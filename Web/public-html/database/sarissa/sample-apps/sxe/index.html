@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "../dtd/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+   <head>
+      <title>
+         Sarissa XML Editor version 0.1a
+      </title>
+      <!-- link rel="stylesheet" type="text/css" href="../css/common.css" / -->
+      <link rel="stylesheet" type="text/css" href="css/xedHTMversion.css" />
+      <style type="text/css">
+       <!-- 
+body{
+margin:0px;         
+          }
+#sourceView{width:100%;height:500px;}
+#gridView{width:100%;height:500px;overflow:auto;}
+#messages{
+         width:100%;
+         height:100px;
+         overflow:scroll;
+}         
+       -->
+      </style>
+      <script type="text/javascript" src="../../gr/abiss/js/sarissa/sarissa.js"> </script>
+      <script type="text/javascript" src="../../gr/abiss/js/sarissa/sarissa_dhtml.js"> </script>
+      <script type="text/javascript" src="js/sxe.js"> </script>
+   </head>
+   <body>
+   <div>
+      <div id="messages">
+      </div>
+      <button style="width:120px;" onclick="loadXmlFromUri('test.xml')">load xml</button>
+      <button style="width:120px;" onclick="showSourceView()">View Source</button>
+      <button style="width:120px;" onclick="document.getElementById('sourceView').value = document.getElementById('gridView').innerHTML">Force Source</button>
+      <div id="gridView"> </div>
+      <textarea id="sourceView"> </textarea>
+	</div>
+   </body>
+</html>
+

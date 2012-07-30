@@ -1,0 +1,36 @@
+/* editable elements */
+html,body{width:100%;height:100%;margin:0px;padding:0px;}
+div.root{display:block;border-right:1px solid #c6c3c6;border-bottom:1px solid #c6c3c6;}
+div.childHolder{display:none;}
+/* 
+button holders 
+*/
+td.expand-toggle-button{width:14px!important;min-width:14px;padding:1px;border:1px solid transparent;}
+td.element-button{background: url(../img/element.gif) no-repeat 1px 1px;}
+td.namespace-button{background: url(../img/attribute.gif) no-repeat 1px 1px;}
+td.attribute-button{background: url(../img/attribute.gif) no-repeat 1px 1px;}
+td.text-button{background: url(../img/text.gif) no-repeat 1px 1px;}
+td.cdata-button{background: url(../img/comment.gif) no-repeat 1px 1px;}
+td.comment-button{background: url(../img/comment.gif) no-repeat 1px 1px;}
+td.pi-button{background: url(../img/pi.gif) no-repeat 1px 1px;}
+/*
+nodetables
+*/
+table.element,table.namespace,table.attribute,table.text,table.cdata,table.comment,table.pi{width:100%;height:16px;background-repeat:no-repeat;background-position:1px 2px;border-top:1px solid #c6c3c6;border-left:1px solid #c6c3c6;text-align:left;background-color:transparent}
+td{vertical-align:top;text-align:left;height:16px;width:auto;}
+/*TODO distinguish between text only elements and not*/
+td.attribute-name,td.namespace-prefix,td.pi-name,td.comment-label{width:50px;padding-left:2px;padding-right:2px;}
+td.element,td.attribute-value,td.namespace-uri,td.text,td.cdata,td.comment-value,td.pi-value{width:auto;padding-left:2px;padding-right:2px;}
+
+/*td.withFocusedTXTArea{position:relative;}*/
+td.fixedTd{width:170px;height:16px;}
+td.childHolder{height:16px;padding-top:21px;/*border rule for IE6 bug -- -- >*/ border-right:1px solid #ffffff;}
+
+button{width:13px;height:100%;}
+button.down{background: url(../img/arrUp.gif) no-repeat center 2px;visibility:visible;}
+button.hidden{visibility:hidden;}
+button.shown{background: url(../img/arr.gif) no-repeat center 2px;visibility:visible;}
+textarea{width:100%;height:100%;border:0px;scrollbar-face-color:#ffffff;}
+textarea.nsValue,textarea.attrValue,textarea.xedValue{border-left:1px solid #c6c3c6;overflow:auto;scrollbar-arrow-color:#808080;}
+textarea.nsName,textarea.attrName,textarea.elemName,textarea.noScroll{/* border:1px dotted red;width:170px!important;font-weight:bold; */overflow:auto;}
+.noScroll{overflow:hidden;}

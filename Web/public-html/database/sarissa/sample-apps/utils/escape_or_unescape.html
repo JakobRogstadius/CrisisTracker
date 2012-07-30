@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+ /**
+ * ====================================================================
+ * About
+ * ====================================================================
+ * Escape or Unescape Text Form
+ * @version @sarissa.version@
+ * @author: Copyright manos batsis
+ * ====================================================================
+ * Licence
+ * ====================================================================
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 or
+ * the GNU Lesser General Public License version 2.1 as published by
+ * the Free Software Foundation (your choice of the two).
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License or GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * or GNU Lesser General Public License along with this program; if not,
+ * write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * or visit http://www.gnu.org
+ *
+ */
+ -->
+<html>
+    <title>Escape or Unescape Text Form</title>
+    <meta name="Description" content="Minesweeper xml xslt">
+    
+        <script type="text/javascript" src="../../gr/abiss/js/sarissa/sarissa.js"> </script> 
+        <script type="text/javascript">
+        // <![CDATA[
+        function escapeOrUnescape(bUnescape){
+        	var oData = document.getElementById("data");
+        	if(bUnescape){
+        		oData.value = Sarissa.unescape(oData.value);
+        	}
+        	else{
+        		oData.value = Sarissa.escape(oData.value);
+        	};
+        	
+        };
+        // ]]>
+         </script> 
+<body> 
+
+<h1>Escape/Unescape Form</h1>
+<button onclick="escapeOrUnescape(false)">Escape</button>
+<button onclick="escapeOrUnescape(true)">Unescape</button>
+<textarea id="data" style="width:100%;height:600px;">
+</textarea>
+
+
+
+</body>
+</html>

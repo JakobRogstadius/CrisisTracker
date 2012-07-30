@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+ /**
+ * ====================================================================
+ * About
+ * ====================================================================
+ * All XSLT Minesweeper
+ * @version @sarissa.version@
+ * @author: Copyright Sean Whalen
+ * ====================================================================
+ * Licence
+ * ====================================================================
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 or
+ * the GNU Lesser General Public License version 2.1 as published by
+ * the Free Software Foundation (your choice of the two).
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License or GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * or GNU Lesser General Public License along with this program; if not,
+ * write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * or visit http://www.gnu.org
+ *
+ */
+ -->
+<html>
+    <title>XSLT-Minesweeper</title>
+    <meta name="Description" content="Minesweeper xml xslt">
+    <meta name="KeyWords" content="xml, xslt, javascript, Minesweeper, sarissa, Java, Game, seanwhalen, Sean, Whalen, Sean Whalen">    
+        <script type="text/javascript" src="../../gr/abiss/js/sarissa/sarissa.js"> </script>
+        <script type="text/javascript" src="minesweeper.js"> </script>
+<body> 
+
+<h1>All XSLT-Minesweeper</h1>
+
+<div id="gameArea"  oncontextmenu = "return false" >
+</div>
+
+<fieldset id="ddd" > 
+    <legend>Configure Minesweeper</legend>
+    <table cellspacing="0" cellpadding="0" summary="minesweeper configuration form">
+        <tr>
+            <td>
+                <label for="userH">Horizontal #:</label>
+            </td>
+            <td>
+                <input type="text" id="userH" name="userH" value = "15"  style="background-color:#FFE4B5;width:100%;" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="userH">Vertical #:</label>
+            </td>
+            <td>
+                <input type="text" id="userV" name="userV" value = "15"  style="background-color:#FFE4B5;width:100%;" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="userH">Number of Bombs: </label>
+            </td>
+            <td>
+                <input type="text" id="userB" name="userB" value = "30"  style="background-color:#FFE4B5;width:100%;" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <button onclick="userVals()">Create Map!</button>
+            </td>
+            <td>
+                <button onclick="extrabutton()">View XML</button>
+            </td>
+        </tr>
+    </table>
+</fieldset>
+
+<div id="belowGame">
+    <h3>Notes:</h3>
+    <p>
+    I started this as a personal educational project to see how much of the data management and rules I could encode in XSLT. The main page uses javascript to handle the mouse-events and to generate the random numbers. Everything else is done in 3 different xslt files. The first stylesheet takes a set of random numbers and a pair of min/max values and returns a list of elements representing a full grid. The next style sheet transforms the list of nodes into grid of HTML buttons. The third sheet returns the set of squares that are revealed when the user clicks on a square. This is a recursive algorithm that looks for flags in squares bordering the square that was clicked. That set is then sent to the same algorithm, and the template finds the flags bordering those squares, etc, until no more bordering flags are found.
+    </p>
+    <h3>Links:</h3>
+    <ul>
+        <li>
+            <a href="http://www.xsltblog.com/codeoftheday/archives/2005/03/ok_this_is_the.html">The app made 'Cool Site of the Day' on the XSLT:Blog!</a> 
+        </li>
+        <li>
+            <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=284708 ">This is a link to the Mozilla bug I submitted regarding the performance of Firefox compared to MS-IE</a> 
+        </li>
+        <li>
+            <a href="http://seanwhalen.home.comcast.net/">A Scrabble game, and java version of Minesweeper that plays a good game by itself.</a>
+        </li>
+    </ul>
+    <p>
+    You can mail feedback to: <a href="mailto:seanwhalen@comcast.net">seanwhalen@comcast.net</a>
+    </p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,99 @@
+/********************/
+/* Any story list */
+/********************/
+
+.story-list {
+    margin-top: 5px;
+    font-size: 1.1em;
+    line-height: 1.25em;
+    letter-spacing: -4px; /* Remove inline-block spacing */
+}
+.story-list .header {
+    font-weight: bold;
+}
+.story-list-item {
+    padding-top: 0px;
+    padding-bottom: 0px;
+    position: relative;
+    display: block;
+}
+.story-list-item .column {
+    letter-spacing: normal; /* End spacing fix */
+    display: -moz-inline-box;
+    display: inline-block;
+    zoom: 1;          /* IE hack to enable inline-block */
+    *display: inline; /* IE hack to enable inline-block */
+    vertical-align: top;
+    background-position: center left;
+    background-repeat: no-repeat;
+    padding-left: 2px;
+    padding-right: 2px;
+    color: #333;
+}
+.story-list-item a.wrapper {
+    display: block;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    border-top: 1px solid #ccc;
+}
+.story-list-item a.wrapper:link {
+    background-color: #fff;
+}
+.story-list-item a.wrapper:visited {
+    background-color: #ECEAE5;
+}
+.story-list-item a.wrapper:hover {
+    background-color: #C74350;
+}
+.story-list-item a.wrapper:hover .column {
+    color: #fff;
+}
+
+.story-list-item .colorbars {
+  width: 80px;
+  padding: 0px;
+  margin: 0;
+  font-size: 1px;
+}
+.story-list-item .colorbars .table {
+  width: 100%;
+}
+
+.story-list-item .loc-tags  { background-image: url('../../img/tag_location.png'); }
+.story-list-item .cat-tags  { background-image: url('../../img/tag_category.png'); }
+.story-list-item .key-tags  { background-image: url('../../img/tag_keyword.png'); }
+.story-list-item .ent-tags  { background-image: url('../../img/tag_entity.png'); }
+.story-list-item .loc-tags,
+.story-list-item .cat-tags,
+.story-list-item .key-tags,
+.story-list-item .ent-tags {
+    width: 16px;
+    padding-left: 15px;
+    opacity: 0.15;
+    filter: alpha(opacity = 15);
+}
+.story-list-item .hasvalue { /* Needs to be declared after opacity 0.15 */
+  opacity: 1;
+  filter: alpha(opacity = 100);
+}
+
+/********************/
+/* tagstorylist.php */
+/********************/
+
+.stories-to-tag-list .size      { width: 40px;  text-align: center; }
+.stories-to-tag-list .time      { width: 100px;  text-align: center; }
+.stories-to-tag-list .title     { width: 645px; }
+.stories-to-tag-list .hidestory {
+  float: right;
+  padding: 4px;
+  cursor: pointer;
+}
+
+/********************/
+/* explorestories.php */
+/********************/
+
+.explorestories-list .size      { width: 40px;  text-align: center; }
+.explorestories-list .time      { width: 100px;  text-align: center; }
+.explorestories-list .title     { width: 645px; }

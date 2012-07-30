@@ -1,0 +1,27 @@
+
+#timeout {
+	background: #FFFFFF;	
+	border:0.1px solid #EBEBEB;
+	border-radius: 10px 10px 10px 10px;overflow-y: auto;
+	font-size:12px;
+	text-align:center;
+}
+
+	form.button { 
+		background: -moz-linear-gradient(center top, #f3f3f3, #dddddd);
+		background: -webkit-gradient(linear, left top, left bottom, from(#f3f3f3), to(#dddddd));
+		background:  -o-linear-gradient(top, #f3f3f3, #dddddd);
+		filter: progid:DXImageTransform.Microsoft.gradient(startColorStr='#f3f3f3', EndColorStr='#dddddd');
+		border-color:#000; 
+		border-width:1px;
+			border-radius:4px 4px 4px 4px;
+		-moz-border-radius: 4px;
+			-webkit-border-radius: 4px;
+		color:#333;
+		cursor:pointer;
+		display:inline-block;
+		padding:6px 6px 4px;
+		margin-top:10px;
+		font:12px; 
+		width:214px;
+	}

@@ -1,0 +1,204 @@
+<?xml version="1.0"?>
+<xsl:transform version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+	<xsl:output method="xml" indent="yes" version="1.0" omit-xml-declaration="yes"/>
+	<xsl:strip-space elements="*"/>
+	<xsl:key name="namespaces" match="* | @*" use="namespace-uri()"/>
+	
+	<!-- constants for node types -->
+	<xsl:variable name="ELEMENT_NODE" select="1"/>
+	<xsl:variable name="ATTRIBUTE_NODE" select="2"/>
+	<xsl:variable name="TEXT_NODE" select="3"/>
+	<xsl:variable name="CDATA_SECTION_NODE" select="4"/>
+	
+	<xsl:variable name="PROCESSING_INSTRUCTION_NODE" select="7"/>
+	<xsl:variable name="COMMENT_NODE" select="8"/>
+	
+	<xsl:template match="/">
+		<!--html>
+			<head>
+				<link rel="stylesheet" type="text/css" href="../css/xedHTMversion.css"/>
+			</head>
+			<body-->
+				<div class="root">
+					<xsl:apply-templates/>
+				</div>
+			<!--/body>
+		</html-->
+	</xsl:template>
+	<!-- 
+		Template for Elements 
+	-->
+	<xsl:template match="*">
+		<xsl:variable name="nsUri" select="namespace-uri()"/>
+		<xsl:variable name="contextNodeId" select="generate-id()"/>
+		<table cellspacing="0" cellpadding="0" class="element" onclick="setContextNode(this, {$ELEMENT_NODE});">
+			<tr>
+				<xsl:call-template name="buttonTD">
+					<xsl:with-param name="classSuffix" select="'element'"/>
+					<xsl:with-param name="contextNodeId" select="$contextNodeId"/>
+				</xsl:call-template>
+				
+				<td class="element">
+					<textarea class="elemName" wrap="soft" onclick="txt_gethighlite()" onfocus="txt_highlite(this)" onblur="txt_restore(this)" oncontextmenu="txt_rightClickHandler(this, this.className);">
+						<xsl:value-of select="name()"/>
+					</textarea>
+					<div id="hide-{$contextNodeId}" class="hide">
+						<!-- 
+							Ensure the element and it's attributes' namespaces are under scope while each of these is the current node 
+						-->
+						<xsl:if test="not(ancestor::*[namespace-uri()=$nsUri]) and $nsUri != ''">
+							<xsl:apply-templates select="." mode="ns-resolve"/>
+						</xsl:if>
+						
+						<xsl:for-each select="@*">
+							<xsl:variable name="ns" select="namespace-uri()"/>
+							<xsl:if test="not(ancestor::*[namespace-uri()=$ns]) and $nsUri != ''">
+								<xsl:apply-templates select="." mode="ns-resolve"/>
+							</xsl:if>
+							<xsl:apply-templates select="."/>
+						</xsl:for-each>
+						<!-- 
+						go for child nodes 
+						-->
+						<xsl:apply-templates/>
+					</div>
+				</td>
+			</tr>
+		</table>
+	</xsl:template>
+	<!--
+	Template for namespace declarations
+	-->
+	<xsl:template match="*|@*" mode="ns-resolve">
+		<table cellspacing="0" cellpadding="0" class="namespace">
+			<tr>
+				<xsl:call-template name="noButtonTD"/>
+				<td class="namespace-prefix">
+					<textarea class="attrName" wrap="soft">
+						<xsl:text>xmlns</xsl:text>
+						<xsl:if test="contains(name(),':')">
+							<xsl:text>:</xsl:text>
+							<xsl:value-of select="substring-before(name(),':')"/>
+						</xsl:if>
+					</textarea>
+				</td>
+				<td class="namespace-uri">
+					<!--textarea class="attrValue" wrap="soft"-->
+						<xsl:value-of select="namespace-uri()"/>
+						<!--/textarea-->
+				</td>
+			</tr>
+		</table>
+	
+	</xsl:template>
+	<!-- 
+	Template for attributes 
+	-->
+	<xsl:template match="@*">
+		<table cellspacing="0" cellpadding="0" class="attribute" onclick="setContextNode(this, {$ATTRIBUTE_NODE});">
+			<tr>
+				<xsl:call-template name="buttonTD">
+					<xsl:with-param name="classSuffix" select="'attribute'"/>
+				</xsl:call-template>
+				
+				<td class="attribute-name">
+					<!--textarea class="attrName" wrap="soft" onclick="txt_gethighlite()" onfocus="txt_highlite(this)" onblur="txt_restore(this)"  oncontextmenu="txt_rightClickHandler(this, this.className);"-->
+					<xsl:value-of select="name()"/>
+					<!--/textarea-->
+				</td>
+				<td class="attribute-value">
+					<!--textarea class="attrValue" wrap="soft" onclick="txt2_highlite(this)" onfocus="txt2_highlite(this)" onblur="txt2_restore(this)" onkeydown="txt2_resizeTxtArea(this)" oncontextmenu="txt_rightClickHandler(this, this.className);"-->
+					<xsl:value-of select="."/>
+					<!--/textarea-->
+				</td>
+			</tr>
+		</table>
+	</xsl:template>
+	<!-- 
+		Template for comment nodes 
+	-->
+	<xsl:template match="comment()">
+		<table cellspacing="0" cellpadding="0" class="comment" onclick="setContextNode(this, {$COMMENT_NODE});">
+			<tr>
+				<xsl:call-template name="buttonTD">
+					<xsl:with-param name="classSuffix" select="'comment'"/>
+				</xsl:call-template>
+				<!--td class="comment-label">
+					<textarea class="noScroll" wrap="soft" onclick="txt_gethighlite(this)" onfocus="focusValue(this);txt_highlite(this)" onblur="txt_restore(this)"  oncontextmenu="txt_rightClickHandler(this);">
+					<xsl:text>Comment</xsl:text>
+					</textarea>
+				</td-->
+				<td class="comment-value">
+					<textarea class="xedValue" areaType="commentValue" wrap="soft" onclick="txt2_highlite(this)" onfocus="txt2_highlite(this)" onblur="txt2_restore(this)" onkeydown="txt2_resizeTxtArea(this)" oncontextmenu="txt_rightClickHandler(this);">
+						<xsl:value-of select="."/>
+					</textarea>
+				</td>
+			</tr>
+		</table>
+	</xsl:template>
+	<!-- Template for  text only -->
+	<xsl:template match="text()">
+		<table cellspacing="0" cellpadding="0" class="text" onclick="setContextNode(this, {$TEXT_NODE});">
+			<tr>
+				<xsl:call-template name="buttonTD">
+					<xsl:with-param name="classSuffix" select="'text'"/>
+				</xsl:call-template>
+				
+				<td class="text-label">
+					<!--textarea class="noScroll" wrap="soft" onclick="txt_gethighlite()" onfocus="focusValue(this);txt_highlite(this)" onblur="txt_restore(this)" oncontextmenu="txt_rightClickHandler(this);"-->
+					<xsl:text>TXT</xsl:text>
+					<!--/textarea-->
+				</td>
+				<td class="text-value">
+					<!--textarea class="xedValue" areaType="textValue" wrap="soft" onclick="txt2_highlite(this)" onfocus="txt2_highlite(this)" onblur="txt2_restore(this)" onkeydown="txt2_resizeTxtArea(this)" oncontextmenu="txt_rightClickHandler(this);"-->
+					<xsl:value-of select="."/>
+					<!--/textarea-->
+				</td>
+			</tr>
+		</table>
+	</xsl:template>
+	<!-- Template for  PI only -->
+	<xsl:template match="processing-instruction()">
+		<table cellspacing="0" cellpadding="0" class="pi" onclick="setContextNode(this, {$PROCESSING_INSTRUCTION_NODE});">
+			<tr>
+				<xsl:call-template name="buttonTD">
+					<xsl:with-param name="classSuffix" select="'pi'"/>
+				</xsl:call-template>
+				<td class="pi-name">
+					<!--textarea class="noScroll" areaType="piName" wrap="soft" onclick="txt_gethighlite()" onfocus="focusValue(this);txt_highlite(this)" onblur="txt_restore(this)" oncontextmenu="txt_rightClickHandler(this);"-->
+					<xsl:value-of select="name()"/>
+					<!--/textarea-->
+				</td>
+				<td class="pi-value">
+					<!--textarea class="xedValue" areaType="textValue" wrap="soft" onclick="txt2_highlite(this)" onfocus="txt2_highlite(this)" onblur="txt2_restore(this)" onkeydown="txt2_resizeTxtArea(this)" oncontextmenu="txt_rightClickHandler(this);"-->
+					<xsl:value-of select="."/>
+					<!--/textarea-->
+				</td>
+			</tr>
+		</table>
+	</xsl:template>
+	<!-- template for nodeTable buttons in the result doc -->
+	<xsl:template name="buttonTD">
+		<xsl:param name="classSuffix"/>
+		<xsl:param name="contextNodeId"/>
+		<xsl:variable name="hasChildNodes">
+			<xsl:choose>
+				<xsl:when test="not(child::node()) and not(@*)">0</xsl:when>
+				<xsl:otherwise>1</xsl:otherwise>
+			</xsl:choose>
+		</xsl:variable>
+		<td class="expand-toggle-button {$classSuffix}-button">
+			<xsl:if test="$classSuffix = 'element' and $hasChildNodes = '1'">
+				<xsl:attribute name="onmouseover">Sxe.elemControlMouseOver(this)</xsl:attribute>
+				<xsl:attribute name="onmouseout">Sxe.elemControlMouseOut(this)</xsl:attribute>
+				<xsl:attribute name="onclick">Sxe.toggleVisibility(this, document.getElementById('hide-<xsl:value-of select="$contextNodeId" />'));</xsl:attribute>
+			</xsl:if>
+			<xsl:text> </xsl:text>
+			<!--button class="{$buttonClass}" onclick="grid_elem_expandToggle(this)"/-->
+		</td>
+	</xsl:template>
+	<!-- template for nodeTable buttons in the result doc -->
+	<xsl:template name="noButtonTD">
+		<td class="expand-toggle-button"></td>
+	</xsl:template>
+</xsl:transform>

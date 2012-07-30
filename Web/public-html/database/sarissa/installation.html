@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+	<head>
+		<link type="text/css" href="./css/theme.css" rel="stylesheet" />
+		<link type="text/css" href="./dp.SyntaxHighlighter/Styles/SyntaxHighlighter.css" rel="stylesheet" />
+		<script class="javascript" src="./dp.SyntaxHighlighter/Scripts/shCore.js"> </script>
+		<script class="javascript" src="./dp.SyntaxHighlighter/Scripts/shBrushJScript.js"> </script>
+		<script class="javascript" src="./dp.SyntaxHighlighter/Scripts/shBrushJava.js"> </script>
+		<script class="javascript" src="./dp.SyntaxHighlighter/Scripts/shBrushSql.js"> </script>
+		<script class="javascript" src="./dp.SyntaxHighlighter/Scripts/shBrushXml.js"> </script>
+		<script class="javascript" src="./dp.SyntaxHighlighter/Scripts/shBrushCss.js"> </script>
+		<!--link rel="stylesheet" href="./css/print.css" type="text/css" media="print" /-->
+		<meta content="application/xhtml+xml; charset=ISO-8859-1" http-equiv="Content-Type" />
+	    	    <meta name="author" content="Manos Batsis" />
+	    		<title>Sarissa - Sarissa: Installation and Usage</title>
+        	</head>
+	<body>
+      <div id="banner">
+                      <a href="../" id="bannerLeft">
+                                                <img src="./images/abiss/banner-logo-dev.png" alt="" />
+                </a>
+                
+          <div id="bannerRight">
+	          <!--             <a href="index.html" id="bannerRight">
+                Sarissa
+                </a>
+       -->
+	          <h1><a href="index.html">  Sarissa </a></h1>
+	                      <a href="http://www.abiss.gr/" class="externalLink">Abiss.gr</a>
+            |
+                <a href="http://sourceforge.net/projects/sarissa/" class="externalLink">SF Project</a>
+            |
+                <a href="http://fisheye1.cenqua.com/browse/sarissa" class="externalLink">Fisheye</a>
+                  </div>
+          <div class="clear"> </div>
+        </div>
+      
+        <!--div id="breadcrumbs">
+          
+          <div class="xright">            <a href="http://www.abiss.gr/" class="externalLink">Abiss.gr</a>
+            |
+                <a href="http://sourceforge.net/projects/sarissa/" class="externalLink">SF Project</a>
+            |
+                <a href="http://fisheye1.cenqua.com/browse/sarissa" class="externalLink">Fisheye</a>
+              
+              </div>
+        </div-->
+    
+        <div id="columns">
+          <div id="leftColumn">
+            <div id="navcolumn">
+                       <h5>Overview</h5>
+        <ul>
+                  <li class="none">
+                    <a href="index.html">Introduction</a>
+          </li>
+                  <li class="none">
+                    <a href="http://sourceforge.net/project/showfiles.php?group_id=75155" class="externalLink">Download</a>
+          </li>
+                  <li class="none">
+                    <a href="source-repository.html">Source Code</a>
+          </li>
+                  <li class="none">
+                    <a href="CHANGELOG.txt">Credits/Changelog</a>
+          </li>
+          </ul>
+          <h5>Documentation</h5>
+        <ul>
+                  <li class="none">
+              <span class="nav-item-selected">Installation</span>
+        </li>
+                  <li class="none">
+                    <a href="howtos.html">HOWTOs</a>
+          </li>
+                  <li class="none">
+                    <a href="todo.html">TODOs</a>
+          </li>
+                  <li class="none">
+                    <a href="jsdoc/index.html">API (JSDoc)</a>
+          </li>
+                  <li class="none">
+                    <a href="troubleshooting.html">Troubleshooting</a>
+          </li>
+                  <li class="none">
+                    <a href="test/testsarissa.html">Unit Tests (ECMAUnit)</a>
+          </li>
+          </ul>
+          <h5>Project Documentation</h5>
+        <ul>
+                                        
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+              
+        <li class="collapsed">
+                    <a href="project-info.html">Project Information</a>
+                </li>
+                                        
+      
+            
+      
+              
+        <li class="collapsed">
+                    <a href="project-reports.html">Project Reports</a>
+                </li>
+          </ul>
+                                                   
+                        
+                                    <a href="http://sourceforge.net/projects/sarissa" title="Powered by Sourceforge services for Open Source projects" class="poweredBy">
+                            <img alt="Powered by Sourceforge services for Open Source projects" src="http://sflogo.sourceforge.net/sflogo.php?group_id=75155&type=1" />
+            </a>
+                                
+                        
+                                    <a href="http://fisheye1.cenqua.com/browse/sarissa" title="Source Perspective by FishEye" class="poweredBy">
+                            <img alt="Source Perspective by FishEye" src="http://www.cenqua.com/images/fisheyed2.gif" />
+            </a>
+                                
+                        
+                                    <a href="http://maven.apache.org/" title="Powered by Apache Maven" class="poweredBy">
+                            <img alt="Powered by Apache Maven" src="./images/maven-button-1.png" />
+            </a>
+                                
+                        
+                                    <a href="http://www.openajax.org/" title="OpenAjax Alliance Member" class="poweredBy">
+                            <img alt="OpenAjax Alliance Member" src="./images/Openajax_Alliance_Member_Logo_light_bg.png" />
+            </a>
+                                 	
+            </div>
+          </div>
+          <div id="centerColumn">
+            <div class="section"><h2><a name="Overview"></a>
+Overview</h2>
+<p> Sarissa is distributed in two versions. The first is the generic distribution
+                archive that includes the JS files, documentation etc. and can be used by anyone.
+                The second is a Maven artifact that can be used as a dependency for Maven projects.
+                Below you can find more details on how to use both in your project and web pages.</p>
+</div>
+<div class="section"><h2><a name="Installation_for_generic_projects"></a>
+Installation for generic projects</h2>
+<p> First of all, download the generic distribution from the SF project download page <a href="http://sourceforge.net/project/showfiles.php?group_id=75155" class="externalLink">here</a>
+.
+                After expanding the archive somwhere in your project, then follow the usage instructions 
+                at the bottom of this page. </p>
+</div>
+<div class="section"><h2><a name="Installation_for_Maven_projects"></a>
+Installation for Maven projects</h2>
+<p>
+                To use Sarissa as a dependency in your Maven project, add it in your pom.xml file. 
+                You will also need to import Maven JSTools for your webapp to build HTTP
+                responses using the Sarissa files:
+            </p>
+<pre name="code" class="xml">
+&lt;dependencies&gt;
+    &lt;!-- add Sarissa  --&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;gr.abiss.js&lt;/groupId&gt;
+        &lt;artifactId&gt;sarissa&lt;/artifactId&gt;
+        &lt;version&gt;LATEST_VERSION_HERE&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;!-- add jstools --&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;gr.abiss.mvn.plugins&lt;/groupId&gt;
+        &lt;artifactId&gt;maven-jstools-plugin&lt;/artifactId&gt;
+        &lt;version&gt;LATEST_VERSION_HERE&lt;/version&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;
+            </pre><p>
+                After that, 
+                <a href="apidocs/gr/abiss/mvn/plugins/jstools/web/JavascriptDependencyFilter.html">configure the JavascriptDependencyFilter</a>
+ 
+                in your webapp config (i.e. web.xml) to intercept requests for JS files or other static 
+                resources packaged in your JS-based dependencies.</p>
+</div>
+<div class="section"><h2><a name="Importing_the_Sarissa_scripts_in_your_web_pages"></a>
+Importing the Sarissa scripts in your web pages</h2>
+<p>To use Sarissa in your web pages, simply import the required files 
+                using the <code>script</code> tag, for example: </p>
+<pre name="code" class="html">
+&lt;script type=&quot;text/javascript&quot; 
+    src=&quot;basePath/gr/abiss/js/sarissa/sarissa.js&quot;&gt; &lt;/script&gt;
+            </pre><p>The available files in the distribution are two (sarissa_dhtml.js has been merged in the main sarissa.js file), 
+            plus their compressed versions makiong a total of four files: </p>
+<ul><li><strong>basePath</strong>/gr/abiss/js/sarissa/sarissa.js</li>
+<li><strong>basePath</strong>/gr/abiss/js/sarissa/sarissa_ieemu_xpath.js</li>
+<li><strong>basePath</strong>/gr/abiss/js/sarissa/sarissa-compressed.js</li>
+<li><strong>basePath</strong>/gr/abiss/js/sarissa/sarissa_ieemu_xpath-compressed.js</li>
+</ul>
+<p>If you are using the generic distribution, <strong>basePath</strong> is 
+            simply the absolute or relative path to the expanded sarissa distribution directory.</p>
+<p>For Maven users however, <strong>&gt;basePath</strong> should be the same as the value used for  
+                <a href="http://www.dev.abiss.gr/mvn-jstools/apidocs/gr/abiss/mvn/plugins/jstools/web/JavascriptDependencyFilter.html" class="externalLink">JavascriptDependencyFilter</a>
+'s 
+                <code>basePath</code> initialization parameter. If you are not familiar with using JS dependencies through Maven,
+                check out the complete <a href="http://www.dev.abiss.gr/mvn-jstools/js-packaging.html" class="externalLink">tutorial</a>
+.
+                 </p>
+</div>
+
+          </div>
+          
+          <!--div id="rightColumn">
+            text here...
+          </div-->
+          <div class="clear"> </div>
+        </div>
+	  
+	  
+        
+        <div id="footer">
+          <div class="infooter">
+            &#169;            2003-2010
+              Abiss.gr
+            
+                                
+                                
+                        <div class="xleft">
+        Last Published: 27/07/2010
+                      </div>
+                </div>
+        </div>
+ 
+		<script class="javascript">
+		dp.SyntaxHighlighter.ClipboardSwf = './dp.SyntaxHighlighter/Scripts/clipboard.swf';
+		dp.SyntaxHighlighter.HighlightAll('code');
+		</script>
+
+  </body>
+</html>

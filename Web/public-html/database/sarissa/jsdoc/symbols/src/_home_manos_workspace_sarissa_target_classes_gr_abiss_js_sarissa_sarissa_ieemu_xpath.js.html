@@ -1,0 +1,227 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=utf-8"> <style>
+	.KEYW {color: #933;}
+	.COMM {color: #bbb; font-style: italic;}
+	.NUMB {color: #393;}
+	.STRN {color: #393;}
+	.REGX {color: #339;}
+	.line {border-right: 1px dotted #666; color: #666; font-style: normal;}
+	</style></head><body><pre><span class='line'>  1</span> <span class="COMM">/**
+<span class='line'>  2</span>  * ====================================================================
+<span class='line'>  3</span>  * About
+<span class='line'>  4</span>  * ====================================================================
+<span class='line'>  5</span>  * Sarissa cross browser XML library - IE XPath Emulation 
+<span class='line'>  6</span>  * @version 0.9.9.5
+<span class='line'>  7</span>  * @author: Copyright 2004-2007 Emmanouil Batsis, mailto: mbatsis at users full stop sourceforge full stop net
+<span class='line'>  8</span>  *
+<span class='line'>  9</span>  * This script emulates Internet Explorer's selectNodes and selectSingleNode
+<span class='line'> 10</span>  * for Mozilla. Associating namespace prefixes with URIs for your XPath queries
+<span class='line'> 11</span>  * is easy with IE's setProperty. 
+<span class='line'> 12</span>  * USers may also map a namespace prefix to a default (unprefixed) namespace in the
+<span class='line'> 13</span>  * source document with Sarissa.setXpathNamespaces
+<span class='line'> 14</span>  *
+<span class='line'> 15</span>  * ====================================================================
+<span class='line'> 16</span>  * Licence
+<span class='line'> 17</span>  * ====================================================================
+<span class='line'> 18</span>  * Sarissa is free software distributed under the GNU GPL version 2 (see &lt;a href="gpl.txt">gpl.txt&lt;/a>) or higher, 
+<span class='line'> 19</span>  * GNU LGPL version 2.1 (see &lt;a href="lgpl.txt">lgpl.txt&lt;/a>) or higher and Apache Software License 2.0 or higher 
+<span class='line'> 20</span>  * (see &lt;a href="asl.txt">asl.txt&lt;/a>). This means you can choose one of the three and use that if you like. If 
+<span class='line'> 21</span>  * you make modifications under the ASL, i would appreciate it if you submitted those.
+<span class='line'> 22</span>  * In case your copy of Sarissa does not include the license texts, you may find
+<span class='line'> 23</span>  * them online in various formats at &lt;a href="http://www.gnu.org">http://www.gnu.org&lt;/a> and 
+<span class='line'> 24</span>  * &lt;a href="http://www.apache.org">http://www.apache.org&lt;/a>.
+<span class='line'> 25</span>  *
+<span class='line'> 26</span>  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY 
+<span class='line'> 27</span>  * KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE 
+<span class='line'> 28</span>  * WARRANTIES OF MERCHANTABILITY,FITNESS FOR A PARTICULAR PURPOSE 
+<span class='line'> 29</span>  * AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR 
+<span class='line'> 30</span>  * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+<span class='line'> 31</span>  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR 
+<span class='line'> 32</span>  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+<span class='line'> 33</span>  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+<span class='line'> 34</span>  */</span><span class="WHIT">
+<span class='line'> 35</span> </span><span class="KEYW">if</span><span class="PUNC">(</span><span class="NAME">Sarissa._SARISSA_HAS_DOM_FEATURE</span><span class="WHIT"> </span><span class="PUNC">&&</span><span class="WHIT"> </span><span class="NAME">document.implementation.hasFeature</span><span class="PUNC">(</span><span class="STRN">"XPath"</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="STRN">"3.0"</span><span class="PUNC">)</span><span class="PUNC">)</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'> 36</span>     </span><span class="COMM">/**
+<span class='line'> 37</span>      * &lt;p>SarissaNodeList behaves as a NodeList but is only used as a result to &lt;code>selectNodes&lt;/code>,
+<span class='line'> 38</span>      * so it also has some properties IEs proprietery object features.&lt;/p>
+<span class='line'> 39</span>      * @private
+<span class='line'> 40</span>      * @constructor
+<span class='line'> 41</span>      * @argument i the (initial) list size
+<span class='line'> 42</span>      */</span><span class="WHIT">
+<span class='line'> 43</span>     </span><span class="NAME">SarissaNodeList</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">i</span><span class="PUNC">)</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'> 44</span>         </span><span class="NAME">this.length</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">i</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'> 45</span>     </span><span class="PUNC">}</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'> 46</span>     </span><span class="COMM">/** 
+<span class='line'> 47</span>      * &lt;p>Set an Array as the prototype object&lt;/p> 
+<span class='line'> 48</span>      * @private
+<span class='line'> 49</span>      */</span><span class="WHIT">
+<span class='line'> 50</span>     </span><span class="NAME">SarissaNodeList.prototype</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="PUNC">[</span><span class="PUNC">]</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'> 51</span>     </span><span class="COMM">/** 
+<span class='line'> 52</span>      * &lt;p>Inherit the Array constructor &lt;/p> 
+<span class='line'> 53</span>      * @private
+<span class='line'> 54</span>      */</span><span class="WHIT">
+<span class='line'> 55</span>     </span><span class="NAME">SarissaNodeList.prototype.constructor</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">Array</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'> 56</span>     </span><span class="COMM">/**
+<span class='line'> 57</span>      * &lt;p>Returns the node at the specified index or null if the given index
+<span class='line'> 58</span>      * is greater than the list size or less than zero &lt;/p>
+<span class='line'> 59</span>      * &lt;p>&lt;b>Note&lt;/b> that in ECMAScript you can also use the square-bracket
+<span class='line'> 60</span>      * array notation instead of calling &lt;code>item&lt;/code>
+<span class='line'> 61</span>      * @argument i the index of the member to return
+<span class='line'> 62</span>      * @returns the member corresponding to the given index
+<span class='line'> 63</span>      * @private
+<span class='line'> 64</span>      */</span><span class="WHIT">
+<span class='line'> 65</span>     </span><span class="NAME">SarissaNodeList.prototype.item</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="PUNC">(</span><span class="NAME">i</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'> 66</span>         </span><span class="KEYW">return</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">i</span><span class="WHIT"> </span><span class="PUNC">&lt;</span><span class="WHIT"> </span><span class="NUMB">0</span><span class="WHIT"> </span><span class="PUNC">||</span><span class="WHIT"> </span><span class="NAME">i</span><span class="WHIT"> </span><span class="PUNC">>=</span><span class="WHIT"> </span><span class="NAME">this.length</span><span class="PUNC">)</span><span class="PUNC">?</span><span class="KEYW">null</span><span class="PUNC">:</span><span class="KEYW">this</span><span class="PUNC">[</span><span class="NAME">i</span><span class="PUNC">]</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'> 67</span>     </span><span class="PUNC">}</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'> 68</span>     </span><span class="COMM">/**
+<span class='line'> 69</span>      * &lt;p>Emulate IE's expr property
+<span class='line'> 70</span>      * (Here the SarissaNodeList object is given as the result of selectNodes).&lt;/p>
+<span class='line'> 71</span>      * @returns the XPath expression passed to selectNodes that resulted in
+<span class='line'> 72</span>      *          this SarissaNodeList
+<span class='line'> 73</span>      * @private
+<span class='line'> 74</span>      */</span><span class="WHIT">
+<span class='line'> 75</span>     </span><span class="NAME">SarissaNodeList.prototype.expr</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="STRN">""</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'> 76</span>     </span><span class="COMM">/** dummy, used to accept IE's stuff without throwing errors */</span><span class="WHIT">
+<span class='line'> 77</span>     </span><span class="KEYW">if</span><span class="PUNC">(</span><span class="NAME">window.XMLDocument</span><span class="WHIT"> </span><span class="PUNC">&&</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="PUNC">!</span><span class="NAME">XMLDocument.prototype.setProperty</span><span class="PUNC">)</span><span class="PUNC">)</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'> 78</span>         </span><span class="NAME">XMLDocument.prototype.setProperty</span><span class="WHIT">  </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="PUNC">(</span><span class="NAME">x</span><span class="PUNC">,</span><span class="NAME">y</span><span class="PUNC">)</span><span class="PUNC">{</span><span class="PUNC">}</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'> 79</span>     </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'> 80</span>     </span><span class="COMM">/**
+<span class='line'> 81</span>     * &lt;p>Programmatically control namespace URI/prefix mappings for XPath
+<span class='line'> 82</span>     * queries.&lt;/p>
+<span class='line'> 83</span>     * &lt;p>This method comes especially handy when used to apply XPath queries
+<span class='line'> 84</span>     * on XML documents with a default namespace, as there is no other way
+<span class='line'> 85</span>     * of mapping that to a prefix.&lt;/p>
+<span class='line'> 86</span>     * &lt;p>Using no namespace prefix in DOM Level 3 XPath queries, implies you
+<span class='line'> 87</span>     * are looking for elements in the null namespace. If you need to look
+<span class='line'> 88</span>     * for nodes in the default namespace, you need to map a prefix to it
+<span class='line'> 89</span>     * first like:&lt;/p>
+<span class='line'> 90</span>     * &lt;pre>Sarissa.setXpathNamespaces(oDoc, "xmlns:myprefix'http://mynsURI'");&lt;/pre>
+<span class='line'> 91</span>     * &lt;p>&lt;b>Note 1 &lt;/b>: Use this method only if the source document features
+<span class='line'> 92</span>     * a default namespace (without a prefix), otherwise just use IE's setProperty
+<span class='line'> 93</span>     * (moz will rezolve non-default namespaces by itself). You will need to map that
+<span class='line'> 94</span>     * namespace to a prefix for queries to work.&lt;/p>
+<span class='line'> 95</span>     * &lt;p>&lt;b>Note 2 &lt;/b>: This method calls IE's setProperty method to set the
+<span class='line'> 96</span>     * appropriate namespace-prefix mappings, so you dont have to do that.&lt;/p>
+<span class='line'> 97</span>     * @param oDoc The target XMLDocument to set the namespace mappings for.
+<span class='line'> 98</span>     * @param sNsSet A whilespace-seperated list of namespace declarations as
+<span class='line'> 99</span>     *            those would appear in an XML document. E.g.:
+<span class='line'>100</span>     *            &lt;code>&quot;xmlns:xhtml=&apos;http://www.w3.org/1999/xhtml&apos;
+<span class='line'>101</span>     * xmlns:&apos;http://www.w3.org/1999/XSL/Transform&apos;&quot;&lt;/code>
+<span class='line'>102</span>     * @throws An error if the format of the given namespace declarations is bad.
+<span class='line'>103</span>     */</span><span class="WHIT">
+<span class='line'>104</span>     </span><span class="NAME">Sarissa.setXpathNamespaces</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="PUNC">(</span><span class="NAME">oDoc</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">sNsSet</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>105</span>         </span><span class="COMM">//oDoc._sarissa_setXpathNamespaces(sNsSet);</span><span class="WHIT">
+<span class='line'>106</span>         </span><span class="NAME">oDoc._sarissa_useCustomResolver</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="KEYW">true</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>107</span>         </span><span class="KEYW">var</span><span class="WHIT"> </span><span class="NAME">namespaces</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">sNsSet.indexOf</span><span class="PUNC">(</span><span class="STRN">" "</span><span class="PUNC">)</span><span class="PUNC">></span><span class="PUNC">-</span><span class="NUMB">1</span><span class="PUNC">?</span><span class="NAME">sNsSet.split</span><span class="PUNC">(</span><span class="STRN">" "</span><span class="PUNC">)</span><span class="PUNC">:</span><span class="PUNC">[</span><span class="NAME">sNsSet</span><span class="PUNC">]</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>108</span>         </span><span class="NAME">oDoc._sarissa_xpathNamespaces</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="PUNC">[</span><span class="PUNC">]</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>109</span>         </span><span class="KEYW">for</span><span class="PUNC">(</span><span class="KEYW">var</span><span class="WHIT"> </span><span class="NAME">i</span><span class="PUNC">=</span><span class="NUMB">0</span><span class="PUNC">;</span><span class="NAME">i</span><span class="WHIT"> </span><span class="PUNC">&lt;</span><span class="WHIT"> </span><span class="NAME">namespaces.length</span><span class="PUNC">;</span><span class="NAME">i</span><span class="PUNC">++</span><span class="PUNC">)</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>110</span>             </span><span class="KEYW">var</span><span class="WHIT"> </span><span class="NAME">ns</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">namespaces</span><span class="PUNC">[</span><span class="NAME">i</span><span class="PUNC">]</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>111</span>             </span><span class="KEYW">var</span><span class="WHIT"> </span><span class="NAME">colonPos</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">ns.indexOf</span><span class="PUNC">(</span><span class="STRN">":"</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>112</span>             </span><span class="KEYW">var</span><span class="WHIT"> </span><span class="NAME">assignPos</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">ns.indexOf</span><span class="PUNC">(</span><span class="STRN">"="</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>113</span>             </span><span class="KEYW">if</span><span class="PUNC">(</span><span class="NAME">colonPos</span><span class="WHIT"> </span><span class="PUNC">></span><span class="WHIT"> </span><span class="NUMB">0</span><span class="WHIT"> </span><span class="PUNC">&&</span><span class="WHIT"> </span><span class="NAME">assignPos</span><span class="WHIT"> </span><span class="PUNC">></span><span class="WHIT"> </span><span class="NAME">colonPos</span><span class="PUNC">+</span><span class="NUMB">1</span><span class="PUNC">)</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>114</span>                 </span><span class="KEYW">var</span><span class="WHIT"> </span><span class="NAME">prefix</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">ns.substring</span><span class="PUNC">(</span><span class="NAME">colonPos</span><span class="PUNC">+</span><span class="NUMB">1</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">assignPos</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>115</span>                 </span><span class="KEYW">var</span><span class="WHIT"> </span><span class="NAME">uri</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">ns.substring</span><span class="PUNC">(</span><span class="NAME">assignPos</span><span class="PUNC">+</span><span class="NUMB">2</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">ns.length</span><span class="PUNC">-</span><span class="NUMB">1</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>116</span>                 </span><span class="NAME">oDoc._sarissa_xpathNamespaces</span><span class="PUNC">[</span><span class="NAME">prefix</span><span class="PUNC">]</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">uri</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>117</span>             </span><span class="PUNC">}</span><span class="KEYW">else</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>118</span>                 </span><span class="KEYW">throw</span><span class="WHIT"> </span><span class="STRN">"Bad format on namespace declaration(s) given"</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>119</span>             </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>120</span>         </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>121</span>     </span><span class="PUNC">}</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>122</span>     </span><span class="COMM">/**
+<span class='line'>123</span>     * @private Flag to control whether a custom namespace resolver should
+<span class='line'>124</span>     *          be used, set to true by Sarissa.setXpathNamespaces
+<span class='line'>125</span>     */</span><span class="WHIT">
+<span class='line'>126</span>     </span><span class="NAME">XMLDocument.prototype._sarissa_useCustomResolver</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="KEYW">false</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>127</span>     </span><span class="COMM">/** @private */</span><span class="WHIT">
+<span class='line'>128</span>     </span><span class="NAME">XMLDocument.prototype._sarissa_xpathNamespaces</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="PUNC">[</span><span class="PUNC">]</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>129</span>     </span><span class="COMM">/**
+<span class='line'>130</span>     * &lt;p>Extends the XMLDocument to emulate IE's selectNodes.&lt;/p>
+<span class='line'>131</span>     * @argument sExpr the XPath expression to use
+<span class='line'>132</span>     * @argument contextNode this is for internal use only by the same
+<span class='line'>133</span>     *           method when called on Elements
+<span class='line'>134</span>     * @returns the result of the XPath search as a SarissaNodeList
+<span class='line'>135</span>     * @throws An error if no namespace URI is found for the given prefix.
+<span class='line'>136</span>     */</span><span class="WHIT">
+<span class='line'>137</span>     </span><span class="NAME">XMLDocument.prototype.selectNodes</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="PUNC">(</span><span class="NAME">sExpr</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">contextNode</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">returnSingle</span><span class="PUNC">)</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>138</span>         </span><span class="KEYW">var</span><span class="WHIT"> </span><span class="NAME">nsDoc</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="KEYW">this</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>139</span>         </span><span class="KEYW">var</span><span class="WHIT"> </span><span class="NAME">nsresolver</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>140</span>         </span><span class="KEYW">if</span><span class="PUNC">(</span><span class="NAME">this._sarissa_useCustomResolver</span><span class="PUNC">)</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>141</span>             </span><span class="NAME">nsresolver</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="PUNC">(</span><span class="NAME">prefix</span><span class="PUNC">)</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>142</span>                 </span><span class="KEYW">var</span><span class="WHIT"> </span><span class="NAME">s</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">nsDoc._sarissa_xpathNamespaces</span><span class="PUNC">[</span><span class="NAME">prefix</span><span class="PUNC">]</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>143</span>                 </span><span class="KEYW">if</span><span class="PUNC">(</span><span class="NAME">s</span><span class="PUNC">)</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>144</span>                     </span><span class="KEYW">return</span><span class="WHIT"> </span><span class="NAME">s</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>145</span>                 </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>146</span>                 </span><span class="KEYW">else</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>147</span>                     </span><span class="KEYW">throw</span><span class="WHIT"> </span><span class="STRN">"No namespace URI found for prefix: '"</span><span class="WHIT"> </span><span class="PUNC">+</span><span class="WHIT"> </span><span class="NAME">prefix</span><span class="PUNC">+</span><span class="STRN">"'"</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>148</span>                 </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>149</span>             </span><span class="PUNC">}</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>150</span>         </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>151</span>         </span><span class="KEYW">else</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>152</span>             </span><span class="NAME">nsresolver</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">this.createNSResolver</span><span class="PUNC">(</span><span class="NAME">this.documentElement</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>153</span>         </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>154</span>         </span><span class="KEYW">var</span><span class="WHIT"> </span><span class="NAME">result</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="KEYW">null</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>155</span>         </span><span class="KEYW">if</span><span class="PUNC">(</span><span class="PUNC">!</span><span class="NAME">returnSingle</span><span class="PUNC">)</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>156</span>             </span><span class="KEYW">var</span><span class="WHIT"> </span><span class="NAME">oResult</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">this.evaluate</span><span class="PUNC">(</span><span class="NAME">sExpr</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>157</span>                 </span><span class="PUNC">(</span><span class="NAME">contextNode</span><span class="PUNC">?</span><span class="NAME">contextNode</span><span class="PUNC">:</span><span class="KEYW">this</span><span class="PUNC">)</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>158</span>                 </span><span class="NAME">nsresolver</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>159</span>                 </span><span class="NAME">XPathResult.ORDERED_NODE_SNAPSHOT_TYPE</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="KEYW">null</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>160</span>             </span><span class="KEYW">var</span><span class="WHIT"> </span><span class="NAME">nodeList</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="KEYW">new</span><span class="WHIT"> </span><span class="NAME">SarissaNodeList</span><span class="PUNC">(</span><span class="NAME">oResult.snapshotLength</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>161</span>             </span><span class="NAME">nodeList.expr</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">sExpr</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>162</span>             </span><span class="KEYW">for</span><span class="PUNC">(</span><span class="KEYW">var</span><span class="WHIT"> </span><span class="NAME">i</span><span class="PUNC">=</span><span class="NUMB">0</span><span class="PUNC">;</span><span class="NAME">i</span><span class="PUNC">&lt;</span><span class="NAME">nodeList.length</span><span class="PUNC">;</span><span class="NAME">i</span><span class="PUNC">++</span><span class="PUNC">)</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>163</span>                 </span><span class="NAME">nodeList</span><span class="PUNC">[</span><span class="NAME">i</span><span class="PUNC">]</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">oResult.snapshotItem</span><span class="PUNC">(</span><span class="NAME">i</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>164</span>             </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>165</span>             </span><span class="NAME">result</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">nodeList</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>166</span>         </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>167</span>         </span><span class="KEYW">else</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>168</span>             </span><span class="NAME">result</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">this.evaluate</span><span class="PUNC">(</span><span class="NAME">sExpr</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>169</span>                 </span><span class="PUNC">(</span><span class="NAME">contextNode</span><span class="PUNC">?</span><span class="NAME">contextNode</span><span class="PUNC">:</span><span class="KEYW">this</span><span class="PUNC">)</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>170</span>                 </span><span class="NAME">nsresolver</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>171</span>                 </span><span class="NAME">XPathResult.FIRST_ORDERED_NODE_TYPE</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="KEYW">null</span><span class="PUNC">)</span><span class="PUNC">.</span><span class="NAME">singleNodeValue</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>172</span>         </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>173</span>         </span><span class="KEYW">return</span><span class="WHIT"> </span><span class="NAME">result</span><span class="PUNC">;</span><span class="WHIT">      
+<span class='line'>174</span>     </span><span class="PUNC">}</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>175</span>     </span><span class="COMM">/**
+<span class='line'>176</span>     * &lt;p>Extends the Element to emulate IE's selectNodes&lt;/p>
+<span class='line'>177</span>     * @argument sExpr the XPath expression to use
+<span class='line'>178</span>     * @returns the result of the XPath search as an (Sarissa)NodeList
+<span class='line'>179</span>     * @throws An
+<span class='line'>180</span>     *             error if invoked on an HTML Element as this is only be
+<span class='line'>181</span>     *             available to XML Elements.
+<span class='line'>182</span>     */</span><span class="WHIT">
+<span class='line'>183</span>     </span><span class="NAME">Element.prototype.selectNodes</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="PUNC">(</span><span class="NAME">sExpr</span><span class="PUNC">)</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>184</span>         </span><span class="KEYW">var</span><span class="WHIT"> </span><span class="NAME">doc</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">this.ownerDocument</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>185</span>         </span><span class="KEYW">if</span><span class="PUNC">(</span><span class="NAME">doc.selectNodes</span><span class="PUNC">)</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>186</span>             </span><span class="KEYW">return</span><span class="WHIT"> </span><span class="NAME">doc.selectNodes</span><span class="PUNC">(</span><span class="NAME">sExpr</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="KEYW">this</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>187</span>         </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>188</span>         </span><span class="KEYW">else</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>189</span>             </span><span class="KEYW">throw</span><span class="WHIT"> </span><span class="STRN">"Method selectNodes is only supported by XML Elements"</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>190</span>         </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>191</span>     </span><span class="PUNC">}</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>192</span>     </span><span class="COMM">/**
+<span class='line'>193</span>     * &lt;p>Extends the XMLDocument to emulate IE's selectSingleNode.&lt;/p>
+<span class='line'>194</span>     * @argument sExpr the XPath expression to use
+<span class='line'>195</span>     * @argument contextNode this is for internal use only by the same
+<span class='line'>196</span>     *           method when called on Elements
+<span class='line'>197</span>     * @returns the result of the XPath search as an (Sarissa)NodeList
+<span class='line'>198</span>     */</span><span class="WHIT">
+<span class='line'>199</span>     </span><span class="NAME">XMLDocument.prototype.selectSingleNode</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="PUNC">(</span><span class="NAME">sExpr</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">contextNode</span><span class="PUNC">)</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>200</span>         </span><span class="KEYW">var</span><span class="WHIT"> </span><span class="NAME">ctx</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">contextNode</span><span class="PUNC">?</span><span class="NAME">contextNode</span><span class="PUNC">:</span><span class="KEYW">null</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>201</span>         </span><span class="KEYW">return</span><span class="WHIT"> </span><span class="NAME">this.selectNodes</span><span class="PUNC">(</span><span class="NAME">sExpr</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">ctx</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="KEYW">true</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>202</span>     </span><span class="PUNC">}</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>203</span>     </span><span class="COMM">/**
+<span class='line'>204</span>     * &lt;p>Extends the Element to emulate IE's selectSingleNode.&lt;/p>
+<span class='line'>205</span>     * @argument sExpr the XPath expression to use
+<span class='line'>206</span>     * @returns the result of the XPath search as an (Sarissa)NodeList
+<span class='line'>207</span>     * @throws An error if invoked on an HTML Element as this is only be
+<span class='line'>208</span>     *             available to XML Elements.
+<span class='line'>209</span>     */</span><span class="WHIT">
+<span class='line'>210</span>     </span><span class="NAME">Element.prototype.selectSingleNode</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="PUNC">(</span><span class="NAME">sExpr</span><span class="PUNC">)</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>211</span>         </span><span class="KEYW">var</span><span class="WHIT"> </span><span class="NAME">doc</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">this.ownerDocument</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>212</span>         </span><span class="KEYW">if</span><span class="PUNC">(</span><span class="NAME">doc.selectSingleNode</span><span class="PUNC">)</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>213</span>             </span><span class="KEYW">return</span><span class="WHIT"> </span><span class="NAME">doc.selectSingleNode</span><span class="PUNC">(</span><span class="NAME">sExpr</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="KEYW">this</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>214</span>         </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>215</span>         </span><span class="KEYW">else</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>216</span>             </span><span class="KEYW">throw</span><span class="WHIT"> </span><span class="STRN">"Method selectNodes is only supported by XML Elements"</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>217</span>         </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>218</span>     </span><span class="PUNC">}</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>219</span>     </span><span class="NAME">Sarissa.IS_ENABLED_SELECT_NODES</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="KEYW">true</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>220</span> </span><span class="PUNC">}</span></pre></body></html>

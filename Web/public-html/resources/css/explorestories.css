@@ -1,0 +1,49 @@
+/********************/
+/* Search button    */
+/********************/
+.search-panel {
+    margin-left: 7px;
+}
+
+.button-submit {
+    border-radius: 5px;
+    color: #444;
+    display: block;
+    position: relative;
+    float: left;
+    height: 34px;
+    text-decoration: none;
+}
+
+.button-submit:active {
+    background-position: bottom right;
+    color: #000;
+    outline: none; /* hide dotted outline in Firefox */
+}
+
+/**********************/
+/* explorestories.php */
+/**********************/
+
+.where-panel #map  {
+    height: 300px;
+    max-width: 512px;
+}
+/* --------- */
+.map_inactive {
+	border:0px solid;
+}
+.map_active {
+	border:4px solid;
+}
+/* --------- */
+.where-panel #searchbox {
+    width:350px;
+    height:20px;
+}
+.what-panel {
+
+}
+.who-panel {
+
+}

@@ -1,0 +1,542 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+ /**
+ * ====================================================================
+ * About
+ * ====================================================================
+ * Escape or Unescape Text Form
+ * @version @sarissa.version@
+ * @author: Copyright manos batsis
+ * ====================================================================
+ * Licence
+ * ====================================================================
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 or
+ * the GNU Lesser General Public License version 2.1 as published by
+ * the Free Software Foundation (your choice of the two).
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License or GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * or GNU Lesser General Public License along with this program; if not,
+ * write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * or visit http://www.gnu.org
+ *
+ */
+ -->
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Language" content="el"/>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1253"/>
+    <title>
+        Table Sorting Demo
+    </title>
+        <script type="text/javascript" src="../../../../main/js/gr/abiss/js/sarissa/sarissa.js"> </script> 
+        <script type="text/javascript" src="../../../../main/js/gr/abiss/js/sarissa/sarissa-table-utils.js"> </script> 
+	<script type="text/javascript">
+var currCursor = null;
+
+//-----------------------------------
+
+function sortIt(iColIndex, oElem){
+	Sarissa.sortHtmlTableData(oElem);
+	
+}
+
+// kbs: added rest of JS functions that author removed
+
+function showFileName(str2, str0)
+{
+	// passed "innerText" appears to work only in IE
+	// alert ("str2 = " + str2 + "\nstr0 = " + str0 );
+}
+
+function highLightMenu( oElem )
+{
+	oElem.style.backgroundColor = "#000000";
+	oElem.style.color = "#ffffff";
+}
+
+function unHighLightMenu( oElem )
+{
+	oElem.style.backgroundColor = "#ffffff";
+	oElem.style.color = "#000000";
+}
+
+function highLight( oElem )
+{
+	oElem.style.backgroundColor = "#ccffff";
+//alert(oElem.childNodes[1].text()); 
+}
+
+function unHighLight( oElem )
+{
+	oElem.style.backgroundColor = "#ffffff";
+}
+	</script>
+
+  <style type="text/css">/**/
+/* kbs: extended styles */
+body	{overflow:auto;background:#fff;}
+td	{vertical-align:top;padding-left:5px;padding-right:5px;}
+.w100	{width:100%;}
+.w200	{width:200px;}
+td.h20	{height:20px; border:thin red solid;}
+  </style>
+</head>
+   <body oncontextmenu="//return false" class="inBrd" 
+	onLoad="">
+
+         <table class="w100" name="rsTable" id="rsTable" cellpadding="0" cellspacing="0">
+         <thead>
+         <tr class="sortButtons">
+               <th class="h20 resizeMeL" nowrap="noWrap" 
+		onmousedown="highLightMenu(this)" onmouseup="unHighLightMenu(this)" 
+		onclick="sortIt(0, this)"
+               unselectable="on">
+                  Αρχείο <img src="img/trans9x6.gif" width="9" height="6" alt="" border="0" /> 
+               </th>
+
+               <th class="h20 resizeMe" nowrap="noWrap" onmousedown="highLightMenu(this)" onmouseup="unHighLightMenu(this)" onclick="sortIt(1, this)"
+               unselectable="on">
+                  Ημερομηνία <img src="img/trans9x6.gif" width="9" height="6" alt="" border="0" /> 
+               </th>
+               <th class="h20 resizeMeR" nowrap="noWrap" onmousedown="highLightMenu(this)" onmouseup="unHighLightMenu(this)" onclick="sortIt(2, this)"
+               unselectable="on">
+                  Περιγραφή <img src="img/trans9x6.gif" width="9" height="6" alt="" border="0" /> 
+               </th>
+            </tr>
+         </thead>
+         <tbody>
+       
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)">
+               <td>
+
+                  PAGE0029.djvu
+               </td>
+               <td>
+                  15/12/2000
+               </td>
+               <td>
+                  Exit Note
+               </td>
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+
+               <td>
+                  PAGE0027.djvu
+               </td>
+               <td>
+                  28/11/2000
+               </td>
+               <td>
+                  Entry Note
+               </td>
+            </tr>
+
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  PAGE0025.djvu
+               </td>
+               <td>
+                  04/12/2000
+               </td>
+               <td>
+                  ΔΕΛΤΙΟ ΝΟΣΗΛΕΙΑΣ
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  <a href="PAGE0003.djvu">PAGE0003.djvu</a>
+               </td>
+               <td>
+                  27/10/1999
+               </td>
+               <td>
+                  Entry Note
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  PAGE0009.djvu
+               </td>
+               <td>
+                  30/11/2000
+               </td>
+               <td>
+                  Treatment Note
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  PAGE0037.djvu
+               </td>
+               <td>
+                  13/12/2000
+               </td>
+               <td>
+                  Thermal Diagram
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  PAGE0041.djvu
+               </td>
+               <td>
+                  27/11/1999
+               </td>
+               <td>
+                  Thermal Diagram
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  PAGE0021.djvu
+               </td>
+               <td>
+                  28/11/2000
+               </td>
+               <td>
+                  Treatment Card
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  Page0033.djvu
+               </td>
+               <td>
+                  28/11/2000
+               </td>
+               <td>
+                  Treatment Note
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  Page0031.djvu
+               </td>
+               <td>
+                  12/10/2000
+               </td>
+               <td>
+                  Treatment Note
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  PAGE0039.djvu
+               </td>
+               <td>
+                  28/11/2000
+               </td>
+               <td>
+                  Thermal Diagram
+               </td>
+
+            </tr>
+            <tr class="sortButtons">
+               <th class="h20 resizeMeL" nowrap="noWrap" 
+		onmousedown="highLightMenu(this)" onmouseup="unHighLightMenu(this)" 
+		onclick="sortIt(0, this)"
+               unselectable="on">
+                  Αρχείο <img src="img/trans9x6.gif" width="9" height="6" alt="" border="0" /> 
+               </th>
+
+               <th class="h20 resizeMe" nowrap="noWrap" onmousedown="highLightMenu(this)" onmouseup="unHighLightMenu(this)" onclick="sortIt(1, this)"
+               unselectable="on">
+                  Ημερομηνία <img src="img/trans9x6.gif" width="9" height="6" alt="" border="0" /> 
+               </th>
+               <th class="h20 resizeMeR" nowrap="noWrap" onmousedown="highLightMenu(this)" onmouseup="unHighLightMenu(this)" onclick="sortIt(2, this)"
+               unselectable="on">
+                  Περιγραφή <img src="img/trans9x6.gif" width="9" height="6" alt="" border="0" /> 
+               </th>
+            </tr>
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  PAGE0011.djvu
+               </td>
+               <td>
+                  28/11/2000
+               </td>
+               <td>
+                  Treatment Note ΕΙΣΟΔΟΥ
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  PAGE0001.djvu
+               </td>
+               <td>
+                  12/01/1995
+               </td>
+               <td>
+                  Ticket
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  PAGE0005.djvu
+               </td>
+               <td>
+                  27/10/1999
+               </td>
+               <td>
+                  Treatment Card
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  xray11.sid
+               </td>
+               <td>
+                  13/12/2000
+               </td>
+               <td>
+                  X-Ray
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  xray07.sid
+               </td>
+               <td>
+                  27/10/1999
+               </td>
+               <td>
+                  X-Ray
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  xray12.sid
+               </td>
+               <td>
+                  28/11/2000
+               </td>
+               <td>
+                  X-Ray
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  xray08.sid
+               </td>
+               <td>
+                  30/08/2000
+               </td>
+               <td>
+                  X-Ray
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  xray03.sid
+               </td>
+               <td>
+                  27/10/1999
+               </td>
+               <td>
+                  X-Ray
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  xray05.sid
+               </td>
+               <td>
+                  29/10/1999
+               </td>
+               <td>
+                  X-Ray
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  xray02.sid
+               </td>
+               <td>
+                  13/12/2001
+               </td>
+               <td>
+                  X-Ray
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  xray04.sid
+               </td>
+               <td>
+                  12/01/1995
+               </td>
+               <td>
+                  X-Ray
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  xray10.sid
+               </td>
+               <td>
+                  28/11/2000
+               </td>
+               <td>
+                  X-Ray
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  xray09.sid
+               </td>
+               <td>
+                  30/08/2000
+               </td>
+               <td>
+                  X-Ray
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  xray13.sid
+               </td>
+               <td>
+                  13/12/2000
+               </td>
+               <td>
+                  X-Ray
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  xray06.sid
+               </td>
+               <td>
+                  12/01/1995
+               </td>
+               <td>
+                  X-Ray
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  xray01.sid
+               </td>
+               <td>
+                  13/12/2001
+               </td>
+               <td>
+                  X-Ray
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+           >
+               <td>
+                  xaxon2.sid
+               </td>
+               <td>
+                  04/10/2000
+               </td>
+               <td>
+                  Mag
+               </td>
+
+            </tr>
+            
+            <tr class="hand" onmouseover="highLight(this)" onmouseout="unHighLight(this)"
+>
+               <td>
+                  xaxon1.sid
+               </td>
+               <td>
+                  11/10/2000
+               </td>
+               <td>
+                  Mag
+               </td>
+
+            </tr>
+            
+         </tbody>
+      </table>
+   </body>
+</html>
+

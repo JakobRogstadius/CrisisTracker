@@ -1,0 +1,48 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <title>AJAX Forms with Sarissa</title>
+        <script type="text/javascript" src="../../gr/abiss/js/sarissa/sarissa.js"> </script>
+        <script src="prototype.js" type="text/javascript"> </script>
+        <script src="scriptaculous.js?load=effects" type="text/javascript"> </script>
+    </head>
+    <body>
+        <form action="test.xml" method="post"
+            onsubmit="return Sarissa.updateContentFromForm(this, document.getElementById('container'));">
+            <fieldset>
+                <legend>Sarissa Ajax Form</legend>
+                <p>To submit a form using AJAX with Sarissa, all you need to do is add a call to 
+                    Sarissa.updateContentFromForm in the form's <code>onsubmit</code> attribute:</p> 
+                <pre style="html">
+&lt;form action="test.xml" method="post"
+    onsubmit="return Sarissa.updateContentFromForm(this, document.getElementById('container'));"&gt;
+                </pre>
+                <p>Where 'container' is the <code>id</code> of the target element. In our case, this is the
+                black-bordered <code>div</code> bellow. To change it's content, just submit the form
+                using the submit button.</p>
+                <button type="submit">Submit</button>
+            </fieldset>
+        </form>
+        <div id="container">
+            <div>
+                <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Vivamus sed metus quis
+                    arcu tempus condimentum. Aenean eu odio. Mauris vehicula dui ut massa. In ac.</p>
+                <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Vivamus sed metus quis
+                    arcu tempus condimentum. Aenean eu odio. Mauris vehicula dui ut massa. In ac.</p>
+                <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Vivamus sed metus quis
+                    arcu tempus condimentum. Aenean eu odio. Mauris vehicula dui ut massa. In ac.</p>
+                <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Vivamus sed metus quis
+                    arcu tempus condimentum. Aenean eu odio. Mauris vehicula dui ut massa. In ac.</p>
+                <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Vivamus sed metus quis
+                    arcu tempus condimentum. Aenean eu odio. Mauris vehicula dui ut massa. In ac.</p>
+                <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Vivamus sed metus quis
+                    arcu tempus condimentum. Aenean eu odio. Mauris vehicula dui ut massa. In ac.</p>
+                <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Vivamus sed metus quis
+                    arcu tempus condimentum. Aenean eu odio. Mauris vehicula dui ut massa. In ac.</p>
+                <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Vivamus sed metus quis
+                    arcu tempus condimentum. Aenean eu odio. Mauris vehicula dui ut massa. In
+                ac.</p>
+            </div>
+        </div>
+    </body>
+</html>

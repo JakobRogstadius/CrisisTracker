@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<settings>
+  <connectionString>Server=?;Database=?;User ID=?;Password=?;charset=utf8;Allow User Variables=True;</connectionString>
+  <sampleStreamConsumer>
+    <twitterUsername>?</twitterUsername>
+    <twitterPassword>?</twitterPassword>
+    <sourceID>1</sourceID>
+  </sampleStreamConsumer>
+  <filterStreamConsumer>
+    <twitterUsername>?</twitterUsername>
+    <twitterPassword>?</twitterPassword>
+    <sourceID>2</sourceID>
+  </filterStreamConsumer>
+  <tweetParser>
+    <wordScore4dMaxToStopwordRatio>0.1</wordScore4dMaxToStopwordRatio>
+    <maxWordTweetTableLength>10000000</maxWordTweetTableLength>
+    <batchSize>500</batchSize>
+    <minTweetVectorLength>0.1</minTweetVectorLength>
+    <minTweetWordCount>2</minTweetWordCount>
+  </tweetParser>
+  <tweetClusterer>
+    <tweetClusterWorker>
+      <initializeSize>5000</initializeSize>
+      <batchSize>500</batchSize>
+      <historySize>2000</historySize>
+      <dictionaryWordCount>50000</dictionaryWordCount>
+      <hashTableCount>8</hashTableCount>
+      <hyperPlaneCount>13</hyperPlaneCount>
+      <hashBinSize>70</hashBinSize>
+      <maxLinksPerTweet>5</maxLinksPerTweet>
+      <minTweetVectorLength>7</minTweetVectorLength>
+      <minTweetWordCount>3</minTweetWordCount>
+      <minTweetSimilarityForLink>0.55</minTweetSimilarityForLink>
+      <identityThreshold>0.99</identityThreshold>
+    </tweetClusterWorker>
+    <storyWorker>
+      <mergeUpperThreshold>0.65</mergeUpperThreshold>
+      <mergeLowerThreshold>0.2</mergeLowerThreshold>
+      <mergeDropScale>0.5</mergeDropScale>
+      <tweetClusterBatchSize>1000</tweetClusterBatchSize>
+      <candidateStoryCount>1000</candidateStoryCount>
+      <maxWordsInStoryVector>30</maxWordsInStoryVector>
+    </storyWorker>
+  </tweetClusterer>
+</settings>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>test</title>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" href="resources/css/main.css" type="text/css" media="screen" >
+        <style type="text/css">
+            .category-button-column {
+                display: inline-block;
+                width: 49%;
+            }
+            .category-button {
+                display: inline-block;
+                position: relative;
+                height: 22px;
+                width: 170px;
+                margin: 1px 7px 1px 7px;
+                border-right: 0;
+                border-radius: 5px;
+                font-size: 1.2em;
+                color: #000;
+                cursor: default;
+            }
+            .category-button:hover {
+                color: #000;
+            }
+            .category-button span {
+                position: absolute;
+                left: 15px;
+                top: 4px;
+            }
+            .inactive {
+                width: 8px;
+                border-right: 162px solid #e9e9e9;
+                color: #757575;
+            }
+        </style>
+        
+        <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js" ></script>
+        <script type="text/javascript">
+            $(document).ready(function(){
+                printCategoryButtons([1,3,10,14]);
+                alert(getSelectedCategories());
+                
+                $('a.category-button').click(function(){
+                    $(this).toggleClass("inactive");
+                });
+            });
+            
+            var $categoryNames = ["Civillian&nbsp;involvement",
+                                  "Military&nbsp;involvement",
+                                  "Crime",
+                                  "Violence",
+                                  "Deaths",
+                                  "Missing&nbsp;people",
+                                  "Damaged&nbsp;infrastructure",
+                                  "Natural&nbsp;hazard",
+                                  "Public&nbsp;announcement",
+                                  "Summary&nbsp;report",
+                                  "Available&nbsp;resource",
+                                  "Request/Need",
+                                  "Warning/Risk/Danger",
+                                  "High&nbsp;impact&nbsp;event"];
+            
+            function printCategoryButtons(activeIDs) {
+                if (activeIDs==null) {
+                    alert("null input");
+                    activeIDs=new Array(0);
+                }
+                $html = "";
+                for ($i=1; $i<15; $i++) {
+                    if ($i==1 || $i==8)
+                        $html += '<div class="category-button-column">';
+                    
+                    $inactive="";
+                    if (activeIDs.indexOf($i) < 0)
+                        $inactive=" inactive";
+                    
+                    $html += '<a class="category-button cc' + $i + $inactive + '"><span>' + $categoryNames[$i-1] + '</span></a>';
+
+                    if ($i==7 || $i==14)
+                        $html += '</div>';
+                }
+                $('div#categorybuttons').html($html);
+            }
+            
+            function getSelectedCategories() {
+                $selectedItems = new Array();
+                $('.category-button').each(function(index) {
+                    if(!$(this).hasClass('inactive')) {
+                        $selectedItems.push(index+1);
+                    }
+                });
+                return $selectedItems;
+            }
+        </script>
+    </head>
+    <body>
+        <div id="container">
+            <div class="left-column-narrow">
+                <div class="gui-panel what-filter-panel">
+                    <h2>What</h2>
+                    <div id="categorybuttons"></div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

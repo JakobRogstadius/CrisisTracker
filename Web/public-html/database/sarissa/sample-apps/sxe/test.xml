@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+    <head>
+        <title>Geekologue: just my OS project links for now.</title>
+        <style type="text/css">
+                html, body{background:black;color:white;font-family:courier;font-size:16pt}
+                
+                a:hover{text-decoration:none;}
+                span.blink{text-decoration: blink;}
+            </style>
+    </head>
+    <body>
+        <!-- p>Nothing for you here yet. Move along<span class="blink">_</span></p -->
+        <pre>
+                eva:~/geekologue manos$ ls projects/
+                <a href="http://sourceforge.net/projects/xcluder" title="xcluder is an XML Inclusions (XInclude) task for Apache Ant. Offers the choice of using Xerces or Elliotte Rusty Harold's XOM API.">xcluder</a> <a href="http://sourceforge.net/projects/uriqa4j" title="URIQA4J is an implementation of Nokia's URI Query Agent Model for the Java platform">uriqa4j</a> <a href="http://sarissa.sourceforge.net" title="Sarissa is a cross-browser ECMAScript lib that helps with browser incompatibilities in XMLHttpRequest/XML/XSLT/XPath along with some bonus utility methods">sarissa</a> <a href="http://md4j.sourceforge.net/" title="MD4J is an extensible J2EE webapp generator">md4j</a>
+                eva:~/geekologue manos$ <span class="blink">_</span>
+            </pre>
+    </body>
+</html>

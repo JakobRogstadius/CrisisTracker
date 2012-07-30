@@ -1,0 +1,282 @@
+################################################################################################
+		          __    _
+		   ____ _/ /_  (_)_________ ____ ______
+		  / __ `/ __ \/ / ___/ ___// __ `/ ___/
+		 / /_/ / /_/ / (__  |__  )/ /_/ / /
+		 \__,_/_.___/_/____/____(_)__, /_/
+		                         /____/
+
+                Changelog and Credits                                            
+                                                                                                         
+Please help me not forget anyone, send patches with your (or other) 
+name and/or change for me to add below. Thanks!
+                        
+Projects used when developing Sarissa:
+    * Apache Maven and Ant are used to build the Sarissa distributions, 
+      documentation and website. Sarissa can nowdays be used as a Maven dependency 
+      in your Maven-based webapps, check out the documentation.
+    * The Maven JSTools Plugin is used to produce documentation based on JSLint and 
+      JSDoc Toolkit. The JSTools Plugin is also used in Maven based java webapps at  
+      runtime, to resolve Sarissa or other JS files and resources.
+    * ECMAUnit is used for Unit Testing. Check out the Sarissa Unit Tests page here.
+    * The MobilVox Maven JavaScript Plugin is used to create the compressed versions 
+      of the Sarissa JS files.
+    * The Syntaxhighlighter is used for (obviously) syntax highlighting through out 
+      the documentation.
+
+
+Sarissa was inspired by articles and code available on the web, most notably the 
+IE Emu Series [http://webfx.eae.net/dhtml/ieemu/] and Cross-Browser DOM Wrapper 
+[http://www.webreference.com/programming/javascript/domwrapper/] by Nicholas C. Zakas
+ 
+################################################################################################
+
+0.9.9.5
+    * AllowXsltScript is false by default in MSXML 6, causing an error when an XSLT 
+      file includes <msxsl:script> element(s). Thanks to Glen Di Persio, Web Developer
+      and Systems Engineer extraordinaire ;-)
+    * Fixed Opera bug in  Sarissa.getText, was getting an empty string instead of the 
+      attribute value. Many thanks to Daniel Weber for the report and provided fix.
+    * Sarissa now explicitly sets IE's default behavior regarding validateOnParse and  
+      ProhibitDTD to false, thanks to matek994 (SF.net username) and 2907778 (SF.net userid) 
+    * Sarissa.xmlize now does not try to xmlize functions and can thus handle more
+      complex structures without infinite recursion errors thanks to iklotzko (SF.net user)
+    * Not sure how far IE can carry this but try to do something useful when ActiveX is disabled
+      thanks to alexeev.net
+      
+0.9.9.4
+    * Added first attempt on a MediaWiki API
+    * Fixed callback execution in updateContentFromForm and updateContentFromUri
+      thanks to javinto (SF user) 
+    * Fixed selectNodes bug thanks to Doug Clayton
+
+0.9.9.3
+    * XMLHttpRequest is now always defined for IE, even version 7 to avoid version 
+      problems between ActiveX controls (IE7 hardcodes XMLHttpRequest to MSXML 3.0).
+      Many thanks to reporter Scott Chinn. Special thanks to dougdomeny and 
+      Ron MacCracken (rmaccracken) for working on solutions.
+    * Fixed the "send results" form unit tests page to work with IE 
+
+0.9.9.2
+    * Fixed a variable scope in Sarissa.updateContentFromURI thanks to Lawrence Michel
+    * Fixed JSLint and JSDoc reports in build (errr, "somebody" forgot to re-enable them after 
+      commenting them out to get a faster build while doing 0.9.9.1 ;-)
+    * Applied the new dev.abiss.gr skin properly in the generated docos
+    * Made some minor code changed to pass more JSLint errors/warnings
+
+0.9.9.1
+    * Removed "!==" and "===" operators.
+    * Fixed bug with Sarissa.updateContentFromNode(), thanks to Javinto 
+      (SF user) andHartmut Wynen for finding the bug and solution respectively. 
+    * Refactored the callback stuff in Sarissa.updateContentFromXXX methods. They work alot
+      better and with appropriate signatures now. Sarissa.updateContentFromNode now uses no 
+      callbacks since it's not an async method.
+    * Added table utilities, just sorting for table data for now. Maybe you'll find it usefull.
+
+0.9.9
+    * Fixed errors in Sarissa.updateContentFromForm (that's what you get for 
+      not keeping your unit tests up to date)
+    * Two distributions now exist: a JAR artifact for for Maven users 
+      (sarissa-VERSION.jar) and one for generic projects that also includes the 
+      documentation (sarissa-full-VERSION.zip)
+    * Changed XSLT output behavior in XSLTProcessor to follow the spec (or rather, 
+      let the browser do do ;-) thanks to Doug D (dougdomeny)
+    * Fixed document.importNode for IE thanks to Duncan Booth
+    
+0.9.8.1
+    * Fixed pickRecentProgID variable scope and JSLint compliance thanks to Duncan Booth
+    * Fixed included/imported stylesheet along with the document() function for 
+      MSXML 3.0 thanks to a bug report by zizo1 (sf user)
+    * Added compressed versions of all script files; they are created automatically
+      thanks to the MobilVox Maven JavaScript Plugin, see
+      http://www.mobilvox.com/projects/maven-js-plugin/
+    * Added syntax highlighting to the HOWTOs thanks to the integration of SyntaxHighlighter
+      by Alex Gorbatchev to our custom Maven skin, see 
+      http://code.google.com/p/syntaxhighlighter/
+
+0.9.8.0
+    * Changed importStylesheet for IE thanks to dougdomeny. 
+    * Fixed XSLT parameter clearing bugs thanks to Vitaliy Ischenko
+    * Added support for Javeline's XPath/XSLT compatibility library thanks 
+      to Jean Sebastien Baklouti and Ruben Daniels. 
+
+0.9.7.8
+    * Fixed XSLTProcessor.getParameter bug thanks to Jason (MoonScript sf user)
+
+0.9.7.7
+    * Fixed deprecated IE XSLT emu checks and Sarissa.getParseErrorText bug thanks to wfay
+    * Added Sarissa.VERSION thanks to  Mike Brown 
+    * Fixed spelling errors and had drinks thanks to Greg Higgins
+    * Had drinks and a good time thanks to Cedric - cedsav
+    * Added support for Text Nodes in document.importNode implementation for IE
+    * Fixed clearParameters bug in MSXML 3.0 thanks to Hartmut Wynen
+    * Enchanced setParameter to allow clearing parameters when null is passed as a param value 
+      thanks to Hartmut Wynen
+    * Fixed Sarissa.updateContentFromURI bug (1614011) thanks to Arjen Duursma 
+
+0.9.7.6 
+    * Fixed MXXMLWriter warning and XHTML transformToFragment testcase thanks to Waleed K. Abdulla
+    * Fixed some typos/errors that broke Safari
+    
+0.9.7.5 
+    * Fixed document.importNode check for IE 7 thanks to Waleed K. Abdulla
+
+0.9.7.4 
+    * Emulated XMLDocument via Document for Opera and fixed XPath thanks to Joao Eiras and Michael(tm) Smith
+    * Removed MSXML 4/5 progIds (warnings/bugs) thanks to Duncan Booth and Rick Oosterholt
+    * Fixed transformToDocument for MSXML 3 (probably the SP2 pooped version) thanks to bug 
+      submitter Waleed K. Abdulla and the anonymous poster with the fix [1549749]
+    * Fixed transformToFragment bug thanks to Robert Sanders
+    * Fixed Sarissa.copyChildNodes thanks to Waleed K. Abdulla
+    * Fixed selectSingleNode bug thanks to Joao Eiras 
+    * Made document.importNode a bit smarter to stop IE from getting too clever for it's own good
+      thanks to Duncan Booth
+    * Fixed IE's document.importNode to use document.importNode thanks to Duncan Booth
+    * Fixed XSLT document() function for MSXML 6 thanks to Ron MacCracken
+    * Added XSLTProcessor.clearParameters for IE
+
+0.9.7.3
+    * Fixed transformToFragment bug in IE thanks to Simon Biickert
+
+0.9.7.2
+    * Fixed err, typo in sarissa_dhtml.js thanks to aevarga and apb2006 (SF users)
+    * Fixed namespace format checking in Sarissa.setXpathNamespaces thanks to Andrew Grooom 
+
+0.9.7.1
+    * Added XSLTProcessor.transformToFragment along with ECMAUnit
+      tests thanks to John Hax
+    * Fixed missing parenthesis typo/error in sarissa_dhtml.js thanks to
+      aevarga (SF user) and Marco Ratto
+    * Fixed some style.cursor error thanks to aevarga (SF user)
+    * Fixed build.xml to convert line endings to be friendly to windows users 
+      thanks to John Hax
+    * Fixed declarations for window.Sarissa to load properly in different contexts 
+      thanks to John Hax
+    * Optimised XSLTProcessor.importStylesheet for IE; it will now reload a remote 
+      stylesheet from the server only if it contains xsl:include or xsl:import elements
+      to resolve those properly, also made it clear in API documentation
+    * Added support for importing HTML nodes in document.importNode (only worked with XML)
+    * Upgraded JSDoc to 1.9.9.2
+    * Added appropriate references to JSLint in credits and documentation (coolest license ever)
+    * Fixed  bad CSS font size units from 'pts' to 'pt', guess i was thinking of spare 
+      parts or something
+    * Changed "gredits" to "credits" in changelog and docos, thanks to Peter (pbb72 SF user). 
+      As i  explained i have been unable to ovecome this re-occuring typo for the last 10  
+      years due to my coin-op (video game arcades) addiction as a kid ;-)
+
+0.9.7
+    * Special thanks to Abiss.gr for sponsoring my new dev machine. Sarissa now is developed
+      on an Apple Quad G5 so Safari, Camino and OS X in general can be properly tested
+    * Moved all the .load bloat to sarissa_ieemu_load.js and deprecated it. XMLHttpRequest
+      objects should be used to load remote files instead
+    * Fixed XSLTProcessor's transformToDocument thanks to furtado (sourceforge user)
+    * Removed Sarissa.IS_ENABLED_XMLHTTP, check for window.XMLHttpRequest instead
+    * Fixed broken-by-typo DOMParser in Safari thanks to Just van den Broecke
+    * Fixed Sarissa.getDomDocument inconsistencies between Moz/IE thanks 
+      to David Flanagan
+    * Added skipCache param in Sarissa.updateContentFromURI thanks to Paul Everitt
+    * Fixed Sarissa.getDomDocument in Safari thanks to Paul Everitt
+    * Fixed oDoc.load in Safari thanks to Jeroen Ferdinandus 
+    * Fixed XPath example errors in documentation thanks to Phil Nash
+    * Fixed bug in Sarissa.updateContentFromNode() thanks to Don Hopkins
+    * Enchanced documentation to work around a moz bug (xmlhttp.send(null) 
+      sends no content-length header) thanks to Mike Branstein
+    * Fixed bug where window.Node was overwritten in Moz when sarissa was evaluated
+      dynamically (talk about extreme usecases) thanks to John Hax
+    * Added callback function parameter to Sarissa.updateContentFromURI and 
+      Sarissa.updateContentFromNode thanks to Ron MacCracken and Dave Hall
+    * Fixed parseError.errorCode bug and documentation thanks to Bernhard van Woerden
+    * Fixed an NS prefix bug in getDomDocument for IE thanks to fimbles (sourceforge user)
+    * Removed (as much as possible) uses of the "in" operator since it is not supported 
+      by JS versions < 1.4, as suggested by troyllama (sourceforge user) 
+    * Activex may not be needed in IE7 so progIDs are only initialized on user request, 
+      thanks to Yiremyahu (sourceforge user) for pointing out the issue
+    * Removed Sarissa.serialize in favor of XMLSerializer and doc.innerHTML for XML and 
+      HTML documents respectively. Besides the function was inconsistent, thanks to 
+      ######INSERT NAME HERE######## for pointing that out
+    * Many thanks to the French Penguin for pointing out various problems
+    * Fixed included XSLT stylesheets problem thanks to apb2006 (sourceforge user)
+
+0.9.6.1
+    * Fixed bug in Sarissa.updateContentFromNode thanks to Franky Braem
+    * Added Safari DOMParser support thanks to a wonderfull idea published 
+      by Nate Steiner on his blog that utilizes the data: URI scheme and 
+      Erik Arvidsson that suggested this could easily be wrapped to emulate 
+      DOMParser. Many thanks to cedric for pointing out the above (between other things).
+    * Removed XSLTProcessor.tranfrormToFragment (didn't work anyway)
+    * Added .load support for Opera thanks to cedric
+    * Added support for HTML nodes in Sarissa.serialize 
+    * Tried to make Safari sniffing more strict thanks to Phil Green who pointed out spoofing is easy
+    * Fixed bugs thanks to feedback by Vincenzo Alcamo
+
+0.9.6
+    * Deprecated stuff as warned in 0.9.4 ;-)
+    * Big change: loadXML is no longer used, as there's no way to emulate it in Opera.
+      So i just removed it directly; to load an XML string to a DOM, you have to use the 
+      DOMParser object. No way to do anything like that in Safari though.
+    * Added Minesweeper as first sample application, original code kindly donated by
+      Sean Whalen, also maintainer of it; welcome Sean!
+    * Fixed Opera and Safari issues  thanks to Phil Endecott and Conrad Chu
+    * Fixed Sarissa.getText bug (ignored CDATA) thanks to Noah Bast
+    * Added Sarissa.moveChildNodes and a third optional parameter to 
+      Sarissa.copyChildNodes (preserved old behavior by default)
+    * Fixed bug in Sarissa.copyChildNodes thanks to Brad Koehn (if i only had 20$ 
+      for each download ;-)
+    * Upgraded JSDoc and ECMAUnit
+
+0.9.5.2 
+    * Fixed IE Sarissa.copyChildNodes bug thanks to Bryan Batchelder
+    * Added Sarissa.xmlize howto 
+    * Fixed documentation errors thanks to R. Mark Volkmann
+    * Upgraded JSDoc
+
+0.9.5.1 
+    * Added Sarissa.escape and Sarissa.unescape, to convert 
+      from and to the five predefined XML entities
+    * Fixed a bug in Sarissa.xmlize (yup, added escaping ;-)
+      
+0.9.5
+    * Added Sarissa.xmlize which produces XML out of any given 
+      ecmascript object and updated JSDoc version/documentation
+
+0.9.4.4 
+    * Fixed and deprecated Sarissa.IS_ENABLED_XSLTPROC bug in Moz 
+      and added fixcrlf task in build. 
+
+0.9.4.3 
+    * Fixed bugs in methods of sarissa_dhtml
+
+0.9.4.2
+    * Fixed a bug in transformNode and transformNodeToObject in
+      sarissa_ieemu_xslt.js (it was not really working)
+
+0.9.4.1 
+    * Fixed a bug in XML loading from URLs and shaped things up a little bit.
+
+0.9.4:
+    * NOTE: Deprecated stuff will go away in 0.9.6. You have been warned!
+    * Refactored to suport KHTML/Webcore (Konqueror/Safari) 
+    * Added some constants to check for availability of features. 
+    * the xml property is now deprecated. Use Sarissa.serialize instead
+    * transformNode and transformNodeToObject are deprecated
+    * Sarissa.setXslParameter is now deprecated
+    * First stab at sarissa_dhtml.js
+    * Fixed major bug in selectSingleNode
+    * Added ecmaunit to distribution
+      
+0.9.3
+    * Fixed readyState bug in finally clause in XMLDocument.prototype.load.
+      Added var before for loop indexes.
+ 
+0.9.2
+    * Sarissa was "adversely affecting Array". Now, Sarissa uses the  new 
+      SarissaNodeList class that inherits Array, instead of extending Array
+      directly. Many thanks to Rob (Flaherty?) for the bug report and initial patch.
+
+0.9.xx 
+    * No changelog kept, but many thanks go to Axel Hecht, Jonas Sicking, 
+      the folks at netscape.public.mozilla.* forums, Dimitre Novatchev, Ken Sall, 
+      Paul Everitt, Christian Stocker, Marcus Andersson, Rob Flaherty, 
+      David Carlisle, Bryan Batchelder, R. Mark Volkmann, Brad Koehn, Phil Endecott, 
+      Conrad Chu, Sean Whalen, Franky Braem, Nate Steiner, Erik Arvidsson, cedric
+      (SF user), Phil Green, Vincenzo Alcamo. 
