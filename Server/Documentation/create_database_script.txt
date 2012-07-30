@@ -2,6 +2,8 @@ DELIMITER $$
 
 CREATE DATABASE `CrisisTracker` DEFAULT CHARACTER SET utf8$$
 
+USE CrisisTracker$$
+
 CREATE TABLE `Constants` (
   `Name` varchar(30) NOT NULL,
   `Value` double NOT NULL,
