@@ -10,11 +10,31 @@ This document explains how to get the CrisisTracker system running on your own s
 
 1. Create database using script in /Server/Documentation folder. The script is written for MySQL and may need modification for other database management systems. Create an account with read and write access for the system to use.
 
-2. Add tracking keywords to the TwitterTrackingKeyword table.
+2. Add tracking keywords to the TwitterTrackingFilter table:
+ID - auto incremented ID
+IsActive - 1 for active, 0 for disabled
+IsStrong - 1 if the filter is so high quality that all tweets that contain the word should be processed. 0 if the word is 'weak' in which case more than one weak filter is needed to keep the tweet. This field can be useful if no filters can be found that uniquely refer to the event of interest. 
+Hits1d - Approximate number of tweets that matched the filter in the past one day.
+Discards1d - Approximate number of tweets that matched the filter but were discarded. Only applies to weak filters.
+FilterType - 0 for keyword, 1 for user, 2 for geographic region (see below).
+Word - keyword to track, or null
+UserID - user ID to track, or null
+UserName - User name (not used, but helps to tell user IDs apart), or null
+Region - Geographic region (box) for which to track geotagged tweets, or null. Coordinates as minlon,minlat,maxlon,maxlat.
+
+Example: IsActive=1, IsStrong=1, FilterType=0, Word=earthquake (this will collect all tweets that contain the word earthquake)
 
 3. Add information categories to the InfoCategory table. The color codes are not currently used.
 
 4. Modify /Server/Common/settings.xml to contain a correct connection string to the database, and login info to the two Twitter accounts.
+
+
+=== ADD TWITTER'S ROOT CERTIFICATE TO MONO'S TRUST STORE ===
+This only applies if you are using Mono. There may be an equivalent step if you are using the .NET framework.
+
+Twitter's root certificate needs to be installed before any Mono program can open a secure connection to Twitter's servers: https://dev.twitter.com/discussions/533
+
+The third option (mozroots.exe) on this site has been used successfully to install the certificate: http://www.mono-project.com/FAQ:_Security
 
 
 === START PROCESSING TWITTER DATA ===

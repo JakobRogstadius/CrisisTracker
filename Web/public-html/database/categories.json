@@ -1,6 +1,0 @@
-[ 	{ "id": "1", "label": "Explosion", "value": "Explosion" }, 
-	{ "id": "2", "label": "Tsunami", "value": "Tsunami" }, 
-	{ "id": "3", "label": "Wind", "value": "Wind" }, 
-	{ "id": "4", "label": "Hearthquake", "value": "Hearthquake" }, 
-	{ "id": "5", "label": "Mudslide", "value": "Mudslide" }, 
-	{ "id": "6", "label": "Tornado", "value": "Tornado" } ]

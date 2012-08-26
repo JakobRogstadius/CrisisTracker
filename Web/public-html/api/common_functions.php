@@ -1,4 +1,7 @@
 <?php
+
+$SITEURL = 'http://ufn.virtues.fi/crisistracker';
+  
 function addLinksToText($text) {
   $text = preg_replace('/http\S+/', '<a href="$0" target="_blank">$0</a>', $text);
   return preg_replace('/@[A-Za-z0-9_]+/', '<a href="https://twitter.com/#!/$0" target="_blank">$0</a>', $text);
@@ -43,7 +46,7 @@ function dumpTable($tableName) {
   
   $tableName = stripMaliciousSql($tableName);
   //Percent of tweets tagged
-  $result = mysql_query("select * from $tableName limit 1000", $db_conn);
+  $result = mysql_query("select * from $tableName order by 1 limit 1000", $db_conn);
   
   echo '<table style="border-spacing: 4px; border-collapse: separate">';
   $firstRow = true;

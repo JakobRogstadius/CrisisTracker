@@ -1,10 +1,11 @@
 <?php
+include_once ('../api/common_functions.php');
+
 // CACHING SERVER
 header("Content-type: text/xml");
 
 //Initialize
 $storyid="";
-$userid="";
 $addedcategories="";
 $addedentities="";
 $addedkeywords="";
@@ -15,16 +16,21 @@ $addedlocationslatitude="";
 $addedlocationslongitude="";
 $removedlocations="";
 
+include('../twitterLogin/login.php');
+
+if (!isLoggedIn()) {
+  exit("not logged in");
+}
+$userid = getUserID();
+
 // Extract GET
-// create sufix
+// create suffix
 $suffix="";
 
 if (isset($_GET['storyid'])) {
 	$storyid = $_GET["storyid"];	
 }
-if (isset($_GET['userid'])) {
-	$userid = $_GET["userid"];
-}
+$ip = $_SERVER['REMOTE_ADDR'];
 
 if (isset($_GET['addedcategories'])) {
 	foreach($_GET['addedcategories'] as $k => $keyword){ 
@@ -39,7 +45,6 @@ if (isset($_GET['addedentities'])) {
 }
 
 if (isset($_GET['addedkeywords'])) {
-	 // $arr = unserialize($_GET["arr"]);
 	foreach($_GET['addedkeywords'] as $k => $keyword){ 
 		$suffix.="&addedkeywords[]=".rawurlencode($keyword);
 	}
@@ -82,12 +87,10 @@ $url = 'http://ufn.virtues.fi/~jakob/twitter/save_story_tag_changes.php?storyid=
 */
 //echo $suffix;
 
-$url = 'http://ufn.virtues.fi/~jakob/twitter/api/save_story_tag_changes.php?storyid='.$storyid.="&userid=".$userid.$suffix;
-// echo $url;
+$url = "$SITEURL/api/save_story_tag_changes.php?storyid=$storyid&userip=$ip&userid=$userid" . $suffix;
+//echo $url;
 
 $xml = file_get_contents($url);
 
 echo $xml;
-
-
 ?>

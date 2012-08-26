@@ -1,4 +1,6 @@
 <?php
+include_once ('../api/common_functions.php');
+
 /***************************************************************/
 // Cross Domain REDIRECTOR HACK
 header("Content-type: text/xml");
@@ -65,7 +67,7 @@ $url = http://ufn.virtues.fi/~jakob/twitter/api/get_stories.php?sortorder=recent
 */
 //echo $suffix;
 
-$url = 'http://ufn.virtues.fi/~jakob/twitter/api/get_stories.php?' . $suffix;
+$url = "$SITEURL/api/get_stories.php?$suffix";
 //echo $url;
 
 $xml = file_get_contents($url);
