@@ -39,9 +39,9 @@ The third option (mozroots.exe) on this site has been used successfully to insta
 
 === START PROCESSING TWITTER DATA ===
 
-1. Compile the entire solution in /Server using Visual Studio. The system has only been used with Mono 2.4, but should also work if compiled for .Net 3.5 or higher.
+1. Compile the entire solution in /Server using Visual Studio, or each project separately from the command line. Compilation requires at least Mono 2.8 or .Net 4.0, primarily due to use of syntax first introduced in C# 4.0. Once compiled, the code has run fine on Mono 2.4.
 
-2. Make sure that whatever target framework the solution was compiled for (e.g. Mono 2.4) is installed on the server.
+2. Make sure that whatever target framework the solution was compiled for (e.g. Mono 2.10) is installed on the server.
 
 3. Copy the following files to a folder on the server, from their respective compilation directories:
 - CrisisTracker.Common.dll
@@ -54,7 +54,10 @@ The third option (mozroots.exe) on this site has been used successfully to insta
 
 4. Start SampleStreamConsumer.exe and TweetParser.exe  on the server (e.g. in separate screens) and let them run for 20-60 minutes. The system needs to build up decently accurate word statistics before processing event-specific content.
 
-5. If any application has created debug.txt, check the log for errors and debug.
+5. If any application has created debug.txt, check the log for errors and debug. If you see errors like the one below, you have not successfully installed Twitter's root certificate (previous step):
+
+System.Net.WebException: Error getting response stream (Write: The authentication or decryption has failed.): SendFailure ---> System.IO.IOException: The authentication or decryption has failed. ---> Mono.Security.Protocol.Tls.TlsException: Invalid certificate received from server. Error code: 0xffffffff800b010a 
+  at Mono.Security.Protocol.Tls.Handshake.Client.TlsServerCertificate.validateCertificates (Mono.Security.X509.X509CertificateCollection certificates) [0x00000] in <filename unknown>:0 
 
 6. Check in the database that the TweetJson, Word and WordScore tables are being populated.
 
