@@ -1,4 +1,11 @@
 <?php
+/*******************************************************************************
+ * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://opensource.org/licenses/eclipse-1.0.php
+ *******************************************************************************/
 
 function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStories = true) {
   $story = array('storyID' => $storyID);
@@ -7,6 +14,7 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
   $storyInfoResult = mysql_query(
   "select 
       Title,
+      CustomTitle,
       UserCount,
       TweetCount,
       RetweetCount,
@@ -15,11 +23,12 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
       ShortDate(StartTime) as StartTimeShort,
       ShortDate(EndTime) as EndTimeShort,
       case when IsHidden then 1 else 0 end as IsHidden
-  from Story
-  where StoryID = $storyID", $db_conn);
+    from Story left join StoryCustomTitle t on t.StoryID=Story.StoryID
+    where Story.StoryID = $storyID", $db_conn);
   $storyInfo = mysql_fetch_array($storyInfoResult);
   
   $story['title'] = $storyInfo['Title'];
+  $story['customTitle'] = urldecode($storyInfo['CustomTitle']);
   $story['userCount'] = $storyInfo['UserCount'];
   $story['tweetCount'] = $storyInfo['TweetCount'];
   $story['retweetCount'] = $storyInfo['RetweetCount'];
@@ -96,7 +105,8 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
         ) T
         join Tweet t on t.TweetID = T.FirstID
         join TwitterUser u on u.UserID = t.UserID
-        where Text!=''
+        left join PendingStorySplits pss on pss.TweetClusterID = t.TweetClusterID
+        where Text!='' and pss.TweetClusterID is null
         order by TweetCount desc
         limit 50) T2
     order by $orderby", $db_conn);
@@ -168,64 +178,18 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
 */
 
 
-    /* Query looks complicated, but consists of four unions. Similarity is the sum of similarity by keywords, geotags, people and categories */
+    /* Query looks complicated, but consists of three unions. Similarity is the sum of similarity by geotags, people and categories */
     $relatedStoriesResult = mysql_query(
       "select 
-          StoryID as StoryID,
+          s.StoryID as StoryID,
           Title,
+          CustomTitle,
           ShortDate(StartTime) as StartTimeShort,
           ceil(exp(Importance)) as Popularity
       from (
           select
               StoryID, sum(Hits) as Hits
           from (
-              select * from (
-                  select
-                      StoryID2 as StoryID, 
-                      5 * (1+log10(UserCount2))*count(*)/(TagCount1+TagCount2) as Hits
-                  from (
-                      select
-                          ActiveStory.StoryID as StoryID1,
-                          sikt2.StoryID as StoryID2,
-                          sikt2.UserCount as UserCount2,
-                          TagCount1,
-                          TagCount2,
-                          sikt1.InfoKeywordID
-                      from
-                          (
-                              select s.StoryID, count(*) as TagCount1
-                              from Story s
-                              left join StoryInfoKeywordTag t on t.StoryID=s.StoryID
-                              where s.StoryID = $storyID
-                              group by s.StoryID
-                          ) ActiveStory
-                          join StoryInfoKeywordTag sikt1 on sikt1.StoryID=ActiveStory.StoryID
-                          join (
-                              select StoryID, UserCount, InfoKeywordID, TagCount2
-                              from
-                                  StoryInfoKeywordTag t
-                                  natural join
-                                  (
-                                      select 
-                                          Story.StoryID, 
-                                          Story.UserCount, 
-                                          (select count(*) from StoryInfoKeywordTag t where t.StoryID=Story.StoryID) as TagCount2
-                                      from (select StoryID, StartTime-interval 24 hour t1, EndTime+interval 6 hour t2 from Story where StoryID=$storyID) T,
-                                          Story
-                                          left join PendingStoryMerges psm on psm.StoryID2 = Story.StoryID
-                                      where StartTime between t1 and t2 
-                                          and Story.StoryID != T.StoryID
-                                          and psm.StoryID2 is null
-                                      order by Importance desc
-                                      limit 3000
-                                  ) NearTimeStoryIDs
-                              ) sikt2 on sikt2.InfoKeywordID=sikt1.InfoKeywordID
-                  ) T
-                  group by StoryID1, StoryID2
-                  order by Hits desc
-                  limit 100
-              ) Tkeywords
-              union
               select
                   s.StoryID, sum(1 / (1 + 5 * (abs(tags.Longitude - t.Longitude) + abs(tags.Latitude-t.Latitude)))) as Hits
               from
@@ -271,7 +235,8 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
           group by 1 order by 2 desc
           limit 10
       ) T
-      natural join Story s;", $db_conn);
+      natural join Story s
+      left join StoryCustomTitle sct on sct.StoryID=s.StoryID;", $db_conn);
     
     if (mysql_num_rows($relatedStoriesResult) > 0) {
       $story['relatedStories'] = array();
@@ -279,11 +244,87 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
       while($row = mysql_fetch_array($relatedStoriesResult)) {
         $relStory = array();
         $relStory['storyID'] = $row['StoryID'];
-        $relStory['title'] = $row['Title'];
+        if (is_null($row['CustomTitle']))
+          $relStory['title'] = $row['Title'];
+        else
+          $relStory['title'] = urldecode($row['CustomTitle']);
         $relStory['popularity'] = $row['Popularity'];
         $relStory['startTimeShort'] = $row['StartTimeShort'];
     
         $story['relatedStories'][] = $relStory;
+      }
+    }
+    
+    $duplicateStoriesResult = mysql_query(
+      "select 
+        s.StoryID as StoryID,
+        Title,
+        CustomTitle,
+        ShortDate(StartTime) as StartTimeShort,
+        ceil(exp(Importance)) as Popularity
+      from (
+        select
+            StoryID2 as StoryID, 
+            count(*)/(TagCount1+TagCount2) as Hits
+        from (
+            select
+                ActiveStory.StoryID as StoryID1,
+                sikt2.StoryID as StoryID2,
+                sikt2.UserCount as UserCount2,
+                TagCount1,
+                TagCount2,
+                sikt1.InfoKeywordID
+            from
+                (
+                    select s.StoryID, count(*) as TagCount1
+                    from Story s
+                    left join StoryInfoKeywordTag t on t.StoryID=s.StoryID
+                    where s.StoryID = $storyID
+                    group by s.StoryID
+                ) ActiveStory
+                join StoryInfoKeywordTag sikt1 on sikt1.StoryID=ActiveStory.StoryID
+                join (
+                    select StoryID, UserCount, InfoKeywordID, TagCount2
+                    from
+                        StoryInfoKeywordTag t
+                        natural join
+                        (
+                            select 
+                                Story.StoryID, 
+                                Story.UserCount, 
+                                (select count(*) from StoryInfoKeywordTag t where t.StoryID=Story.StoryID) as TagCount2
+                            from (select StoryID, StartTime-interval 24 hour t1, EndTime+interval 6 hour t2 from Story where StoryID=$storyID) T,
+                                Story
+                                left join PendingStoryMerges psm on psm.StoryID2 = Story.StoryID
+                            where StartTime between t1 and t2 
+                                and Story.StoryID != T.StoryID
+                                and psm.StoryID2 is null
+                            order by Importance desc
+                            limit 3000
+                        ) NearTimeStoryIDs
+                    ) sikt2 on sikt2.InfoKeywordID=sikt1.InfoKeywordID
+        ) T
+        group by StoryID1, StoryID2
+        order by Hits desc
+        limit 10
+      ) T
+      natural join Story s
+      left join StoryCustomTitle sct on sct.StoryID=s.StoryID;", $db_conn);
+
+    if (mysql_num_rows($duplicateStoriesResult) > 0) {
+      $story['duplicateStories'] = array();
+      
+      while($row = mysql_fetch_array($duplicateStoriesResult)) {
+        $relStory = array();
+        $relStory['storyID'] = $row['StoryID'];
+        if (is_null($row['CustomTitle']))
+          $relStory['title'] = $row['Title'];
+        else
+          $relStory['title'] = urldecode($row['CustomTitle']);
+        $relStory['popularity'] = $row['Popularity'];
+        $relStory['startTimeShort'] = $row['StartTimeShort'];
+    
+        $story['duplicateStories'][] = $relStory;
       }
     }
   }

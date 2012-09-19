@@ -1,4 +1,13 @@
-    <!-- OpenLayers -->
+<?php
+/*******************************************************************************
+ * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://opensource.org/licenses/eclipse-1.0.php
+ *******************************************************************************/
+?>
+<!-- OpenLayers -->
     <link rel="stylesheet" href="openLayers/theme/default/style.css" type="text/css">
     <script type="text/javascript" src="http://openlayers.org/dev/OpenLayers.js"></script>
     <!-- TAGINPUT XOXCO @dependencies {jQuery} -->
@@ -29,13 +38,12 @@
 
     <!-- Category buttons -->    
     <script type="text/javascript" src="resources/javascript/categorybuttons.js"></script>
-
     
     <!-- Instantiate CrisisTracker object -->  
     <script type="text/javascript" src="resources/javascript/crisistracker.js"></script>    
     <script type="text/javascript"> 
       var crisis_tracker = new crisisTracker();
 
-    //Create session object
+      //Create session object
       var session_global;   
     </script>

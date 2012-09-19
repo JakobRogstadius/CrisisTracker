@@ -1,4 +1,12 @@
 <?php
+/*******************************************************************************
+ * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://opensource.org/licenses/eclipse-1.0.php
+ *******************************************************************************/
+
 include('header_start.php');
 ?>
 
@@ -82,18 +90,24 @@ if ($registered) {
 <div class="right-column-narrow">
     <div class="gui-panel textpanel">
 	<h1>Upcoming field trial</h1>
-	<p>Are you a professional intelligence analyst or decision maker in a disaster response organization, or a journalist trying to piece together scattered reports emerging from complex crises? Do you want to help test if clustered and crowd-curated reports from social media can support your work?</p>
-	<p>We are looking for professional participants for an upcoming field trial that will evaluate how well our new CrisisTracker platform can contribute to increased situation awareness during large-scale complex crises, e.g. major earthquakes and country-wide civil unrest. The preliminary duration of the study is September 7-14, during which a group of volunteers will be working in the system to organize data.</p>
+	<p>Are you a professional intelligence analyst or decision maker in a disaster
+  response organization, or a journalist trying to piece together scattered
+  reports emerging from complex crises? Do you want to help test if clustered
+  and crowd-curated reports from social media can support your work?</p>
+	<p>We are looking for professional participants for an upcoming field trial
+  where CrisisTracker will be used to track the Syrian Civil War. The duration
+  of the study is September 7-14, during which volunteers from the Stand-By Task
+  force (and others) will be working in the system to organize data.</p>
 
 	<h2>Registration</h2>
 	<p>Please indicate below if and how you are willing to participate. You can at any time withdraw from participation and your contact information will never be used beyond the scope of this study.</p>
 	<form name="registrationForm" action="study2.php" method="post" onsubmit="return validateForm()">
 	<p><input type="checkbox" name="survey" value="1" id="chksurvey"/> I am interested in watching a video demonstration of data analysis in CrisisTracker, and answering a survey about the tool's potential role in my work.</p>
 	<p><input type="checkbox" name="interview" value="1" id="chkinterview"/> I am interested in participating in a 30-60 minute online interview which will discuss benefits and risks of using CrisisTracker to increase situation awareness in my professional role and organization.</p>
-	<p><input type="checkbox" name="deployment" value="1" id="chkdeployment"/> I will potentially be analyzing or responding to a large-scale crisis in early September and I would like to use CrisisTracker as a secondary information source in my work during a one-week trial. I will have a chance to influence what the tool will track and how information is structured by volunteers. Finally, I will participate in one or two 30-60 minute online interviews to share my reflections on the tool.</p>
+	<p><input type="checkbox" name="deployment" value="1" id="chkdeployment"/> I would like to use CrisisTracker during the one-week evaluation period to familiarize myself with the platform and the dataset. I would then like to share my reflections in a 60 minute Skype interview.</p>
 	<p>Name<br />
 	<input type="text" name="name" style="width: 300px"/></p>
-	<p>In what professional role and organization do you work with disaster information management?<br />
+	<p>In what professional role and organization do you work with disaster information management, or data analysis?<br />
 	<input type="text" name="role" style="width: 300px"/></p>
 	<p>Email<br />
 	<input type="text" name="email" style="width: 300px"/></p>

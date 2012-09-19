@@ -1,4 +1,12 @@
 <?php
+/*******************************************************************************
+ * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://opensource.org/licenses/eclipse-1.0.php
+ *******************************************************************************/
+
 include('api/was_story_merged.php');
 include('api/get_story_content.php');
 include_once('api/common_functions.php');
@@ -11,9 +19,12 @@ if (isset($_GET['sortorder'])) {
   }
 }
 
-$storyID = 0;
+$storyID = -1;
 if (isset($_GET['storyid'])) {
   $storyID = intval($_GET['storyid']);
+}
+if ($storyID<0) {
+  exit;
 }
 
 include('api/open_db.php');
@@ -25,8 +36,6 @@ if (!is_null($mergedWith))
 
 //Fetch story content
 $story = get_story_content($storyID, $sortOrder, $db_conn);
-
-include('api/close_db.php');
 
 include('header_start.php');
 include('storymanagementincludes.php');
@@ -122,13 +131,13 @@ include('storymanagementincludes.php');
     removedCategories = new Array();
     removedEntities = new Array();
     removedKeywords = new Array();
-	environment.texttag_flag = true;
+    environment.texttag_flag = true;
     
     // Scripts    
     registerMouseClickEvent();          
     zoomMap(1);  
     userSearchMapLocation();
-	resetTextTagsList();
+    resetTextTagsList();
     // Load Story
     firstStoryLoad(<?php echo $storyID; ?>);  // story id
 
@@ -140,16 +149,52 @@ include('storymanagementincludes.php');
    *@param  storyId{int}  
   **/    
   function firstStoryLoad(storyId) {
-    //ajaxGetItems(2);	// xmlParser HTTP Request to WebService
-	ajaxGetItems(storyId);
-  }        
+    ajaxGetItems(storyId); // xmlParser HTTP Request to WebService
+  }
+  
+  //Login alerts
+  function mergeStoryCheck() {
+    
+  }
+  
+  function addClass(itemID, name) {
+    document.getElementById(itemID).className += " " + name;
+  }
+  function removeClass(itemID, name) {
+    //r = new RegExp("(?:^|\s)" + name + "(?!\S)", "g");
+    r = new RegExp(name, "g");
+    document.getElementById(itemID).className = document.getElementById(itemID).className.replace(r, '')
+  }
+  function showDefaultTitle() {
+    removeClass("panel-default-title", "hidden");
+    addClass("panel-translated-title", "hidden");
+    addClass("button-default-title", "selected");
+    removeClass("button-translated-title", "selected");
+  }
+  function showTranslatedTitle() {
+    addClass("panel-default-title", "hidden");
+    removeClass("panel-translated-title", "hidden");
+    removeClass("button-default-title", "selected");
+    addClass("button-translated-title", "selected");
+  }
 </script>
 
-<?php include('header_end.php'); ?>
+<?php
+include('header_end.php');
+$hasCT = $story['customTitle'] != '';
+?>
 
 <div class="left-column-wide">
     <div class="gui-panel story-panel">
-        <h1><?php echo addLinksToText($story['title']); ?></h1>
+        <div class="multipanel-container">
+            <div id="button-default-title" class="panel-button <?php echo (!$hasCT ? 'selected' : ''); ?>" onclick="showDefaultTitle()">Default title</div>
+            <div id="button-translated-title" class="panel-button <?php echo ($hasCT ? 'selected' : ''); ?>" onclick="showTranslatedTitle()">Translation/Summary</div>
+            <div id="panel-default-title" class="panel <?php echo ($hasCT ? 'hidden' : ''); ?>"><h1><?php echo addLinksToText($story['title']); ?></h1></div>
+            <div id="panel-translated-title" class="panel <?php echo (!$hasCT ? 'hidden' : ''); ?>">
+              <textarea id="custom-title-box"><?php echo $story['customTitle']; ?></textarea>
+              <input type="button" value="Save" onclick="saveCustomTitle()"/>
+            </div>
+        </div>
         <div class="story-info">
             <div class="usercount">
                 Shared by<br/><span class="value"><?php echo $story['userCount']; ?></span>
@@ -191,8 +236,8 @@ include('storymanagementincludes.php');
                 <a
                   class="actionlink<?php echo $hideStoryStyle; ?>"
                   title="<?php echo $hideStoryTooltip; ?>"
-                  href="hidestory.php?storyid=<?php echo $storyID; ?>"
-                  onclick="if(!confirm('<?php echo $hideStoryConfirm; ?>')) return false;"><?php echo $hideStoryCaption; ?></a>
+                  href="#"
+                  onclick="if(confirm('<?php echo $hideStoryConfirm; ?>')) window.location='hidestory.php?storyid=<?php echo $storyID; ?>&hidden=<?php echo (1-$story['isHidden']); ?>';"><?php echo $hideStoryCaption; ?></a>
             </span>        
             <h2 style="clear: none;">Content summary</h2>
         </div>
@@ -224,9 +269,15 @@ include('storymanagementincludes.php');
     </div>
 </div>
 <div class="right-column-narrow">
+    <?php if (!isLoggedIn()) { ?>
+    <div class="gui-panel" style="font-weight: bold; color: white; background-color: red;">
+      Logging in will enable you to curate stories in CrisisTracker, e.g. by geo-tagging, and merging duplicates. Any changes you make before you log in will be discarded.
+    </div>
+    <?php } ?>
+
     <!-- MAP -->
     <div class="gui-panel where-panel">
-        <h2>Where</h2>
+      <h2>Where</h2>
     	<div id="map_holder" class="where-content">
             <div id="map"></div>
             <div id="mapsearchfield">
@@ -265,19 +316,60 @@ include('storymanagementincludes.php');
         <div class="related-content">
             <ol>
 <?php
-    foreach($story['relatedStories'] as $relStory) {
-        echo '<li>';
-        echo '<span class="title"><a href="story.php?storyid=' . $relStory["storyID"] . '" title="' . htmlspecialchars($relStory["title"]) . '">' . htmlspecialchars($relStory["title"]) . '</a></span>';
-        echo '<div class="info">First seen: ' . $relStory["startTimeShort"] . ' | Popularity: ' . $relStory["popularity"];
+    if (array_key_exists('relatedStories', $story)) {
+      foreach($story['relatedStories'] as $relStory) {
+          echo '<li>';
+          echo '<span class="title"><a href="story.php?storyid=' . $relStory["storyID"] . '" title="' . htmlspecialchars($relStory["title"]) . '">' . htmlspecialchars($relStory["title"]) . '</a></span>';
+          echo '<div class="info">First seen: ' . $relStory["startTimeShort"] . ' | Popularity: ' . $relStory["popularity"];
             echo '<span class="story-footer-right"><a class="actionlink" title="Merge the current story with this story" href="confirmstorymerge?storyid1=' . $storyID . '&amp;storyid2=' . $relStory['storyID'] . '">Merge</a></span>';
+          echo '</div></li>';
+      }
+    }
+    else {
+      echo '<p>Add meta-tags and reload the page to see related stories.</p>';
+    }
+?>
+            </ol>
+        </div>
+    </div>
+    
+    <!-- DUPLICATE STORIES -->
+    <div class="gui-panel related-panel">	
+        <h2>Possible Duplicate Stories</h2>
+        <div class="related-content">
+            <ol>
+<?php
+    foreach($story['duplicateStories'] as $dupStory) {
+        echo '<li>';
+        echo '<span class="title"><a href="story.php?storyid=' . $dupStory["storyID"] . '" title="' . htmlspecialchars($dupStory["title"]) . '">' . htmlspecialchars($dupStory["title"]) . '</a></span>';
+        echo '<div class="info">First seen: ' . $dupStory["startTimeShort"] . ' | Popularity: ' . $dupStory["popularity"];
+            echo '<span class="story-footer-right"><a class="actionlink" title="Merge the current story with this story" href="confirmstorymerge?storyid1=' . $storyID . '&amp;storyid2=' . $dupStory['storyID'] . '">Merge</a></span>';
         echo '</div></li>';
     }
 ?>
             </ol>
         </div>
     </div>
+
+    <div class="gui-panel" style="background-color: transparent"><a href="api/get_story.php?storyid=<?php echo $storyID; ?>"><img src="img/xml_icon.png" alt="XML" /></a></div>
 </div>
 
 <?php
 include('footer.php');
+
+//Log page view
+$ip = $_SERVER['REMOTE_ADDR'];
+$userID = getUserID();
+if ($userID == NULL)
+  $userID = 0;
+mysql_query(
+  "insert into StoryLog (IP, UserID, Timestamp, EventType, StoryID, StoryAgeInSeconds, TweetCount, RetweetCount, UserCount, TopUserCount, Trend)
+  select 
+      INET_ATON('$ip'), $userID, utc_timestamp(), 20, StoryID, 
+      unix_timestamp(utc_timestamp())-unix_timestamp(StartTime),
+      TweetCount, RetweetCount, UserCount, TopUserCount, Trend
+  from Story where StoryID=$storyID;", $db_conn);
+
+include('api/close_db.php');
+
 ?>

@@ -1,4 +1,12 @@
 <?php
+/*******************************************************************************
+ * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://opensource.org/licenses/eclipse-1.0.php
+ *******************************************************************************/
+
 include('header_start.php');
 include('storymanagementincludes.php');
 ?>
@@ -77,8 +85,8 @@ include('storymanagementincludes.php');
     //***************************************************************   
     // Scripts
     resetTextTagsList();
-                addDateTextboxListeners();
-                startDatePicker();
+    addDateTextboxListeners();
+    startDatePicker();
     userSearchMapLocation();
     hideLoadingAnimation(); // hide loading 'gif'
     activateMapBorderSelection();
@@ -180,7 +188,21 @@ include('header_end.php');
 <div class="fullwidth-column">
     <div class="gui-panel filtered-stories-panel">
         <div class="priority-filters">
-            <!-- Populated via JavaScript -->
+          <p>Sort order <select id="sortOrderSelect" onchange="switchPriority(this.options[this.selectedIndex].value)">
+            <optgroup label="All twitter users">
+              <option value="trending-all">Trending (all users)</option>
+              <option value="active-all" selected="selected">Most shared in the past four hours</option>
+              <option value="largest-all">Most shared all-time, by size</option>
+              <option value="timeline-all">Most shared all-time, by time</option>
+              <option value="newest-all">Newest</option>
+            </optgroup>
+            <optgroup label="Domain experts (top 5000 users)">
+              <option value="active-top">Most shared in the past four hours</option>
+              <option value="largest-top">Most shared all-time, by size</option>
+              <option value="timeline-top">Most shared all-time, by time</option>
+              <option value="newest-top">Newest</option>
+            </optgroup>
+          </select></p>
         </div>
         <div class="gui-subpanel story-list explorestories-list">
             <ol id="story-list-items">

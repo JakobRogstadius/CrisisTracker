@@ -1,3 +1,11 @@
+/*******************************************************************************
+* Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+* All rights reserved. This program and the accompanying materials
+* are made available under the terms of the Eclipse Public License v1.0
+* which accompanies this distribution, and is available at
+* http://opensource.org/licenses/eclipse-1.0.php
+*******************************************************************************/
+
 // ---------------------------------------------------------------------------------------
 /***
 	Query Text Box for "Map Location"	
@@ -42,8 +50,8 @@ function userSearchMapLocation() {
 						geocoder.geocode({'latLng': latlng}, function(results1, status1) {
 							if (status1 == google.maps.GeocoderStatus.OK) {			
 								if (results1[1]) {
-									responseCallBack($.map(results1, function(loc) {										
-										return {																						
+									responseCallBack($.map(results1, function(loc) {
+                    return {																						
 											label  : loc.formatted_address,
 											value  : loc.formatted_address,
 											lonlat : loc.geometry.location
@@ -69,9 +77,9 @@ function userSearchMapLocation() {
 		
 				if (lonlat){
 					// lat_lo,lng_lo,lat_hi,lng_hi
-					var lonlat = new OpenLayers.LonLat(lonlat.Sa, lonlat.Ra);
-					console.log('LONLAT OBJECT: ' + lonlat);
-					centerMapToPosition(lonlat,10);
+					var lonlat2 = new OpenLayers.LonLat(lonlat.lng(), lonlat.lat());
+					console.log('LONLAT AFTER: ' + lonlat2);
+					centerMapToPosition(lonlat2,10);
 				}
 			}												
 		});

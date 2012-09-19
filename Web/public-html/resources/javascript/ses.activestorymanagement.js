@@ -1,10 +1,18 @@
+/*******************************************************************************
+* Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+* All rights reserved. This program and the accompanying materials
+* are made available under the terms of the Eclipse Public License v1.0
+* which accompanies this distribution, and is available at
+* http://opensource.org/licenses/eclipse-1.0.php
+*******************************************************************************/
+
 	// ACTIVE STORY MANAGEMENT -----------------------------------------------------------------------------------------
   
   /**
    * Receives a Story generated via XML_PARSER (database), and draws it with GeoTags and TextTags into Local DataStructure
    *
    *@return  boolean
-   */    
+   */  
   function drawStory(story){
     console.log("Drawing Story");
     // console.log(story);
@@ -30,7 +38,16 @@
     return true;
   }
   
-
+  function saveCustomTitle() {
+    customTitle = $('textarea#custom-title-box').val();
+    console.log('Saving custom title (' + customTitle + ') ...');
+    $.post('api/save_story_custom_title.php',
+          {
+            'storyid' : environment.active_story.storyId,
+            'customtitle' : customTitle
+          },
+          function(data){ console.log('returned: ' + data); });
+  }
     
   /**
    * Save any user made change to the 'Environment Contextual story object' to the WebService DataBase
@@ -39,7 +56,6 @@
 		console.log("save Story Tag Changes to DB");
 		// Load Story
 		var storyID = environment.active_story.storyId;
-		var userID = 1;  //debug purposes ONLY*
 
 		// Added Geotags
 		// console.log(environment.added_geotags_array);
@@ -70,7 +86,17 @@
 		// } 
 
 		// Save to database via AJAX $_GET (xml_parser.js)
-		ajaxSaveStoryTagChangesItems(storyID,userID,crisis_tracker.added_categories_array,crisis_tracker.added_entities_array,crisis_tracker.added_keywords_array,crisis_tracker.removed_categories_array,crisis_tracker.removed_entities_array,crisis_tracker.removed_keywords_array,addedLocationsLongitude,addedLocationsLatitude,removedLocations);
+		ajaxSaveStoryTagChangesItems(
+      storyID,
+      crisis_tracker.added_categories_array,
+      crisis_tracker.added_entities_array,
+      crisis_tracker.added_keywords_array,
+      crisis_tracker.removed_categories_array,
+      crisis_tracker.removed_entities_array,
+      crisis_tracker.removed_keywords_array,
+      addedLocationsLongitude,
+      addedLocationsLatitude,
+      removedLocations);
 	}
   
 	/**
@@ -117,35 +143,37 @@
 		console.log(id);
 		
 		switch(typeOfChange) {
-		
-		case "keywords":
-			environment.active_story.keywords.push({"id":id,"name":name});
-			console.log("keywords array updated in ActiveStory");
-			console.log(id,name);
-			resetTagContainers("added_texttags");
-			break;
-			
-		case "entities":
-			environment.active_story.entities.push({"id":id,"name":name});
-			console.log("entities array updated in ActiveStory");
-			console.log(id,name);
-			resetTagContainers("added_texttags");
-			break;
-			
-		case "categories":	
-			console.log(id);
-			getCategoryNameById(id);
-			resetTagContainers("added_texttags");
-			// saving to environment.active_story procedures done via callback due to JQuery DOM Access Latency			
-			break;	
-			
-		// ?BROKEN		
-		case "geotags":
-			// set ID to last added geotag
-			console.log("reading geotags");
-			console.log(id);		
-			break;
-		}		
+      case "keywords":
+        environment.active_story.keywords.push({"id":id,"name":name});
+        console.log("keywords array updated in ActiveStory");
+        console.log(id,name);
+        resetTagContainers("added_texttags");
+        break;
+        
+      case "entities":
+        environment.active_story.entities.push({"id":id,"name":name});
+        console.log("entities array updated in ActiveStory");
+        console.log(id,name);
+        resetTagContainers("added_texttags");
+        break;
+        
+      case "categories":	
+        console.log(id);
+        getCategoryNameById(id);
+        resetTagContainers("added_texttags");
+        // saving to environment.active_story procedures done via callback due to JQuery DOM Access Latency			
+        break;	
+        
+      // ?BROKEN		
+      case "geotags":
+        // set ID to last added geotag
+        console.log("reading geotags");
+        console.log(id);		
+        break;
+		}
+    
+    $('#tags_keywords_tagsinput').scrollTop(1000);
+    $('#tags_entities_tagsinput').scrollTop(1000);
 	}
 	
 	

@@ -1,3 +1,11 @@
+/*******************************************************************************
+ * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://opensource.org/licenses/eclipse-1.0.php
+ *******************************************************************************/
+
 @import url(reset.css);
 @import url(http://fonts.googleapis.com/css?family=Bevan);
 
@@ -42,7 +50,7 @@ a:hover, a:active {
     text-decoration: none;
 }
 .actionlink:link, .actionlink:visited {
-    background-color: #e0e0d0;
+    background-color: #c0c0b0;
     color: #fff;
     font-family: 'Trebuchet MS', Trebuchet, 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
     text-decoration: none;
@@ -78,6 +86,7 @@ em, i {font-style: italic;}
 .td {
     display: table-cell;
 }
+/*
 .cc1, .cc1:hover { background-color: #ddde40; }
 .cc2, .cc2:hover { background-color: #d69da6; }
 .cc3, .cc3:hover { background-color: #e1a2e3; }
@@ -92,6 +101,22 @@ em, i {font-style: italic;}
 .cc12, .cc12:hover { background-color: #dfd79e; }
 .cc13, .cc13:hover { background-color: #d8aa91; }
 .cc14, .cc14:hover { background-color: #c83939; }
+*/
+
+.cc1, .cc1:hover { background-color: #75cf75; }
+.cc2, .cc2:hover { background-color: #d69da6; }
+.cc3, .cc3:hover { background-color: #5db8c8; }
+.cc4, .cc4:hover { background-color: #ddde40; }
+.cc5, .cc5:hover { background-color: #5f5f5f; }
+.cc6, .cc6:hover { background-color: #c83939; }
+.cc7, .cc7:hover { background-color: #4a57d1; }
+.cc8, .cc8:hover { background-color: #5f5f5f; background-image: url('../../img/stripes.png'); }
+.cc9, .cc9:hover { background-color: #5db8c8; background-image: url('../../img/stripes.png'); }
+.cc10, .cc10:hover { background-color: #d69da6; background-image: url('../../img/stripes.png'); }
+.cc11, .cc11:hover { background-color: #75cf75; background-image: url('../../img/stripes.png'); }
+.cc12, .cc12:hover { background-color: #4a57d1; background-image: url('../../img/stripes.png'); }
+.cc13, .cc13:hover { background-color: #ddde40; background-image: url('../../img/stripes.png'); }
+.cc14, .cc14:hover { background-color: #c83939; background-image: url('../../img/stripes.png'); }
 
 /********************/
 /* TOP MENU         */

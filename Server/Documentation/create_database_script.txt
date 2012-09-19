@@ -8,16 +8,10 @@ CREATE TABLE Constants (
   Name varchar(30) NOT NULL,
   Value double NOT NULL,
   PRIMARY KEY (Name),
-  KEY Full (`Name`,`Value`)
+  KEY Full (Name,Value)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8$$
 
 INSERT INTO Constants (Name, Value) VALUES ('WordScore4dHigh', 100)$$
-
-CREATE TABLE HourStatistics (
-  DateHour datetime NOT NULL,
-  TweetCount int(10) unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (DateHour)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
 
 CREATE TABLE TweetJson (
   ID bigint(20) NOT NULL AUTO_INCREMENT,
@@ -38,23 +32,36 @@ CREATE TABLE TwitterTrackFilter (
   UserName varchar(45) DEFAULT NULL,
   Region varchar(100) DEFAULT NULL,
   PRIMARY KEY (ID),
-  UNIQUE KEY Keyword (`Word`)
+  UNIQUE KEY Keyword (Word)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
+
+CREATE TABLE HourStatistics (
+  DateHour datetime NOT NULL,
+  TweetsProcessed int(10) unsigned NOT NULL DEFAULT '0',
+  TweetClustersCreated int(10) unsigned NOT NULL DEFAULT '0',
+  StoriesCreated int(10) unsigned NOT NULL DEFAULT '0',
+  StoriesAutoMerged int(10) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (DateHour)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
 
 CREATE TABLE PendingStoryMerges (
   StoryID1 bigint(20) unsigned NOT NULL,
   StoryID2 bigint(20) unsigned NOT NULL,
   MergedAt datetime DEFAULT NULL,
-  PRIMARY KEY (StoryID1,`StoryID2`),
-  KEY PendingStoryMerges_StoryID1 (`StoryID1`),
-  KEY PendingStoryMerges_StoryID2 (`StoryID2`)
+  IP int(10) unsigned NOT NULL DEFAULT '0',
+  UserID bigint(20) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (StoryID1,StoryID2),
+  KEY PendingStoryMerges_StoryID1 (StoryID1),
+  KEY PendingStoryMerges_StoryID2 (StoryID2)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8$$
 
 CREATE TABLE PendingStorySplits (
   StoryID bigint(20) unsigned NOT NULL,
   TweetClusterID bigint(20) unsigned NOT NULL,
   SplitAt datetime DEFAULT NULL,
-  PRIMARY KEY (StoryID,`TweetClusterID`)
+  IP int(10) unsigned NOT NULL DEFAULT '0',
+  UserID bigint(20) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (StoryID,TweetClusterID)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8$$
 
 CREATE TABLE InfoCategory (
@@ -62,21 +69,21 @@ CREATE TABLE InfoCategory (
   Category varchar(30) NOT NULL,
   Color char(6) NOT NULL DEFAULT 'ffffff',
   PRIMARY KEY (InfoCategoryID),
-  UNIQUE KEY Category_UNIQUE (`Category`)
+  UNIQUE KEY Category_UNIQUE (Category)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
 
 CREATE TABLE InfoEntity (
   InfoEntityID int(10) unsigned NOT NULL AUTO_INCREMENT,
   Entity varchar(45) NOT NULL,
   PRIMARY KEY (InfoEntityID),
-  UNIQUE KEY Entity_UNIQUE (`Entity`)
+  UNIQUE KEY Entity_UNIQUE (Entity)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
 
 CREATE TABLE InfoKeyword (
   InfoKeywordID int(10) unsigned NOT NULL AUTO_INCREMENT,
   Keyword varchar(30) NOT NULL,
   PRIMARY KEY (InfoKeywordID),
-  UNIQUE KEY Keyword_UNIQUE (`Keyword`)
+  UNIQUE KEY Keyword_UNIQUE (Keyword)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
 
 CREATE TABLE Story (
@@ -100,13 +107,21 @@ CREATE TABLE Story (
   IsHidden bit(1) NOT NULL DEFAULT b'0',
   Title varchar(140) DEFAULT NULL,
   PRIMARY KEY (StoryID),
-  KEY Archived (`IsArchived`),
-  KEY Time (`StartTime`),
-  KEY ImportanceRecent (`Importance`),
-  KEY Importance (`Importance`),
-  KEY TaggingImportance (`TaggingImportance`),
-  KEY Trend (`Trend`),
-  KEY IsHidden (`IsHidden`)
+  KEY Archived (IsArchived),
+  KEY Time (StartTime),
+  KEY ImportanceRecent (Importance),
+  KEY Importance (Importance),
+  KEY TaggingImportance (TaggingImportance),
+  KEY Trend (Trend),
+  KEY IsHidden (IsHidden)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
+
+CREATE TABLE StoryCustomTitle (
+  StoryID bigint(20) unsigned NOT NULL,
+  CustomTitle text NOT NULL,
+  PRIMARY KEY (StoryID),
+  KEY StoryID (StoryID),
+  CONSTRAINT StoryID FOREIGN KEY (StoryID) REFERENCES Story (StoryID) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
 
 CREATE TABLE StoryInfoCategoryTag (
@@ -115,14 +130,14 @@ CREATE TABLE StoryInfoCategoryTag (
   CreatedAt datetime NOT NULL,
   UserID bigint(20) unsigned NOT NULL,
   IP int(11) unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (StoryID,`InfoCategoryID`),
-  KEY Reverse (`InfoCategoryID`,`StoryID`),
-  KEY User (`UserID`),
-  KEY StoryID (`StoryID`),
-  KEY InfoCategoryTag (`InfoCategoryID`),
-  KEY StoryInfoCategoryTag_TagID (`InfoCategoryID`),
-  CONSTRAINT StoryInfoCategoryTag_StoryID FOREIGN KEY (`StoryID`) REFERENCES `Story` (`StoryID`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT StoryInfoCategoryTag_TagID FOREIGN KEY (`InfoCategoryID`) REFERENCES `InfoCategory` (`InfoCategoryID`) ON DELETE CASCADE ON UPDATE NO ACTION
+  PRIMARY KEY (StoryID,InfoCategoryID),
+  KEY Reverse (InfoCategoryID,StoryID),
+  KEY User (UserID),
+  KEY StoryID (StoryID),
+  KEY InfoCategoryTag (InfoCategoryID),
+  KEY StoryInfoCategoryTag_TagID (InfoCategoryID),
+  CONSTRAINT StoryInfoCategoryTag_StoryID FOREIGN KEY (StoryID) REFERENCES Story (StoryID) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT StoryInfoCategoryTag_TagID FOREIGN KEY (InfoCategoryID) REFERENCES InfoCategory (InfoCategoryID) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
 
 CREATE TABLE StoryInfoEntityTag (
@@ -131,13 +146,13 @@ CREATE TABLE StoryInfoEntityTag (
   CreatedAt datetime NOT NULL,
   UserID bigint(20) unsigned NOT NULL,
   IP int(11) unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (StoryID,`InfoEntityID`),
-  KEY UserID (`UserID`),
-  KEY Reverse (`InfoEntityID`,`StoryID`),
-  KEY StoryInfoEntityTag_StoryID (`StoryID`),
-  KEY StoryInfoEntityTag_TagID (`InfoEntityID`),
-  CONSTRAINT StoryInfoEntityTag_StoryID FOREIGN KEY (`StoryID`) REFERENCES `Story` (`StoryID`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT StoryInfoEntityTag_TagID FOREIGN KEY (`InfoEntityID`) REFERENCES `InfoEntity` (`InfoEntityID`) ON DELETE CASCADE ON UPDATE NO ACTION
+  PRIMARY KEY (StoryID,InfoEntityID),
+  KEY UserID (UserID),
+  KEY Reverse (InfoEntityID,StoryID),
+  KEY StoryInfoEntityTag_StoryID (StoryID),
+  KEY StoryInfoEntityTag_TagID (InfoEntityID),
+  CONSTRAINT StoryInfoEntityTag_StoryID FOREIGN KEY (StoryID) REFERENCES Story (StoryID) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT StoryInfoEntityTag_TagID FOREIGN KEY (InfoEntityID) REFERENCES InfoEntity (InfoEntityID) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
 
 CREATE TABLE StoryInfoKeywordTag (
@@ -145,13 +160,14 @@ CREATE TABLE StoryInfoKeywordTag (
   InfoKeywordID int(10) unsigned NOT NULL,
   CreatedAt datetime NOT NULL,
   UserID bigint(20) unsigned NOT NULL,
-  PRIMARY KEY (StoryID,`InfoKeywordID`),
-  KEY Reverse (`InfoKeywordID`,`StoryID`),
-  KEY User (`UserID`),
-  KEY StoryInfoKeywordTag_StoryID (`StoryID`),
-  KEY StoryInfoKeywordTag_TagID (`InfoKeywordID`),
-  CONSTRAINT StoryInfoKeywordTag_StoryID FOREIGN KEY (`StoryID`) REFERENCES `Story` (`StoryID`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT StoryInfoKeywordTag_TagID FOREIGN KEY (`InfoKeywordID`) REFERENCES `InfoKeyword` (`InfoKeywordID`) ON DELETE CASCADE ON UPDATE NO ACTION
+  IP int(10) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (StoryID,InfoKeywordID),
+  KEY Reverse (InfoKeywordID,StoryID),
+  KEY User (UserID),
+  KEY StoryInfoKeywordTag_StoryID (StoryID),
+  KEY StoryInfoKeywordTag_TagID (InfoKeywordID),
+  CONSTRAINT StoryInfoKeywordTag_StoryID FOREIGN KEY (StoryID) REFERENCES Story (StoryID) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT StoryInfoKeywordTag_TagID FOREIGN KEY (InfoKeywordID) REFERENCES InfoKeyword (InfoKeywordID) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
 
 CREATE TABLE StoryLocationTag (
@@ -163,10 +179,64 @@ CREATE TABLE StoryLocationTag (
   UserID bigint(20) unsigned NOT NULL,
   IP int(11) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (TagID),
-  UNIQUE KEY Geo (`StoryID`,`Longitude`,`Latitude`),
-  KEY User (`UserID`),
-  KEY StoryLocationTag_StoryID (`StoryID`),
-  CONSTRAINT StoryLocationTag_StoryID FOREIGN KEY (`StoryID`) REFERENCES `Story` (`StoryID`) ON DELETE CASCADE ON UPDATE NO ACTION
+  UNIQUE KEY Geo (StoryID,Longitude,Latitude),
+  KEY User (UserID),
+  KEY StoryLocationTag_StoryID (StoryID),
+  CONSTRAINT StoryLocationTag_StoryID FOREIGN KEY (StoryID) REFERENCES Story (StoryID) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
+
+CREATE TABLE StoryLog (
+  LogID bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  IP int(10) unsigned NOT NULL DEFAULT '0',
+  UserID bigint(20) unsigned NOT NULL DEFAULT '0',
+  Timestamp datetime NOT NULL,
+  EventType tinyint(3) unsigned NOT NULL,
+  StoryID bigint(20) unsigned NOT NULL,
+  StoryAgeInSeconds int(10) unsigned DEFAULT NULL,
+  MergedWithStoryID bigint(20) unsigned DEFAULT NULL,
+  TweetCount int(10) unsigned DEFAULT NULL,
+  RetweetCount int(10) unsigned DEFAULT NULL,
+  UserCount int(10) unsigned DEFAULT NULL,
+  TopUserCount int(10) unsigned DEFAULT NULL,
+  Trend int(10) unsigned DEFAULT NULL,
+  TagID bigint(20) unsigned DEFAULT NULL,
+  PRIMARY KEY (LogID),
+  KEY UserID (UserID,EventType)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
+
+CREATE TABLE StoryLogEventType (
+  EventType int(11) NOT NULL,
+  Name varchar(45) NOT NULL,
+  PRIMARY KEY (EventType)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8$$
+
+INSERT INTO StoryLogEventType (EventType,Name) VALUES 
+(10,'Create story'),
+(11,'Delete story'),
+(12,'Merge stories'),
+(13,'Split story'),
+(14,'Hide story'),
+(15,'Show story'),
+(20,'Read story'),
+(30,'Add keyword tag'),
+(31,'Add category tag'),
+(32,'Add entity tag'),
+(33,'Add location tag'),
+(40,'Remove keyword tag'),
+(41,'Remove category tag'),
+(42,'Remove entity tag'),
+(43,'Remove location tag'),
+(34,'Add/edit custom title'),
+(44,'Remove custom title')$$
+
+CREATE TABLE SyriaDeploymentVolunteerSurveyAnswer (
+  TwitterUserID bigint(20) unsigned NOT NULL,
+  QuestionID varchar(60) NOT NULL,
+  Timestamp datetime DEFAULT NULL,
+  LikertRange tinyint(3) unsigned DEFAULT NULL,
+  AnswerValue tinyint(4) DEFAULT NULL,
+  AnswerText text,
+  PRIMARY KEY (TwitterUserID,QuestionID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
 
 CREATE TABLE TweetCluster (
@@ -185,12 +255,12 @@ CREATE TABLE TweetCluster (
   IsArchived bit(1) NOT NULL DEFAULT b'0',
   Title varchar(140) DEFAULT NULL,
   PRIMARY KEY (TweetClusterID),
-  KEY Archived (`IsArchived`),
-  KEY StartTime (`StartTime`),
-  KEY EndTime (`EndTime`),
-  KEY TweetCluster_StoryID (`StoryID`),
-  KEY UserCountRecent (`UserCountRecent`),
-  CONSTRAINT TweetCluster_StoryID FOREIGN KEY (`StoryID`) REFERENCES `Story` (`StoryID`) ON DELETE CASCADE ON UPDATE NO ACTION
+  KEY Archived (IsArchived),
+  KEY StartTime (StartTime),
+  KEY EndTime (EndTime),
+  KEY TweetCluster_StoryID (StoryID),
+  KEY UserCountRecent (UserCountRecent),
+  CONSTRAINT TweetCluster_StoryID FOREIGN KEY (StoryID) REFERENCES Story (StoryID) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
 
 CREATE TABLE Tweet (
@@ -206,34 +276,33 @@ CREATE TABLE Tweet (
   Longitude float DEFAULT NULL,
   Latitude float DEFAULT NULL,
   PRIMARY KEY (TweetID),
-  KEY CreatedAt (`CreatedAt`),
-  KEY Relations (`CalculatedRelations`),
-  KEY Retweet (`RetweetOf`),
-  KEY Location (`Longitude`,`Latitude`),
-  KEY User (`UserID`),
-  KEY Tweet_TweetClusterID (`TweetClusterID`),
-  CONSTRAINT Tweet_TweetClusterID FOREIGN KEY (`TweetClusterID`) REFERENCES `TweetCluster` (`TweetClusterID`) ON DELETE CASCADE ON UPDATE NO ACTION
+  KEY CreatedAt (CreatedAt),
+  KEY Relations (CalculatedRelations),
+  KEY Retweet (RetweetOf),
+  KEY Location (Longitude,Latitude),
+  KEY User (UserID),
+  KEY Tweet_TweetClusterID (TweetClusterID),
+  CONSTRAINT Tweet_TweetClusterID FOREIGN KEY (TweetClusterID) REFERENCES TweetCluster (TweetClusterID) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
-
 
 CREATE TABLE TweetRelation (
   TweetID1 bigint(20) unsigned NOT NULL,
   TweetID2 bigint(20) unsigned NOT NULL,
   Similarity float unsigned NOT NULL DEFAULT '0.1',
-  PRIMARY KEY (TweetID1,`TweetID2`),
-  KEY TweetRelation_TweetID1 (`TweetID1`),
-  KEY TweetRelation_TweetID2 (`TweetID2`),
-  CONSTRAINT TweetRelation_TweetID1 FOREIGN KEY (`TweetID1`) REFERENCES `Tweet` (`TweetID`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT TweetRelation_TweetID2 FOREIGN KEY (`TweetID2`) REFERENCES `Tweet` (`TweetID`) ON DELETE CASCADE ON UPDATE NO ACTION
+  PRIMARY KEY (TweetID1,TweetID2),
+  KEY TweetRelation_TweetID1 (TweetID1),
+  KEY TweetRelation_TweetID2 (TweetID2),
+  CONSTRAINT TweetRelation_TweetID1 FOREIGN KEY (TweetID1) REFERENCES Tweet (TweetID) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT TweetRelation_TweetID2 FOREIGN KEY (TweetID2) REFERENCES Tweet (TweetID) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
 
 CREATE TABLE TweetRelationInsertBuffer (
   TweetID1 bigint(20) unsigned NOT NULL,
   TweetID2 bigint(20) unsigned NOT NULL,
   Similarity float unsigned NOT NULL DEFAULT '0.1',
-  PRIMARY KEY (TweetID1,`TweetID2`),
-  KEY TweetRelationInsertBuffer_TweetID1 (`TweetID1`),
-  KEY TweetRelationInsertBuffer_TweetID2 (`TweetID2`)
+  PRIMARY KEY (TweetID1,TweetID2),
+  KEY TweetRelationInsertBuffer_TweetID1 (TweetID1),
+  KEY TweetRelationInsertBuffer_TweetID2 (TweetID2)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
 
 CREATE TABLE TwitterUser (
@@ -244,8 +313,8 @@ CREATE TABLE TwitterUser (
   ProfileImageUrl varchar(200) DEFAULT NULL,
   Score12h double unsigned NOT NULL DEFAULT '1',
   PRIMARY KEY (UserID),
-  KEY Score (`Score12h`),
-  KEY IsTopUser (`IsTopUser`)
+  KEY Score (Score12h),
+  KEY IsTopUser (IsTopUser)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
 
 CREATE TABLE TweetUrl (
@@ -258,7 +327,7 @@ CREATE TABLE Word (
   Word varchar(30) NOT NULL,
   WordID bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (Word),
-  KEY WordID (`WordID`)
+  KEY WordID (WordID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
 
 CREATE TABLE WordScore (
@@ -266,19 +335,19 @@ CREATE TABLE WordScore (
   Score4d double unsigned NOT NULL DEFAULT '1',
   Score1h double unsigned NOT NULL DEFAULT '1',
   PRIMARY KEY (WordID),
-  KEY WordScore_WordID (`WordID`),
-  CONSTRAINT WordScore_WordID FOREIGN KEY (`WordID`) REFERENCES `Word` (`WordID`) ON DELETE CASCADE ON UPDATE NO ACTION
+  KEY WordScore_WordID (WordID),
+  CONSTRAINT WordScore_WordID FOREIGN KEY (WordID) REFERENCES Word (WordID) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
 
 CREATE TABLE WordTweet (
   WordID bigint(20) unsigned NOT NULL,
   TweetID bigint(20) unsigned NOT NULL,
-  PRIMARY KEY (WordID,`TweetID`),
-  KEY Reverse (`TweetID`,`WordID`),
-  KEY WordTweet_TweetID (`TweetID`),
-  KEY WordTweet_WordID (`WordID`),
-  CONSTRAINT WordTweet_TweetID FOREIGN KEY (`TweetID`) REFERENCES `Tweet` (`TweetID`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT WordTweet_WordID FOREIGN KEY (`WordID`) REFERENCES `Word` (`WordID`) ON DELETE CASCADE ON UPDATE NO ACTION
+  PRIMARY KEY (WordID,TweetID),
+  KEY Reverse (TweetID,WordID),
+  KEY WordTweet_TweetID (TweetID),
+  KEY WordTweet_WordID (WordID),
+  CONSTRAINT WordTweet_TweetID FOREIGN KEY (TweetID) REFERENCES Tweet (TweetID) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT WordTweet_WordID FOREIGN KEY (WordID) REFERENCES Word (WordID) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8$$
 
 CREATE TABLE ParticipantRegistrationProfessional (
@@ -301,6 +370,17 @@ CREATE TABLE ParticipantRegistrationVolunteer (
   PRIMARY KEY (id)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8$$
 
+CREATE TABLE User (
+  UserID int(10) unsigned NOT NULL AUTO_INCREMENT,
+  TwitterUserID bigint(20) unsigned DEFAULT NULL,
+  Name varchar(45) DEFAULT NULL,
+  IsAnonymous bit(1) NOT NULL DEFAULT b'1',
+  PRIMARY KEY (UserID),
+  UNIQUE KEY TwitterUserID_UNIQUE (TwitterUserID)
+) ENGINE=InnoDB AUTO_INCREMENT=158 DEFAULT CHARSET=utf8$$
+
+
+
 CREATE FUNCTION ScoreToIdf(score double) RETURNS double
     DETERMINISTIC
 return greatest(0, (1/(1+exp(-0.3*(score-10)))) * log((select 12*Value as D from Constants where Name='WordScore4dHigh')/score))
@@ -317,6 +397,109 @@ return case
 end
 $$
 
+CREATE PROCEDURE AddRemoveStoryCustomTitle (usrID bigint, usrIP int, sID bigint, customTitle text)
+BEGIN
+IF !isnull(customTitle) THEN
+    insert into StoryCustomTitle (StoryID, CustomTitle) values (sID, customTitle)
+    on duplicate key update CustomTitle=VALUES(CustomTitle);
+ELSE
+    delete from StoryCustomTitle where StoryID=sID limit 1;
+END IF;
+
+IF row_count()=1 THEN
+    insert into StoryLog (IP, UserID, Timestamp, EventType, StoryAgeInSeconds, StoryID, TweetCount, RetweetCount, UserCount, TopUserCount, Trend)
+    select usrIP, usrID, utc_timestamp(),
+        case when isnull(customTitle) then 44 else 34 end,
+        unix_timestamp(utc_timestamp())-unix_timestamp(StartTime),
+        StoryID, TweetCount, RetweetCount, UserCount, TopUserCount, Trend
+    from Story where StoryID=sID;
+END IF;
+END
+$$
+
+CREATE PROCEDURE HideShowStory (sid bigint(20), hide bit(1), usrip int(11), usrid bigint(20))
+BEGIN
+update Story set IsHidden=hide where StoryID=sid;
+insert into StoryLog (IP, UserID, Timestamp, EventType, StoryID, TweetCount, RetweetCount, UserCount, TopUserCount, Trend)
+select usrip, usrid, utc_timestamp(), case when hide then 14 else 15 end, sid,
+    TweetCount, RetweetCount, UserCount, TopUserCount, Trend
+from Story where StoryID=sid;
+END
+$$
+
+CREATE PROCEDURE AddRemoveStoryTag (addtag bit(1), tagtype varchar(8), usrID bigint, usrIP int, sID bigint, taggID bigint, lon double, lat double)
+BEGIN
+IF addtag THEN
+	IF tagtype='keyword' THEN
+		insert ignore into StoryInfoKeywordTag (StoryID, InfoKeywordID, CreatedAt, UserID, IP)
+		values (sID, taggID, utc_timestamp(), usrID, usrIP);
+	ELSEIF tagtype='category' THEN
+		insert ignore into StoryInfoCategoryTag (StoryID, InfoCategoryID, CreatedAt, UserID, IP)
+		values (sID, taggID, utc_timestamp(), usrID, usrIP);
+	ELSEIF tagtype='entity' THEN
+		insert ignore into StoryInfoEntityTag (StoryID, InfoEntityID, CreatedAt, UserID, IP)
+		values (sID, taggID, utc_timestamp(), usrID, usrIP);
+	ELSEIF tagtype='location' THEN
+		insert ignore into StoryLocationTag (StoryID, Longitude, Latitude, CreatedAt, UserID, IP)
+		values (sID, lon, lat, utc_timestamp(), usrID, usrIP);
+	END IF;
+ELSE
+	IF tagtype='keyword' THEN
+		delete from StoryInfoKeywordTag where StoryID = sID and InfoKeywordID = taggID;
+	ELSEIF tagtype='category' THEN
+		delete from StoryInfoCategoryTag where StoryID = sID and InfoCategoryID = taggID;
+	ELSEIF tagtype='entity' THEN
+		delete from StoryInfoEntityTag where StoryID = sID and InfoEntityID = taggID;
+	ELSEIF tagtype='location' THEN
+		delete from StoryLocationTag where StoryID = sID and TagID = taggID;
+	END IF;
+END IF;
+
+IF row_count()=1 THEN
+    insert into StoryLog (IP, UserID, Timestamp, EventType, StoryAgeInSeconds, StoryID, TweetCount, RetweetCount, UserCount, TopUserCount, Trend, TagID)
+    select usrIP, usrID, utc_timestamp(), 
+        case 
+            when addtag and tagtype='keyword' then 30
+            when addtag and tagtype='category' then 31
+            when addtag and tagtype='entity' then 32
+            when addtag and tagtype='location' then 33
+            when not addtag and tagtype='keyword' then 40
+            when not addtag and tagtype='category' then 41
+            when not addtag and tagtype='entity' then 42
+            when not addtag and tagtype='location' then 43
+        end, 
+        unix_timestamp(utc_timestamp())-unix_timestamp(StartTime),
+        StoryID, TweetCount, RetweetCount, UserCount, TopUserCount, Trend, 
+        if(addtag and tagtype='location', last_insert_id(), taggID)
+    from Story where StoryID=sID;
+END IF;
+END
+$$
+
+
+
+CREATE
+TRIGGER TweetCluster_Insert
+AFTER INSERT ON TweetCluster
+FOR EACH ROW
+BEGIN
+    INSERT INTO HourStatistics (DateHour, TweetClustersCreated) 
+    VALUES (DATE_FORMAT(utc_timestamp(), "%Y-%m-%d %H:00:00"), 1)
+    ON DUPLICATE KEY UPDATE TweetClustersCreated = TweetClustersCreated + 1;
+END
+$$
+
+CREATE
+TRIGGER Story_Insert
+AFTER INSERT ON Story
+FOR EACH ROW
+BEGIN
+    INSERT INTO HourStatistics (DateHour, StoriesCreated) 
+    VALUES (DATE_FORMAT(utc_timestamp(), "%Y-%m-%d %H:00:00"), 1)
+    ON DUPLICATE KEY UPDATE StoriesCreated = StoriesCreated + 1;
+END
+$$
+
 CREATE
 TRIGGER Story_Update
 BEFORE UPDATE ON Story
@@ -325,7 +508,16 @@ BEGIN
     SET NEW.TaggingImportance = (1/(1+exp(2*NEW.TagScore-2))) * log(1 + least(NEW.UserCount, NEW.TweetCount + 0.5*log(10+NEW.RetweetCount)));
     SET NEW.Importance = log(1 + least(NEW.UserCount, NEW.TweetCount + 0.5*log(10+NEW.RetweetCount)));
     SET NEW.ImportanceRecent = log(1 + least(NEW.UserCountRecent, NEW.TweetCountRecent + 0.5*log(10+NEW.RetweetCountRecent)));
-END$$
+END
+$$
+
+
+CREATE
+TRIGGER StoryInfoCategoryTag_Insert
+AFTER INSERT ON StoryInfoCategoryTag
+FOR EACH ROW
+update Story set TagScore := TagScore+1 where Story.StoryID = new.StoryID
+$$
 
 CREATE
 TRIGGER StoryInfoCategoryTag_Insert

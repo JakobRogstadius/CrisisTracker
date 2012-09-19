@@ -12,6 +12,7 @@ Web/twitter-login
 .metadata
 bin/
 tmp/
+bak/
 *.tmp
 *.bak
 *.swp

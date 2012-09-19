@@ -1,4 +1,12 @@
 <?php
+/*******************************************************************************
+ * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://opensource.org/licenses/eclipse-1.0.php
+ *******************************************************************************/
+
 include('header_start.php');
 ?>
 
@@ -6,11 +14,16 @@ include('header_start.php');
 
 <script type="text/javascript">
   function confirmHideStory(storyid) {
-    if(confirm('Stories that do not contribute to situation awareness should be hidden. Hide this story?')) {
-      window.location = "hidestory.php?storyid=" + storyid;
-      return true;
-    }
-    return false;
+    <?php if (isLoggedIn()) { ?>
+      if(confirm('Stories that do not contribute to situation awareness should be hidden. Hide this story?')) {
+        window.location = "hidestory.php?hidden=1&storyid=" + storyid;
+        return true;
+      }
+      return false;
+    <?php } else { ?>
+      alert('You must log in before you can hide stories.');
+      return false;    
+    <?php } ?>    
   }
 </script>
 
@@ -68,26 +81,31 @@ elseif ($sortOrder == 'recent')
 else //weighted
   $orderby = 'TaggingImportance / log(10 + (unix_timestamp(utc_timestamp()) - unix_timestamp(StartTime)) / 60)';
 
+$hideArabic = "";
+if ($_COOKIE["hidearabic"] == "true")
+  $hideArabic = "and Title not regexp '[؀-ۿ]'";
 
 // Story info
 $isHidden = ($sortOrder == 'hidden' ? 1 : 0);
 $storyInfoResult = mysql_query(
 "select
-    s.StoryID, Title, Popularity, StartTime,
+    s.StoryID, Title, CustomTitle, Popularity, StartTime,
     count(distinct TagID) as LocationCount,
     count(distinct InfoCategoryID) as CategoryCount,
     count(distinct InfoEntityID) as EntityCount,
     count(distinct InfoKeywordID) as KeywordCount
 from (
         select 
-            StoryID,
+            Story.StoryID,
             Title,
+            CustomTitle,
             ceil(exp(Importance)) as Popularity,
             ShortDate(StartTime) as StartTime,
             $orderby as score
         from Story
             left join PendingStoryMerges psm on psm.StoryID2 = Story.StoryID
-        where psm.StoryID2 is null and IsHidden=$isHidden
+            left join StoryCustomTitle sct on sct.StoryID=Story.StoryID
+        where psm.StoryID2 is null and IsHidden=$isHidden $hideArabic
         order by score desc
         limit $limit
     ) s
@@ -107,7 +125,10 @@ while($row = mysql_fetch_array($storyInfoResult)) {
     echo '<a class="wrapper" href="story.php?storyid=' . $row['StoryID'] . '">';
     echo '<span class="column size">' . $row['Popularity'] . '</span>';
     echo '<span class="column time">' . $row['StartTime'] . '</span>';
-    echo '<span class="column title">' . htmlspecialchars($row['Title']) . '</span>';
+    if (is_null($row['CustomTitle']))
+        echo '<span class="column title">' . htmlspecialchars($row['Title']) . '</span>';
+    else
+        echo '<span class="column title">' . htmlspecialchars(urldecode($row['CustomTitle'])) . '</span>';
     echo '<span class="column loc-tags'.  ($row['LocationCount'] != '0' ? ' hasvalue' : '') .'">' . $row['LocationCount'] . '</span>';
     echo '<span class="column ent-tags'.  ($row['EntityCount'] != '0' ? ' hasvalue' : '') .'">' . $row['EntityCount'] . '</span>';
     echo '<span class="column cat-tags'.  ($row['CategoryCount'] != '0' ? ' hasvalue' : '') .'">' . $row['CategoryCount'] . '</span>';

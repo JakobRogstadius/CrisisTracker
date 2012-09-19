@@ -1,4 +1,12 @@
 <?php
+/*******************************************************************************
+ * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://opensource.org/licenses/eclipse-1.0.php
+ *******************************************************************************/
+
 /*
 INPUT:
   storyID: long
@@ -61,58 +69,59 @@ header( 'Content-Type: text/xml; charset=UTF-8' );
 mb_internal_encoding( 'UTF-8' );
 
 include('common_functions.php');
-include('open_db.php');
+include('../twitterLogin/login.php');
+
+if (!isLoggedIn() && !isset($_GET['userid'])) {
+  exit("missing user id");
+}
 
 //Validate inputs
 if (!isset($_GET['storyid']))
   exit("missing storyid");
-if (!isset($_GET['userid']))
-  exit("missing userid");
 
 $storyID = intval($_GET['storyid']);
-$userID = intval($_GET['userid']);
 $ip = $_SERVER['REMOTE_ADDR'];
+if (isset($_GET['userip'])) {
+  $ip = stripMaliciousSql($_GET['userip']);
+}
+$userID = getUserID();
+if (isset($_GET['userid'])) {
+  $userID = intval($_GET['userid']);
+}
 
 $outputData = array();
 
+include('open_db.php');
 
 //Delete removed locations
 if (isset($_GET['removedlocations'])) {
-  $removedLocationIDs = getSafeValues($_GET['removedlocations']);
-  if (count($removedLocationIDs) > 0) {
-    mysql_query(
-      "delete from StoryLocationTag where StoryID=$storyID and TagID in ('" . implode("','", $removedLocationIDs) . "')",
-      $db_conn);
+  $removedLocationIDs = getSafeValues($_GET['removedlocations'], TRUE);
+  foreach ($removedLocationIDs as $tagID) {
+    mysql_query("call AddRemoveStoryTag(0, 'location', $userID, INET_ATON('$ip'), $storyID, $tagID, null, null);", $db_conn);
   }
 }
 
 //Delete removed categories
 if (isset($_GET['removedcategories'])) {
-  $removedCategoryIDs = getSafeValues($_GET['removedcategories']);
-  if (count($removedCategoryIDs) > 0) {
-    mysql_query(
-      "delete from StoryInfoCategoryTag where StoryID=$storyID and InfoCategoryID in ('" . implode("','", $removedCategoryIDs) . "')",
-      $db_conn);
+  $removedCategoryIDs = getSafeValues($_GET['removedcategories'], TRUE);
+  foreach ($removedCategoryIDs as $tagID) {
+    mysql_query("call AddRemoveStoryTag(0, 'category', $userID, INET_ATON('$ip'), $storyID, $tagID, null, null);", $db_conn);
   }
 }
 
 //Delete removed entities
 if (isset($_GET['removedentities'])) {
-  $removedEntityIDs = getSafeValues($_GET['removedentities']);
-  if (count($removedEntityIDs) > 0) {
-    mysql_query(
-      "delete from StoryInfoEntityTag where StoryID=$storyID and InfoEntityID in ('" . implode("','", $removedEntityIDs) . "')",
-      $db_conn);
+  $removedEntityIDs = getSafeValues($_GET['removedentities'], TRUE);
+  foreach ($removedEntityIDs as $tagID) {
+    mysql_query("call AddRemoveStoryTag(0, 'entity', $userID, INET_ATON('$ip'), $storyID, $tagID, null, null);", $db_conn);
   }
 }
 
 //Delete removed keywords
 if (isset($_GET['removedkeywords'])) {
-  $removedKeywordIDs = getSafeValues($_GET['removedkeywords']);
-  if (count($removedKeywordIDs) > 0) {
-    mysql_query(
-      "delete from StoryInfoKeywordTag where StoryID=$storyID and InfoKeywordID in ('" . implode("','", $removedKeywordIDs) . "')",
-      $db_conn);
+  $removedKeywordIDs = getSafeValues($_GET['removedkeywords'], TRUE);
+  foreach ($removedKeywordIDs as $tagID) {
+    mysql_query("call AddRemoveStoryTag(0, 'keyword', $userID, INET_ATON('$ip'), $storyID, $tagID, null, null);", $db_conn);
   }
 }
 
@@ -121,13 +130,8 @@ if (isset($_GET['removedkeywords'])) {
 if (isset($_GET['addedcategories']))
 {
   $addedCategoryIDs = getSafeValues($_GET['addedcategories'], TRUE);
-
-  if (count($addedCategoryIDs) > 0) {
-    mysql_query(
-      "insert ignore into StoryInfoCategoryTag (StoryID, UserID, CreatedAt, IP, InfoCategoryID) values ($storyID, $userID, utc_timestamp(), INET_ATON('$ip'), "
-      . implode("), ($storyID, $userID, utc_timestamp(), INET_ATON('$ip'), ", $addedCategoryIDs)
-      . ")",
-      $db_conn);
+  foreach ($addedCategoryIDs as $tagID) {
+    mysql_query("call AddRemoveStoryTag(1, 'category', $userID, INET_ATON('$ip'), $storyID, $tagID, null, null);", $db_conn);
   }
 }
 
@@ -135,6 +139,7 @@ if (isset($_GET['addedcategories']))
 if (isset($_GET['addedentities']))
 {
   $addedEntityNames = getSafeValues($_GET['addedentities']);
+  $addedEntityNames = array_diff($addedEntityNames, array(''));
 
   if (count($addedEntityNames) > 0) {
     //Insert new values
@@ -155,10 +160,9 @@ if (isset($_GET['addedentities']))
         'name' => $row['Entity']);
     }
     
-    $entityTagQuery = "insert ignore into StoryInfoEntityTag (StoryID, UserID, CreatedAt, IP, InfoEntityID) values ($storyID, $userID, utc_timestamp(), INET_ATON('$ip'), "
-      . implode("), ($storyID, $userID, utc_timestamp(), INET_ATON('$ip'), ", array_keys($entityTags))
-      . ")";
-   mysql_query($entityTagQuery, $db_conn);
+    foreach (array_keys($entityTags) as $tagID) {
+      mysql_query("call AddRemoveStoryTag(1, 'entity', $userID, INET_ATON('$ip'), $storyID, $tagID, null, null);", $db_conn);
+    }
   }
 }
 
@@ -166,7 +170,8 @@ if (isset($_GET['addedentities']))
 if (isset($_GET['addedkeywords']))
 {
   $addedKeywordNames = naiveStemming(getSafeValues($_GET['addedkeywords']));
-
+  $addedKeywordNames = array_diff($addedKeywordNames, array(''));
+  
   if (count($addedKeywordNames) > 0) {
     //Insert new values
     mysql_query(
@@ -185,56 +190,49 @@ if (isset($_GET['addedkeywords']))
         'id' => $row['InfoKeywordID'],
         'name' => $row['Keyword']);
     }
-        
-    mysql_query(
-      "insert ignore into StoryInfoKeywordTag (StoryID, UserID, CreatedAt, InfoKeywordID) values ($storyID, $userID, utc_timestamp(), "
-      . implode("), ($storyID, $userID, utc_timestamp(), ", array_keys($keywordTags))
-      . ")",
-      $db_conn);
+    
+    foreach (array_keys($keywordTags) as $tagID) {
+      mysql_query("call AddRemoveStoryTag(1, 'keyword', $userID, INET_ATON('$ip'), $storyID, $tagID, null, null);", $db_conn);
+    }
   }
 }
 
 //Insert added locations
 if (isset($_GET['addedlocationslatitude']) && isset($_GET['addedlocationslongitude']))
 {
-  $addedLatitudes  = getSafeValues($_GET['addedlocationslatitude']);
   $addedLongitudes = getSafeValues($_GET['addedlocationslongitude']);
+  $addedLatitudes  = getSafeValues($_GET['addedlocationslatitude']);
   if (count($addedLatitudes) != count($addedLongitudes))
     exit("Lengths of latitude and longiude does not match.");
 
   if (count($addedLatitudes) > 0) {
     //Insert locations
-    $locationSql = "insert ignore into StoryLocationTag (StoryID, UserID, CreatedAt, IP, Latitude, Longitude) values ";
     for ($i=0; $i<count($addedLatitudes); $i++)
     {
       $addedLatitudes[$i] = round($addedLatitudes[$i], 6);
       $addedLongitudes[$i] = round($addedLongitudes[$i], 6);
-      if ($i > 0)
-        $locationSql .= ',';
-      $locationSql .= "($storyID, $userID, utc_timestamp(), INET_ATON('$ip'), " . doubleval($addedLatitudes[$i]) . ',' . doubleval($addedLongitudes[$i]) . ')';
+      
+      mysql_query("call AddRemoveStoryTag(1, 'location', $userID, INET_ATON('$ip'), $storyID, null, " . doubleval($addedLongitudes[$i]) . ',' . doubleval($addedLatitudes[$i]) . ');', $db_conn);
     }
-    mysql_query($locationSql, $db_conn);
     
     //Get IDs
     $locationIDsResult = mysql_query(
-      "select TagID, Latitude, Longitude from StoryLocationTag where StoryID=$storyID and Latitude in ("
-      . implode(',', $addedLatitudes)
-      . ") and Longitude in ("
+      "select TagID, Longitude, Latitude from StoryLocationTag where StoryID=$storyID and Longitude in ("
       . implode(',', $addedLongitudes)
+      . ") and Latitude in ("
+      . implode(',', $addedLatitudes)
       . ")"
     );
     
     $outputData['locations'] = array();
     while($row = mysql_fetch_array($locationIDsResult)) {
-      $outputData['locations'][] = array('id' => $row['TagID'], 'latitude' => $row['Latitude'], 'longitude' => $row['Longitude']);
+      $outputData['locations'][] = array('id' => $row['TagID'], 'longitude' => $row['Longitude'], 'latitude' => $row['Latitude']);
     }
   }
 }
 
-
 //Print
 echo array_to_xml($outputData, new SimpleXMLElement('<tags/>'))->asXML();
-
 
 include('close_db.php');
 ?>

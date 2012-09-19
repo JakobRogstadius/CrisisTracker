@@ -1,4 +1,11 @@
 <?php
+/*******************************************************************************
+ * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://opensource.org/licenses/eclipse-1.0.php
+ *******************************************************************************/
 
 ini_set('display_errors', 1); 
 ini_set('log_errors', 1); 
@@ -7,14 +14,16 @@ error_reporting(E_ALL);
 
 session_start(); 
 
+include_once ('api/common_functions.php');
+include_once ('twitterLogin/login.php');
+setLoginRedirect(); //from login.php
+
 header( 'Content-Type: text/html; charset=UTF-8' );
 mb_internal_encoding( 'UTF-8' );
 function addLinks($text) {
   $text = preg_replace('/http\S+/', '<a href="$0" target="_blank">$0</a>', $text);
   return preg_replace('/@[A-Za-z0-9_]+/', '<a href="https://twitter.com/#!/$0" target="_blank">$0</a>', $text);
 }
-
-include_once ('api/common_functions.php');
 ?>
 
 <!DOCTYPE html>
@@ -23,7 +32,7 @@ include_once ('api/common_functions.php');
     <meta charset="utf-8" />
     <title>CrisisTracker</title>
     <meta name="description" content="Crisis Tracker lets you explore Twitter activity related to ongoing real-world events." />
-    <meta name="keywords" content="crisis, emergency, social media, twitter, crowdsourcing" />
+    <meta name="keywords" content="crisis, emergency, disaster, protest, conflict, social media, twitter, crowdsourcing, crisis informatics" />
   
     <!-- *** STATS AND FEEDBACK ************************************************************************* -->
     <!-- Google Analytics -->
@@ -104,7 +113,7 @@ if (false) {//(strpos($_SERVER['REQUEST_URI'], 'study') <= 0) {
     <!-- Random Generators -->
     <script type="text/javascript" src="resources/javascript/ses.randomgenerators.js"></script>
     <!-- Login Component -->
-    <script type="text/javascript" src="login/login.js"></script>  
+    <script type="text/javascript" src="login/login.js"></script>
 <?php
 }
 ?>

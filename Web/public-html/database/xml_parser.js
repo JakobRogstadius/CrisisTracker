@@ -1,7 +1,15 @@
+/*******************************************************************************
+* Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+* All rights reserved. This program and the accompanying materials
+* are made available under the terms of the Eclipse Public License v1.0
+* which accompanies this distribution, and is available at
+* http://opensource.org/licenses/eclipse-1.0.php
+*******************************************************************************/
+
 /* This file uses 'Sarissa Ajax Library' to dynamically return XML data
-	1. Sarissa It’s small (11.8kb!)
-	2. Sarissa is Cross browser compatible!
-	3. Sarissa Escapes the information received nicely
+1. Sarissa It’s small (11.8kb!)
+2. Sarissa is Cross browser compatible!
+3. Sarissa Escapes the information received nicely
 */
 	var data;
 	var typeOfChange='';
@@ -82,7 +90,7 @@
 	/**  
 	* Calls the WebService to "get_stories.php" with changes via GET (Url)
 	**/		
-	function ajaxSendQuery(categoryfilter,entityfilter,keywordfilter,sortorder,limit,minstarttime,maxstarttime,locationfilter){	
+	function ajaxSendQuery(categoryfilter,entityfilter,keywordfilter,sortorder,limit,minstarttime,maxstarttime,locationfilter,hidearabic){	
 		console.log("Preparing to send via AJAX");
 		var url_sufix='';
 		
@@ -103,7 +111,8 @@
 		if(typeof(maxstarttime) != 'undefined' && maxstarttime != null){			
 			url_sufix+='&maxstarttime='+maxstarttime;
 		}
-		
+    if (hidearabic===true)
+  		url_sufix+='&hidearabic='+hidearabic;
 		
 		// ************* Arrays *************
 		// location Filter - DO NOT SEND AS ARRAY
@@ -138,17 +147,16 @@
 		
 		// ************* CROSS DOMAIN BYPASS URL *************
 		var filetouse = 'database/get_stories_cache.php?'+url_sufix;
-		console.log(filetouse);		
+		console.log(filetouse);
+    console.log('hide arabic is: ' + hidearabic);
 		getUrl(filetouse,httpResponseHandlerExploreStories);
 	}
 	
-	
-	
-	
+		
 	/**  
 	* Calls the WebService to "save_story_tag_changes.php" with changes via GET (Url)
 	**/	
-	function ajaxSaveStoryTagChangesItems(storyID,userID,addedCategories,addedEntities,addedKeywords,removedCategories,removedEntities,removedKeywords,addedLocationsLongitude,addedLocationsLatitude,removedLocations) {
+	function ajaxSaveStoryTagChangesItems(storyID,addedCategories,addedEntities,addedKeywords,removedCategories,removedEntities,removedKeywords,addedLocationsLongitude,addedLocationsLatitude,removedLocations) {
 	  console.log("ajaxSaveStoryTagChangesItems");	
 			  
 		var url_sufix='';
@@ -156,10 +164,6 @@
 		// StoryID
 		if(typeof(storyID) != 'undefined'){		
 			url_sufix+='storyid='+storyID;
-		}
-		// UserID
-		if(typeof(userID) != 'undefined'){			
-			url_sufix+='&userid='+userID;
 		}
 		// addedCategories
 		if(typeof(addedCategories) != 'undefined'){
@@ -431,7 +435,7 @@
 		console.log("handling result data -> http Response Handler Story Loading..");	  
 		if (checkResultIsOk(xml)) {
 			
-			try {
+			//try {
 				// Story Information
 				var storyId = Math.abs(xml.getElementsByTagName('storyID')[0].firstChild.data.trim());
 				var title = xml.getElementsByTagName('title')[0].firstChild.data.trim();
@@ -467,7 +471,7 @@
 					entities.push({
 					  "id": parseInt(items[0].getElementsByTagName('id')[i].firstChild.data.trim()),
 					  "name": items[0].getElementsByTagName('name')[i].firstChild.data.trim()});			          
-				}	      
+				}
 
 				// Keywords
 				var keywords = new Array();
@@ -504,11 +508,11 @@
 				console.log("returning story..");		
 				console.log(story);			
 				callBackStoryLoaded(story);	// Callback to INDEX.PHP
-			}
-			catch(error) {
-				// todo
-				console.log("Error catched at xml_parser.js" + error);
-			}		
+			//}
+			//catch(error) {
+			//	// todo
+			//	console.log("Error catched at xml_parser.js: " + error);
+			//}		
 		}
 		//else
 		  //alert ("something wrong on -> httpResponseHandlerStoryLoad!");	      	      	      

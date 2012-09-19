@@ -1,22 +1,35 @@
 <?php
-//include('header_start.php');
-//include('header_end.php');
-
-$storyID = -1;
-if (isset($_GET['storyid'])) {
-  $storyID = intval($_GET['storyid']);
+/*******************************************************************************
+ * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://opensource.org/licenses/eclipse-1.0.php
+ *******************************************************************************/
+ 
+ include('twitterLogin/login.php');
+if (isLoggedIn()) {
+  $storyID = 0;
+  if (isset($_GET['storyid']))
+    $storyID = intval($_GET['storyid']);
+  else 
+    die('parameter error');
+  
+  $hidden = 1;
+  if (isset($_GET['hidden'])) {
+    $hidden = intval($_GET['hidden']);
+    if ($hidden > 1 || $hidden < 0)
+      die('parameter error');
+  }
+  else 
+    die('parameter error');
+  
+  $ip = $_SERVER['REMOTE_ADDR'];
+  $userID = getUserID();
+  
+  include('api/open_db.php');
+  mysql_query("call HideShowStory($storyID, $hidden, INET_ATON('$ip'), $userID);", $db_conn);
+  include('api/close_db.php');
 }
-
-if ($storyID < 0) {
-  die('parameter error');
-}
-
-include('api/open_db.php');
-mysql_query("update Story set IsHidden=1-IsHidden where StoryID=$storyID;", $db_conn);
-include('api/close_db.php');
-
-//header('Location: story.php?storyid=' . $storyID);
 header('Location: ' . $_SERVER['HTTP_REFERER'] );
-
-//include('footer.php');
 ?>

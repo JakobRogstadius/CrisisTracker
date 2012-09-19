@@ -1,4 +1,12 @@
 <?php
+/*******************************************************************************
+ * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://opensource.org/licenses/eclipse-1.0.php
+ *******************************************************************************/
+
 include('header_start.php');
 ?>
 
@@ -57,19 +65,22 @@ if ($registered) {
 <div class="right-column-narrow">
     <div class="gui-panel textpanel">
 	<h1>Upcoming field trial</h1>
-	<p>We need participants who would like to help us test how well CrisisTracker can support geographically distributed
-	volunteers to successfully organize information from social media into a format that can improve situation
-	awareness among on-the-ground responders and professional analysts. If you wish to help, all you need to do is spend at least 15 minutes
-	daily for one week tagging stories, and improving the way reports are grouped together by merging and splitting
-	stories (as illustrated in the video).</p>
-	<p>The preliminary duration of the study is September 7-14 and we will be tracking Twitter activity related to an ongoing crisis.</p>
+	<p>During September 7-14 we will be running a first full-scale field deployment of CrisisTracker. The goal of this
+  deployment is to evaluate how well CrisisTracker can support geographically distributed volunteers to successfully
+  organize information from social media into a format that can improve situation awareness among on-the-ground
+  responders and professional analysts.</p>
+  <p>The event that will be tracked is the Syrian Civil War. If you wish to help, all you need to do is annotate
+  stories with meta-tags, and improving the way reports are grouped into stories (as illustrated in the video on the
+  left). How much time you spend doing this is fully up to you. There is also a document with
+  <a href="https://docs.google.com/document/d/1t2YISIe68GACmFfYEdPmoJ2OtT5c99BLYEUjKY8woqI/edit" target="_blank">detailed instructions</a>
+  to get you started.</p>
 	<p>During the study, the collaboratively organized live reports will be evaluated with
 	the help of experienced professional disaster responders. At the end of the study, we will also be collecting
 	feedback from you and other volunteers.</p>
 	<p><i>We are also looking for <a href="study2.php">disaster response professionals</a>.</i></p>
 
 	<h2>Registration</h2>
-	<p>Please register below if you may be willing to participate. Further instructions will be provided closer to the study.</p>
+	<p>Please register below if you may be willing to participate.</p>
 	<form name="registrationForm" action="study.php" method="post" onsubmit="return validateForm()">
 	<p>Name<br />
 	<input type="text" name="name" style="width: 300px"/></p>

@@ -1,4 +1,12 @@
 <?php
+/*******************************************************************************
+ * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://opensource.org/licenses/eclipse-1.0.php
+ *******************************************************************************/
+
 /*
 INPUT:
   sortorder, one of:
@@ -53,8 +61,11 @@ $orderby = '';
 if ($sortOrder == 'active')
   $orderby = 'ImportanceRecent';
 else //weighted
-  $orderby = 'TaggingImportance / log(2 + (unix_timestamp(utc_timestamp()) - unix_timestamp(min(tc.StartTime))) / 60)';
+  $orderby = 'TaggingImportance / log(2 + (unix_timestamp(utc_timestamp()) - unix_timestamp(min(StartTime))) / 60)';
 
+$where = "";
+if ($_COOKIE["hidearabic"] == "true")
+  $where = "where Title not regexp '[؀-ۿ]'";
 
 // Story info
 $querySql = "select
@@ -71,6 +82,7 @@ from (
             StartTime,
             $orderby as score
         from Story
+        $where
         order by score desc
         limit $limit
     ) s

@@ -1,0 +1,25 @@
+2012-08-16:
+Added StoryLog table.
+Added StoryLogEventType table.
+Added logging triggers in Story.
+Added HideShowStory procedure.
+Added AddRemoveStoryTag procedure.
+
+2012-08-18:
+Renamed columns in HourStatistics table.
+Modified insert trigger in Story table.
+Removed delete trigger in Story table.
+Added insert trigger in TweetCluster table.
+Added StoryAgeInSeconds to StoryLog table.
+
+2012-08-20:
+Added ParticipantRegistrationProfessional table.
+Added ParticipantRegistrationVolunteer table.
+
+2012-09-03
+Added SyriaDeploymentVolunteerSurveyAnswer table.
+Added User table.
+
+2012-09-09
+Added StoryCustomTitle table.
+Added AddRemoveStoryCustomTitle procedure.

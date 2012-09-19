@@ -1,4 +1,12 @@
-﻿using System;
+﻿/*******************************************************************************
+ * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://opensource.org/licenses/eclipse-1.0.php
+ *******************************************************************************/
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -59,24 +67,27 @@ namespace CrisisTracker.Common
             return urls;
         }
 
-        public static int RunSqlStatement(string callerName, string sql)
+        public static int RunSqlStatement(string callerName, string sql, bool forceTransaction = true)
         {
             MySqlCommand command = new MySqlCommand();
             command.CommandText = sql;
-            return RunSqlStatement(callerName, command); //Command gets disposed in RunSqlStatement
+            return RunSqlStatement(callerName, command, forceTransaction); //Command gets disposed in RunSqlStatement
         }
 
-        public static int RunSqlStatement(string callerName, MySqlCommand command)
+        public static int RunSqlStatement(string callerName, MySqlCommand command, bool forceTransaction = true)
         {
             if (command == null || command.CommandText == null || command.CommandText == "")
                 return -1;
 
             int affectedRows = -1;
 
-            if (!command.CommandText.Contains("start transaction"))
-                command.CommandText = "start transaction; " + command.CommandText;
-            if (!command.CommandText.Contains("commit;"))
-                command.CommandText = command.CommandText + " commit;";
+            if (forceTransaction)
+            {
+                if (!command.CommandText.Contains("start transaction"))
+                    command.CommandText = "start transaction; " + command.CommandText;
+                if (!command.CommandText.Contains("commit;"))
+                    command.CommandText = command.CommandText + " commit;";
+            }
 
             MySqlConnection connection = null;
             try

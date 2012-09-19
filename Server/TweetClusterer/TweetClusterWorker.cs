@@ -1,4 +1,12 @@
-﻿using System;
+﻿/*******************************************************************************
+ * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://opensource.org/licenses/eclipse-1.0.php
+ *******************************************************************************/
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -22,7 +30,7 @@ namespace CrisisTracker.TweetClusterer
             public int Degree { get; set; }
         }
 
-        const string Name = "TweetClusterer";
+        const string Name = "TweetClusterWorker";
         int _wordsPerHyperPlane = 1 + (int)(Math.Log(Math.Pow(Settings.TweetClusterer_TCW_DictionaryWordCount, 2)));
 
         List<LSHashTable> _tables = new List<LSHashTable>();
@@ -196,9 +204,9 @@ namespace CrisisTracker.TweetClusterer
                 sqlSB.Append(')');
             }
             sqlSB.Append(';');
-            Helpers.RunSqlStatement(Name, sqlSB.ToString());
-            Helpers.RunSqlStatement(Name, "insert ignore into TweetRelation select b.* from TweetRelationInsertBuffer b join Tweet t1 on t1.TweetID=b.TweetID1 join Tweet t2 on t2.TweetID=b.TweetID2;");
-            Helpers.RunSqlStatement(Name, "delete from TweetRelationInsertBuffer;");
+            Helpers.RunSqlStatement(Name, sqlSB.ToString(), false);
+            Helpers.RunSqlStatement(Name, "insert ignore into TweetRelation select b.* from TweetRelationInsertBuffer b join Tweet t1 on t1.TweetID=b.TweetID1 join Tweet t2 on t2.TweetID=b.TweetID2;", false);
+            Helpers.RunSqlStatement(Name, "delete from TweetRelationInsertBuffer;", false);
         }
 
         private void AssignTweetClusterIDsToBatchTweets(List<LSHashTweet> tweets, List<TweetRelationSimple> relations)
@@ -297,7 +305,7 @@ namespace CrisisTracker.TweetClusterer
             //Insert new TweetClusters (otherwise the tweet update below will fail from trigger constraints)
             string tweetClusterInsert = "INSERT IGNORE INTO TweetCluster (TweetClusterID, StartTime, EndTime) VALUES (" +
                 string.Join(",'3000-01-01',0),(", assignedTweetClusterIDs.Values.Distinct().Select(n => n.ToString()).ToArray()) + ",'3000-01-01',0);";
-            Helpers.RunSqlStatement(Name, tweetClusterInsert);
+            Helpers.RunSqlStatement(Name, tweetClusterInsert, false);
             Console.Write(".");
 
 
@@ -315,7 +323,7 @@ namespace CrisisTracker.TweetClusterer
             sb.AppendLine("ON DUPLICATE KEY UPDATE TweetClusterID=VALUES(TweetClusterID);");
             Console.Write(".");
 
-            Helpers.RunSqlStatement(Name, sb.ToString());
+            Helpers.RunSqlStatement(Name, sb.ToString(), false);
 
             //Update EndTime of affected TweetClusters, to catch those cases where a tweet is assigned by the hash tables to an archived TweetCluster
             string sqlTweetCluster = @"
@@ -335,7 +343,7 @@ namespace CrisisTracker.TweetClusterer
                 on duplicate key update
                     EndTime=greatest(EndTime,VALUES(EndTime))
                 ;";
-            Helpers.RunSqlStatement(Name, sqlTweetCluster);
+            Helpers.RunSqlStatement(Name, sqlTweetCluster, false);
             Console.Write(".");
 
 
@@ -373,7 +381,7 @@ namespace CrisisTracker.TweetClusterer
                     StartTime=VALUES(StartTime),
                     EndTime=VALUES(EndTime)
                 ;";
-            Helpers.RunSqlStatement(Name, sqlTweetClusterCounts);
+            Helpers.RunSqlStatement(Name, sqlTweetClusterCounts, false);
             Console.Write(".");
 
             //Update TweetCluster titles
@@ -385,7 +393,7 @@ namespace CrisisTracker.TweetClusterer
                 where (Title = '' or Title is null)
                     and EndTime > (select max(CreatedAt) - interval 10 minute from Tweet where CalculatedRelations)
                 ;";
-            Helpers.RunSqlStatement(Name, sqlTweetClusterTitles);
+            Helpers.RunSqlStatement(Name, sqlTweetClusterTitles, false);
             Console.Write(".");
         }
 

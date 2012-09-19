@@ -1,4 +1,11 @@
 <?php
+/*******************************************************************************
+ * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://opensource.org/licenses/eclipse-1.0.php
+ *******************************************************************************/
 
 /*
 INPUT:
@@ -74,19 +81,17 @@ mb_internal_encoding( 'UTF-8' );
 include('common_functions.php');
 include('open_db.php');
 
-//TOP USERS
-$topusers = false;
-if (isset($_GET['topusers'])) {
-  $topusers = ($_GET['topusers'] == 'true');
-}
-
 //ORDER BY
 $sortOrder = 'large';
+$topusers = false;
 if (isset($_GET['sortorder'])) {
   $sortOrder = stripMaliciousSql($_GET['sortorder']);
+  if (substr($sortOrder, -3) == 'top')
+    $topusers = true;
+  $sortOrder = substr($sortOrder, 0, -4); //remove -top/-all ending
 }
 $orderby = '';
-if ($sortOrder == 'large' || $sortOrder == 'timeline')
+if ($sortOrder == 'largest' || $sortOrder == 'timeline')
   $orderby = ($topusers ? 'TopUserCount' : 'Importance');
 elseif ($sortOrder == 'active')
   $orderby = ($topusers ? 'TopUserCountRecent' : 'ImportanceRecent');
@@ -104,13 +109,18 @@ if ($limit < 1 || $limit > 200)
   $limit = 50;
 
 //WHERE
-$where = "where not IsHidden ";
+$where = "where not IsHidden and psm.StoryID2 is null ";
 $wherejoins = "";
 $hitcounts = "";
 $having = "having ";
 
-if ($sortOrder == 'trending')
-  $where .= "and UserCount>5";
+if ($sortOrder == 'trending' && !$topusers) {
+    $where .= "and UserCount>5";
+}
+else if ($topusers) {
+    $where .= "and TopUserCount>0";
+}
+
 
 //Min StartTime filter
 if (isset($_GET['minstarttime'])) {
@@ -191,6 +201,12 @@ if (isset($_GET['locationfilter'])) {
   }
 }
 
+//Hide Arabic
+if (isset($_GET['hidearabic']) && $_GET['hidearabic'] == "true") {
+  $where .= " and Title not regexp '[؀-ۿ]'";
+}
+
+
 if ($where == 'where ') $where = '';
 if ($having == 'having ') $having = '';
 
@@ -213,12 +229,15 @@ from (
         select
             Story.StoryID,
             Title,
+            CustomTitle,
             " . ($topusers ? 'TopUserCount' : 'round(exp(Importance))') . " as Size,
             ShortDate(StartTime) as StartTime,
             StartTime as StartTimeRaw,
             $hitcounts
             $orderby as sortorder
         from Story
+            left join PendingStoryMerges psm on psm.StoryID2 = Story.StoryID
+            left join StoryCustomTitle sct on sct.StoryID=Story.StoryID
             $wherejoins
         $where
         group by Story.StoryID
@@ -241,7 +260,10 @@ $stories = array();
 while($row = mysql_fetch_array($storyInfoResult)) {
   $story = array();
   $story['storyID'] = $row['StoryID'];
-  $story['title'] = htmlspecialchars($row['Title']);
+  if (is_null($row['CustomTitle']))
+    $story['title'] = htmlspecialchars($row['Title']);
+  else
+    $story['title'] = htmlspecialchars(urldecode($row['CustomTitle']));
   $story['userCount'] = $row['Size'];
   $story['startTime'] = $row['StartTime'];
   $story['locationCount'] = $row['LocationCount'];

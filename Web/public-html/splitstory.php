@@ -1,25 +1,36 @@
 <?php
+/*******************************************************************************
+ * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://opensource.org/licenses/eclipse-1.0.php
+ *******************************************************************************/
+
 include('header_start.php');
 include('header_end.php');
 
-$story = -1;
-if (isset($_POST['storyid'])) {
-  $storyID = intval($_POST['storyid']);
-}
-$tweetClusterID = -1;
-if (isset($_POST['tweetclusterid'])) {
-  $tweetClusterID = intval($_POST['tweetclusterid']);
-}
-
-if ($storyID < 0 || $tweetClusterID < 0) {
-  die('parameter error');
-}
-
-include('api/open_db.php');
-mysql_query("insert ignore into PendingStorySplits (StoryID, TweetClusterID) values ($storyID, $tweetClusterID);", $db_conn);
-include('api/close_db.php');
+if(isLoggedIn()) {
+  $story = -1;
+  if (isset($_POST['storyid'])) {
+    $storyID = intval($_POST['storyid']);
+  }
+  $tweetClusterID = -1;
+  if (isset($_POST['tweetclusterid'])) {
+    $tweetClusterID = intval($_POST['tweetclusterid']);
+  }
+  
+  if ($storyID < 0 || $tweetClusterID < 0) {
+    die('parameter error');
+  }
+  
+  $ip = $_SERVER['REMOTE_ADDR'];
+  $userID = getUserID();
+  
+  include('api/open_db.php');
+  mysql_query("insert ignore into PendingStorySplits (StoryID, TweetClusterID, IP, UserID) values ($storyID, $tweetClusterID, INET_ATON('$ip'), $userID);", $db_conn);
+  include('api/close_db.php');
 ?>
-
 <div class="fullwidth-column">
   <div class="gui-panel">
     <h1>Thank you</h1>
@@ -28,5 +39,9 @@ include('api/close_db.php');
   </div>
 </div>
 <?php
+}
+else {
+  echo '<div class="fullwidth-column"><div class="gui-panel"><p>You must log in before you can split stories.</p></div></div>';
+}
 include('footer.php');
 ?>

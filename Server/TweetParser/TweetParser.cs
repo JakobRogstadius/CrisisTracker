@@ -1,4 +1,12 @@
-﻿using System;
+﻿/*******************************************************************************
+ * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://opensource.org/licenses/eclipse-1.0.php
+ *******************************************************************************/
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -149,10 +157,10 @@ namespace CrisisTracker.TweetParser
             }
 
             Helpers.RunSqlStatement(Name,
-                "insert into HourStatistics (DateHour, TweetCount) values ("
+                "insert into HourStatistics (DateHour, TweetsProcessed) values ("
                 + string.Join("),(", dateHourTweetCount.Select(n => "'" + n.Key.ToString("yyyy-MM-dd HH:mm:ss") + "'," + n.Value.ToString()).ToArray())
                 + @")
-                on duplicate key update TweetCount = TweetCount + values(TweetCount);");
+                on duplicate key update TweetsProcessed = TweetsProcessed + values(TweetsProcessed);", false);
         }
 
         void PerformMaintenance()
@@ -395,7 +403,7 @@ namespace CrisisTracker.TweetParser
             Console.Write("'");
 
             insertCommand.CommandText = insertSql.ToString();
-            Helpers.RunSqlStatement(Name, insertCommand);
+            Helpers.RunSqlStatement(Name, insertCommand, false);
 
             Console.Write("'");
 
@@ -447,7 +455,7 @@ namespace CrisisTracker.TweetParser
             }
             sbWordScore.Append(" ON DUPLICATE KEY UPDATE Score1h = Score1h + VALUES(Score1h), Score4d = Score4d + VALUES(Score4d);");
 
-            Helpers.RunSqlStatement(Name, sbWordScore.ToString());
+            Helpers.RunSqlStatement(Name, sbWordScore.ToString(), false);
 
             Console.Write("'");
 
@@ -469,7 +477,7 @@ namespace CrisisTracker.TweetParser
             Helpers.RunSelect(Name, getScoresSql, wordIDsByID,
                 (values, reader) =>
                 {
-                    Word word = values[reader.GetInt32("WordID")];
+                    Word word = values[reader.GetInt64("WordID")];
                     word.Idf = reader.GetDouble("Idf");
                     word.IsStopWord = reader.GetBoolean("IsStopword");
                 });
