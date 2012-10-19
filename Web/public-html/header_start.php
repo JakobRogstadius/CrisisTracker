@@ -30,7 +30,7 @@ function addLinks($text) {
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>CrisisTracker</title>
+    <title><?php echo (isset($documentTitle) ? $documentTitle : "CrisisTracker"); ?></title>
     <meta name="description" content="Crisis Tracker lets you explore Twitter activity related to ongoing real-world events." />
     <meta name="keywords" content="crisis, emergency, disaster, protest, conflict, social media, twitter, crowdsourcing, crisis informatics" />
   

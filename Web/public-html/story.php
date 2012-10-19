@@ -36,6 +36,7 @@ if (!is_null($mergedWith))
 
 //Fetch story content
 $story = get_story_content($storyID, $sortOrder, $db_conn);
+$documentTitle = htmlspecialchars($story['customTitle'] != '' ? $story['customTitle'] : $story['title']);
 
 include('header_start.php');
 include('storymanagementincludes.php');
@@ -62,6 +63,7 @@ include('storymanagementincludes.php');
   
   // JQuery Document Ready Handler *autostart
   $(document).ready(function(){
+   
     // Map
     environment.map = new OpenLayers.Map('map');
     /*environment.map = new OpenLayers.Map('map',{

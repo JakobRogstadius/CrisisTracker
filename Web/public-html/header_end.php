@@ -49,6 +49,7 @@ elseif (strpos($_SERVER['REQUEST_URI'], 'evaluation') > 0)
       </div>
       <section id="content">
 <?php
+/* VOLUNTEER SURVEY
 include_once('api/open_db.php');
 include_once('twitterLogin/login.php');
 $userID=getUserID();
@@ -58,7 +59,6 @@ $userAnsweredResult = mysql_query("select count(*) as 'answers' from SyriaDeploy
 $resultObj = mysql_fetch_object($userAnsweredResult);
 $answeredVolunteerSurvey = ($resultObj->answers > 0);
 //include('api/close_db.php');
-
 if (!$answeredVolunteerSurvey && strpos($_SERVER['REQUEST_URI'], 'survey-volunteer') <= 0) {
 ?>
         <div id="survey-ad" class="fullwidth-column">
@@ -68,4 +68,5 @@ if (!$answeredVolunteerSurvey && strpos($_SERVER['REQUEST_URI'], 'survey-volunte
         </div>
 <?php
 }
+*/
 ?>

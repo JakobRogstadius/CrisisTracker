@@ -60,7 +60,8 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
   $firstTweetResult = mysql_query(
   "select TweetID, RealName, ScreenName, CreatedAt, ShortDate(CreatedAt) as CreatedAtShort, Text
   from Tweet natural join TwitterUser natural join TweetCluster
-  where StoryID=$storyID
+    left join PendingStorySplits pss on pss.TweetClusterID = Tweet.TweetClusterID
+  where TweetCluster.StoryID=$storyID and pss.TweetClusterID is null
   order by CreatedAt
   limit 1", $db_conn);
   $firstTweet = mysql_fetch_array($firstTweetResult);
@@ -89,7 +90,8 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
       ) T
       join Tweet t on t.TweetID = T.FirstID
       join TwitterUser u on u.UserID = t.UserID
-      where Text!=''
+        left join PendingStorySplits pss on pss.TweetClusterID = t.TweetClusterID
+      where Text!='' and pss.TweetClusterID is null
       order by t.CreatedAt
       limit 50) T2
     order by $orderby", $db_conn);    
