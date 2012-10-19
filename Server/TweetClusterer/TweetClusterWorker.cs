@@ -59,6 +59,7 @@ namespace CrisisTracker.TweetClusterer
                     {
                         continue;
                     }
+
                     //Add the tweet to each hash table and keep track of collisions with previously added tweets
                     Dictionary<LSHashTweet, int> neighborCandidates = new Dictionary<LSHashTweet, int>();
                     foreach (LSHashTable table in _tables)
@@ -97,6 +98,10 @@ namespace CrisisTracker.TweetClusterer
                             }
                         }
                     }
+
+                    //If retweet, add relation to parent
+                    if (t.RetweetOf.HasValue && !relations.Any(n => n.TweetID2 == t.RetweetOf.Value))
+                        relations.Add(new TweetRelationSimple() { TweetID = t.ID, TweetID2 = t.RetweetOf.Value, Similarity = 0.99 });
 
                     //If no neighbor from bins, search in history
                     if (foundRelations < 2)
@@ -335,7 +340,7 @@ namespace CrisisTracker.TweetClusterer
                     select 
                         TweetClusterID, 
                         max(TweetID) as MaxTweetID
-                    from Tweet 
+                    from Tweet
                     where TweetID in (" + batchIDsStr + @") 
                     group by TweetClusterID
                 ) T
@@ -356,10 +361,10 @@ namespace CrisisTracker.TweetClusterer
                     sum(RetweetOf is null and CreatedAt > T4h) as TweetCountRecent,
                     sum(RetweetOf is not null) as RetweetCount,
                     sum(RetweetOf is not null and CreatedAt > T4h) as RetweetCountRecent,
-                    count(distinct UserID) as UserCount,
+                    count(distinct if(IsBlacklisted, null, UserID)) as UserCount,
                     count(distinct if(CreatedAt > T4h, UserID, null)) as UserCountRecent,
-                    count(distinct if(IsTopUser, UserID, null)) as TopUserCount,
-                    count(distinct if(IsTopUser and CreatedAt > T4h, UserID, null)) as TopUserCountRecent,
+                    count(distinct if(IsTopUser and not IsBlacklisted, UserID, null)) as TopUserCount,
+                    count(distinct if(IsTopUser and not IsBlacklisted and CreatedAt > T4h, UserID, null)) as TopUserCountRecent,
                     min(CreatedAt) as StartTime,
                     max(CreatedAt) as EndTime
                 from
@@ -367,7 +372,9 @@ namespace CrisisTracker.TweetClusterer
                     natural join Tweet
                     natural join TwitterUser,
                     (select max(CreatedAt) - interval 4 hour as T4h, max(CreatedAt) - interval 10 minute as T10m from Tweet where CalculatedRelations) as TTT
-                where (UserCountRecent > 0 or EndTime > T10m or StartTime > T10m) and ((UserCountRecent > 0 and StartTime < T4h) or EndTime > T10m or StartTime > T10m)
+                where 
+                    (UserCountRecent > 0 or EndTime > T10m or StartTime > T10m) 
+                    and ((UserCountRecent > 0 and StartTime < T4h) or EndTime > T10m or StartTime > T10m)
                 group by TweetClusterID
                 on duplicate key update
                     TweetCount=VALUES(TweetCount),

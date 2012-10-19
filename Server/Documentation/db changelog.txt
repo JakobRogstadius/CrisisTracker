@@ -12,14 +12,7 @@ Removed delete trigger in Story table.
 Added insert trigger in TweetCluster table.
 Added StoryAgeInSeconds to StoryLog table.
 
-2012-08-20:
-Added ParticipantRegistrationProfessional table.
-Added ParticipantRegistrationVolunteer table.
+2012-10-09:
+Added IsBlacklisted field (bit, default 0) to TwitterUser table.
 
-2012-09-03
-Added SyriaDeploymentVolunteerSurveyAnswer table.
-Added User table.
-
-2012-09-09
-Added StoryCustomTitle table.
-Added AddRemoveStoryCustomTitle procedure.
+ALTER TABLE TwitterUser ADD COLUMN IsBlacklisted BIT NOT NULL DEFAULT 0  AFTER IsTopUser , ADD INDEX IsBlacklisted (IsBlacklisted ASC) ;
