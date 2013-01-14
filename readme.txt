@@ -1,3 +1,4 @@
+DEVELOPMENT VERSION
 CRISIS TRACKER
 
 During large-scale complex crises such as the Haiti earthquake, the Indian Ocean tsunami and the Arab Spring, social media has emerged as a source of timely and detailed reports regarding important events. However, individual disaster responders, government officials or citizens who wish to access this vast knowledge base are met with a torrent of information that quickly results in information overload. Without a way to organize and navigate the reports, important details are easily overlooked and it is challenging to use the data to get an overview of the situation as a whole.
