@@ -485,8 +485,8 @@ namespace CrisisTracker.TweetClusterer
 
             //Update Story trends
             int trendUpdateCount = Helpers.RunSqlStatement(Name, @"
-                insert into Story (StoryID, Trend)
-                select StoryID, N0-N1 as Trend from (
+                insert into Story (StoryID, Trend, MaxGrowth)
+                select StoryID, N0-N1 as Trend, N0 as MaxGrowth from (
                     select 
                         s.*, 
                         count(distinct case when CreatedAt between T2 and T0 then UserID else null end) as N0, 
@@ -503,7 +503,7 @@ namespace CrisisTracker.TweetClusterer
                     group by s.StoryID
                     having N0 > 0 or s.Trend > 0
                 ) TT
-                on duplicate key update Trend=VALUES(Trend);", false);
+                on duplicate key update Trend=VALUES(Trend), MaxGrowth=if(VALUES(MaxGrowth)>Story.MaxGrowth,VALUES(MaxGrowth),Story.MaxGrowth);", false);
             Console.WriteLine("Updated " + trendUpdateCount + " trends");
 
             //Add tags for newly created stories
@@ -701,7 +701,23 @@ namespace CrisisTracker.TweetClusterer
                             st.StartTime=T.StartTime, 
                             st.EndTime=T.EndTime,
                             st.IsArchived=T.IsArchived
-                        ;");
+                        ;
+                    insert into Story (StoryID, MaxGrowth)
+                    select StoryID, max(UserCount) as MaxGrowth from (
+                        select
+                            s.StoryID,
+                            date(t.CreatedAt) as d,
+                            hour(t.CreatedAt) as h,
+                            count(distinct t.UserID) as UserCount
+                        from Story s
+                            join TweetCluster tc on tc.StoryID = s.StoryID
+                            natural join Tweet t
+                            left join TwitterUser u on u.UserID=t.UserID
+                        where s.StoryID=" + action.Key + @" and not coalesce(IsBlacklisted,0)
+                        group by d,h
+                    ) T
+                    on duplicate key update MaxGrowth=if(VALUES(MaxGrowth)>Story.MaxGrowth,VALUES(MaxGrowth),Story.MaxGrowth);
+                    ;");
             }
 
             if (mergeActions.Count > 0)

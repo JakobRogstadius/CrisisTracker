@@ -92,15 +92,16 @@ namespace CrisisTracker.TweetParser
 
                     if (filteredTweets.Count > 0)
                     {
-                        //Count number of tweets per hour
-                        StoreTweetCountPerHour(filteredTweets);
-                        Console.Write(".");
-
                         //Make note of the time of the last tweet
                         _lastTweetTime = (DateTime)filteredTweets.Last()["created_at_datetime"];
 
                         //Remove the off-topic tweets from further processing
+                        List<Hashtable> filteredTweetsBefore = new List<Hashtable>(filteredTweets);
                         var filterPerf = RemoveOffTopicTweets(filteredTweets, filters); //Tweets are appended with longitude and latitude
+                        Console.Write(".");
+
+                        //Count number of tweets per hour
+                        StoreTweetCountPerHour(filteredTweets, filteredTweetsBefore);
                         Console.Write(".");
 
                         //Insert filter performance
@@ -140,27 +141,58 @@ namespace CrisisTracker.TweetParser
             }
         }
 
-        private void StoreTweetCountPerHour(List<Hashtable> filteredTweets)
+        private void StoreTweetCountPerHour(List<Hashtable> filteredTweetsCleaned, List<Hashtable> filteredTweetsAll)
         {
-            if (filteredTweets.Count == 0)
+            if (filteredTweetsAll.Count == 0)
                 return;
 
-            Dictionary<DateTime, int> dateHourTweetCount = new Dictionary<DateTime, int>();
-            foreach (var tweet in filteredTweets)
+            Dictionary<DateTime, int> dateHourTweetCountAll = new Dictionary<DateTime, int>();
+            foreach (var tweet in filteredTweetsAll)
             {
                 DateTime t = (DateTime)tweet["created_at_datetime"];
                 t = new DateTime(t.Year, t.Month, t.Day, t.Hour, 0, 0);
-                if (dateHourTweetCount.ContainsKey(t))
-                    dateHourTweetCount[t]++;
+                if (dateHourTweetCountAll.ContainsKey(t))
+                    dateHourTweetCountAll[t]++;
                 else
-                    dateHourTweetCount.Add(t, 1);
+                    dateHourTweetCountAll.Add(t, 1);
             }
 
-            Helpers.RunSqlStatement(Name,
-                "insert into HourStatistics (DateHour, TweetsProcessed) values ("
-                + string.Join("),(", dateHourTweetCount.Select(n => "'" + n.Key.ToString("yyyy-MM-dd HH:mm:ss") + "'," + n.Value.ToString()).ToArray())
-                + @")
-                on duplicate key update TweetsProcessed = TweetsProcessed + values(TweetsProcessed);", false);
+            Dictionary<DateTime, int> dateHourTweetCountCleaned = new Dictionary<DateTime, int>();
+            foreach (var tweet in filteredTweetsCleaned)
+            {
+                DateTime t = (DateTime)tweet["created_at_datetime"];
+                t = new DateTime(t.Year, t.Month, t.Day, t.Hour, 0, 0);
+                if (dateHourTweetCountCleaned.ContainsKey(t))
+                    dateHourTweetCountCleaned[t]++;
+                else
+                    dateHourTweetCountCleaned.Add(t, 1);
+            }
+
+            StringBuilder sql = new StringBuilder();
+            sql.AppendLine("insert into HourStatistics (DateHour, TweetsProcessed, TweetsDiscarded) values ");
+            bool first = true;
+            foreach (var item in dateHourTweetCountAll)
+	        {
+                if (first)
+                    first = false;
+                else
+                    sql.Append(",");
+
+                string dateHour = item.Key.ToString("yyyy-MM-dd HH:mm:ss");
+                int tweetsKept = 0;
+                dateHourTweetCountCleaned.TryGetValue(item.Key, out tweetsKept);
+                int tweetsDiscarded = item.Value - tweetsKept;
+                sql.Append("('");
+                sql.Append(dateHour);
+                sql.Append("',");
+                sql.Append(item.Value.ToString());
+                sql.Append(",");
+                sql.Append(tweetsDiscarded.ToString());
+                sql.AppendLine(")");
+	        }
+            sql.AppendLine("on duplicate key update TweetsProcessed = TweetsProcessed + values(TweetsProcessed), TweetsDiscarded = TweetsDiscarded + values(TweetsDiscarded);");
+
+            Helpers.RunSqlStatement(Name, sql.ToString(), false);
         }
 
         void PerformMaintenance()
@@ -221,6 +253,9 @@ namespace CrisisTracker.TweetParser
                     else
                         parseTweets.Add(reader.GetInt64("ID"), Helpers.DecodeEncodedNonAsciiCharacters(reader.GetString("Json")));
                 });
+
+            //Console.WriteLine("Fetched " + wordStatTweets.Count  + " samples and " + parseTweets.Count + " filters");
+            //Console.ReadLine();
         }
 
         List<Hashtable> ParseJsonTweets(Dictionary<Int64, string> jsonTweets, bool onlyExtractWords)
@@ -603,6 +638,7 @@ namespace CrisisTracker.TweetParser
                     if (tweetWordScore <= Settings.TweetParser_MinTweetVectorLength
                         && tweetwordCount <= Settings.TweetParser_MinTweetWordCount)
                     {
+                        Console.WriteLine(t["text"]);
                         continue;
                     }
                     hasWords = true;

@@ -16,7 +16,7 @@ session_start();
 
 include_once ('api/common_functions.php');
 include_once ('twitterLogin/login.php');
-setLoginRedirect(); //from login.php
+setLoginRedirect($_SERVER['REQUEST_URI'], "$SITEPATH/"); //from login.php
 
 header( 'Content-Type: text/html; charset=UTF-8' );
 mb_internal_encoding( 'UTF-8' );

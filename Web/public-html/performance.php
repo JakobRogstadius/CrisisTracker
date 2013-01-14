@@ -221,12 +221,12 @@ while($row = mysql_fetch_array($result)) {
   	<div class="gui-subpanel">
       <p>The following keywords are currently being tracked on Twitter.</p>
       <table class="normal-table">
-        <tr><td><strong>Keyword</strong></td><td><strong>Approximate daily hits</strong></td></tr>
+        <tr><td><strong>Keyword</strong></td><td><strong>Approximate daily tweets</strong></td><td><strong>Discarded tweets</strong></td></tr>
         <?php
-        $query = "select Word, round(Hits1d) Hits from TwitterTrackFilter where FilterType=0 and IsActive order by Hits1d desc;";
+        $query = "select Word, round(Hits1d) Hits, round(100*Discards1d/Hits1d) as Discarded from TwitterTrackFilter where FilterType=0 and IsActive order by Hits1d desc;";
         $result = mysql_query($query, $db_conn);
         while($row = mysql_fetch_array($result)) {
-          echo '<tr><td>' . $row['Word'] . '</td><td>' . $row['Hits'] . '</td></tr>';
+          echo '<tr><td>' . $row['Word'] . '</td><td>' . $row['Hits'] . '</td><td>' . $row['Discarded'] . '%</td></tr>';
         }
         ?>
 	    </table>

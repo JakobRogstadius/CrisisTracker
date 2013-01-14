@@ -7,7 +7,9 @@
  * http://opensource.org/licenses/eclipse-1.0.php
  *******************************************************************************/
 
-$SITEURL = 'http://ufn.virtues.fi/crisistracker';
+$SITEDOMAIN = 'http://ufn.virtues.fi';
+$SITEPATH = '/crisistracker';
+$SITEURL = $SITEDOMAIN . $SITEPATH;
   
 function addLinksToText($text) {
   $text = preg_replace('/http\S+/', '<a href="$0" target="_blank">$0</a>', $text);

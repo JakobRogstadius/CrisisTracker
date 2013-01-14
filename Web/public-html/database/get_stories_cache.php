@@ -72,10 +72,6 @@ if (isset($_GET['keywordfilter'])) {
 }
 
 //***************************************************************
-/* Compose URL
-
-$url = http://ufn.virtues.fi/~jakob/twitter/api/get_stories.php?sortorder=recent&categoryfilter[]=2&categoryfilter[]=5&locationfilter=0,0,100,100&keywordfilter[]=daraa&minstarttime=2012-02-22
-*/
 //echo $suffix;
 
 $url = "$SITEURL/api/get_stories.php?$suffix";

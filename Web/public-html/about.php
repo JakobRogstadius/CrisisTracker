@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /*******************************************************************************
  * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
  * All rights reserved. This program and the accompanying materials
@@ -25,8 +25,10 @@ include('header_end.php');
 	Without a way to organize and navigate the reports, important details
 	are easily overlooked and it is challenging to use the data to get an
 	overview of the situation as a whole.</p>
-	<p>We (researchers at Madeira University, University of Oulu and IBM
-	Research) believe that volunteers around the world would be willing to
+	<p>We (researchers at <a href="http://hci.uma.pt/~jakob/" target="_blank">Madeira University</a>, 
+	<a href="http://researcher.watson.ibm.com/researcher/view.php?person=us-maja" target="_blank">IBM Research</a> and
+	<a href="http://www.ee.oulu.fi/~vassilis/" target="_blank">University of Oulu</a>)
+	believe that volunteers around the world would be willing to
 	assist hard-pressed decision makers with information management, if the
 	tools were available. With this vision in mind, we have developed
 	CrisisTracker.</p>
@@ -84,10 +86,21 @@ include('header_end.php');
 	<p>We are extremely interested in hearing your feedback! Just use the tab on the 
 	right, or visit our <a href="https://getsatisfaction.com/crisistracker" target="_blank">discussion forum</a>.</p>
         <h1>Contact</h1>
-	<p><a href="http://hci.uma.pt/~jakob" target="_blank">Jakob Rogstadius</a></p>
+        <p><a href="http://hci.uma.pt/~jakob" target="_blank">Jakob Rogstadius</a> - Research, design, development (M-ITI)<br/>
+	Claudio Teixeira - Web development (M-ITI)<br/>
+	<a href="http://researcher.watson.ibm.com/researcher/view.php?person=us-maja" target="_blank">Maja Vukovic</a> - Advisor (IBM Research)<br/>
+	<a href="http://www.ee.oulu.fi/~vassilis/" target="_blank">Vassilis Kostakos</a> - Advisor (University of Oulu)<br/>
+	<a href="http://ekarapanos.com/" target="_blank">Evangelos Karapanos</a> - Advisor (M-ITI)</p>
         <h1>Source code</h1>
         <p>CrisisTracker is free and <a href="https://github.com/JakobRogstadius/CrisisTracker">open source</a>,
         so that you can deploy your own instance or integrate it with your own analysis software.</p>
+        <h1>CrisisTracker in the news</h1>
+        <p><a href="http://techpresident.com/news/wegov/23075/crisis-tracker-open-source-map-curates-crowdsourced-information">Crisis Tracker: An Open Source Map that Curates Crowdsourced Information</a><br/>TechPresident, 1 November 2012</p>
+        <p><a href="http://sm4good.com/2012/09/20/social-media-emergencies-responsibility-verify/">Social media in emergencies: is there a responsibility to verify?</a><br/>Social Media 4 Good, 20 September 2012</p>
+        <p><a href="http://idisaster.wordpress.com/2012/09/17/new-social-media-monitoring-tool-crisistracker/">New Social Media Monitoring Tool: CrisisTracker</a><br/>idisaster 2.0, 17 September 2012</p>
+        <p><a href="http://www.elperiodico.com/es/noticias/tecnologia/crisistracker-herramienta-organizar-informacion-sobre-catastrofes-internet-2188829">Crisistracker, nueva herramienta para organizar en internet la información sobre catástrofes</a><br/>el Periódico, 21 August 2012</p>
+        <p><a href="http://irevolution.net/2012/07/30/collaborative-social-media-analysis/">CrisisTracker: Collaborative Social Media Analysis For Disaster Response</a><br/>iRevolution, 30 July 2012</p>
+        <p><a href="http://www.newscientist.com/article/mg21028137.700-earthquake-terrorist-bomb-call-in-the-ai.html">Earthquake? Terrorist bomb? Call in the AI</a><br/>New Scientist, 23 May 2011</p>
     </div>
 </div>
 

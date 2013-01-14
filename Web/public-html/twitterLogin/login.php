@@ -43,8 +43,8 @@ function printLoginShort() {
   }
 }
 
-function setLoginRedirect() {
-    setcookie('login_redirect', $_SERVER['REQUEST_URI'], 0, '/');
+function setLoginRedirect($uri, $scope) {
+    setcookie('login_redirect', $uri, 0, $scope);
 }
 
 function isLoggedIn() {

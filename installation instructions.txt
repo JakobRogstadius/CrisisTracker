@@ -77,3 +77,9 @@ System.Net.WebException: Error getting response stream (Write: The authenticatio
 4. Copy entire /Web folder to a publicly accessible folder on a web server.
 
 5. Load up the site in a web browser. If it doesn't work, and debugging doesn't solve the problem, contact Jakob (see top of file) and we'll try to figure out what went wrong.
+
+
+=== ADD LATER ===
+
+edit the file CrisisTracker/Web/public-html/api/common_functions.php 
+Replace: $SITEURL = 'http://ufn.virtues.fi/crisistracker'; with your URL
