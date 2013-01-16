@@ -1,0 +1,4 @@
+HOW TO: Copy all folders including 'ext-4' to your server workspace.
+NOTE: All Snippets use 'ext-4' folder which contains ExtJS 4.1 Library files.
+
+RUN:  Write your server workspace  address in your browser appending the snippet folder name. 'myserver/snippet.1'
