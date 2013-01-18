@@ -164,7 +164,7 @@ namespace CrisisTracker.Common
         {
             MySqlCommand command = new MySqlCommand();
             command.CommandText = sql;
-            RunSelect<T>(callerName, command, values, assigner); ;
+            RunSelect<T>(callerName, command, values, assigner);
         }
 
         public static void RunSelect<T>(string callerName, MySqlCommand command, T values, Assigner<T> assigner)
