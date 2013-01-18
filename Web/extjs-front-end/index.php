@@ -6,9 +6,9 @@
  * which accompanies this distribution, and is available at
  * http://opensource.org/licenses/eclipse-1.0.php
  *******************************************************************************/
-$debug = true;
+$debugflag = true;
 
-if ($debug)
+if ($debugflag)
 {
     ini_set('display_errors', 1); 
     ini_set('log_errors', 1); 
@@ -21,8 +21,8 @@ mb_internal_encoding( 'UTF-8' );
 
 include_once ('login/login.php');
 //TODO: Set some information that allows the login page to redirect back to where the user came from
-?>
 
+?>
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -31,6 +31,8 @@ include_once ('login/login.php');
         <meta charset="utf-8" />
         <meta name="description" content="Crisis Tracker lets you explore Twitter activity related to ongoing real-world events." />
         <meta name="keywords" content="crisis, emergency, disaster, protest, conflict, social media, twitter, crowdsourcing, crisis informatics" />
+        
+        <? if ($debugflag) echo "<script>var debugflag=true;</script>"; ?>
         
         <!-- General page layout (CSS) -->
         <link rel="stylesheet" type="text/css" href="main.css" />
@@ -43,7 +45,7 @@ include_once ('login/login.php');
 		
         <!-- Open Layers -->
         <link rel="stylesheet" type="text/css" href="OpenLayers-2.12/theme/default/style.css" />
-<? if($debug) { ?>
+<? if($debugflag) { ?>
         <script src="libraries/full/OpenLayers-2.12/OpenLayers.debug.js"></script>
 <? } else { //TODO: UPDATE PATH ?>
        <script src="libraries/compressed/OpenLayers-2.12/OpenLayers.debug.js"></script>
@@ -53,12 +55,12 @@ include_once ('login/login.php');
 		
 		<!-- ExtJs: Ext and GeoExt files are fetched by the loader. See in app.js -->
         <link rel="stylesheet" type="text/css" href="ext-4/resources/css/ext-all.css">
-<? if($debug) { ?>
+<? if($debugflag) { ?>
 		<script src="libraries/full/ext-4/ext-all-dev.js"></script>	
 <? } else { //TODO: UPDATE PATH ?>
 		<script src="libraries/compressed/ext-4/ext-all-dev.js"></script>	
 <? } ?>
-        <!--<script src="app.js"></script>-->
+        <script src="app.js"></script>
     </head>
     
     <body>

@@ -167,4 +167,10 @@ em, i {font-style: italic;}
 }
 #content {
     display: block;
-}
+    clear: both;
+    background-color: #f4f4f4;
+    color: #333;
+    border: none;
+    border-radius: 5px;
+    margin: 7px;
+    padding: 7px;}
