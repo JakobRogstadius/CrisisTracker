@@ -1,1 +1,0 @@
-Folder containing JavaScript code unique to page 2.
