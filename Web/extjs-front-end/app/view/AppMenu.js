@@ -1,6 +1,6 @@
 Ext.define('CrisisTracker.view.AppMenu', {
     extend: 'Ext.panel.Panel',
-    alias: 'widget.appMenu',
+    alias: 'widget.appMenu', 
 	layout: {
 		type: 'hbox',
 		align: 'stretch'
