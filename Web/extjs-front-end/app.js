@@ -55,31 +55,24 @@ Ext.application({
     name: 'CrisisTracker',	// Namespace
     appFolder: 'app',
 	// autoDestroy: true,
-	autoCreateViewport: false,
     controllers: [
         'ApplicationController'
     ],	
 	
+	views: [
+		'AppMenu',
+		'AppContainer'
+	],
+	
 	requires: [
-		'CrisisTracker.controller.Page1Controller',
+		'CrisisTracker.controller.latestnews.LatestNewsController',
 		'CrisisTracker.controller.Page2Controller'
 	],
 	
     launch: function() {
 		console.log('app.js -> Application Launched');
-
-        var viewport = Ext.create('Ext.container.Viewport', {
-			layout: {
-				type: 'auto',
-			},		
-			title: 'page',
-			defaults: {bodyStyle:'padding:5px'},		
-			items: [
-				{
-					xtype: 'appMenu'
-				}			
-			]				
-		
+        var pageContainer = Ext.create('widget.appContainer', {
+			renderTo: Ext.getDom('content'),	// manually specify DOM element to place the container
         });
     }
 });

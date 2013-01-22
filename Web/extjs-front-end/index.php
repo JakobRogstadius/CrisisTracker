@@ -44,7 +44,7 @@ include_once ('login/login.php');
         <script src="get_satisfaction.js"></script>
 		
         <!-- Open Layers -->
-        <link rel="stylesheet" type="text/css" href="OpenLayers-2.12/theme/default/style.css" />
+        <link rel="stylesheet" type="text/css" href="libraries/full/OpenLayers-2.12/theme/default/style.css" />
 <? if($debugflag) { ?>
         <script src="libraries/full/OpenLayers-2.12/OpenLayers.debug.js"></script>
 <? } else { //TODO: UPDATE PATH ?>
@@ -54,7 +54,7 @@ include_once ('login/login.php');
 		<script src="http://maps.google.com/maps/api/js?sensor=false&v=3.2"></script>		
 		
 		<!-- ExtJs: Ext and GeoExt files are fetched by the loader. See in app.js -->
-        <link rel="stylesheet" type="text/css" href="ext-4/resources/css/ext-all.css">
+        <link rel="stylesheet" type="text/css" href="libraries/full/ext-4/resources/css/ext-all.css">
 <? if($debugflag) { ?>
 		<script src="libraries/full/ext-4/ext-all-dev.js"></script>	
 <? } else { //TODO: UPDATE PATH ?>
@@ -69,7 +69,7 @@ include_once ('login/login.php');
                 <header>
                     <div style="position: relative">
                         <div id="top-title"><h1>CRISIS TRACKER</h1></div>
-                        <div id="login-box" style="z-index: 100; position: absolute; right:4px; bottom: 8px;"><?php printLogin(); ?></div>
+                        <div id="login-box" style="z-index: 100; position: absolute; right:4px; bottom: 8px;"><?php //printLogin(); ?></div>
                     </div>
                     <div id="menu"><nav>
                         <ul>
@@ -83,7 +83,11 @@ include_once ('login/login.php');
                     </nav></div>
                 </header>
             </div>
-            <section id="content"></section>
+			
+			<!-- ExtJS Draws in Here -->
+            <section id="content">			
+			</section>
+			
             <footer id="footer">
                 All timestamps are in UTC.
                 <span style="float: right">CrisisTracker is free and <a href="http://github.com/JakobRogstadius/CrisisTracker" target="_blank">open source</a> (<a href="http://www.eclipse.org/legal/epl-v10.html" target="_blank">license</a>)</span>

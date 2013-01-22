@@ -8,15 +8,14 @@ Ext.define('CrisisTracker.controller.Page2Controller', {
 		console.log('CONTROLLER PAGE 2 - CrisisTracker.controller.Page2Controller »» Initialized');
 		
 		// 1. Remove Current Page (if any)		
-		var viewport = Ext.ComponentQuery.query('viewport')[0];		
-		var currentPage = viewport.getComponent(1);
+		var appContainer = Ext.ComponentQuery.query('appContainer')[0];	
+		var currentPage = appContainer.getComponent(1);
 		if(currentPage) {
-			viewport.remove(currentPage);		
+			appContainer.remove(currentPage);		
 		}
-		console.log(viewport);
 		
 		// 2. Draw Page2 on Viewport
-		viewport.add({xtype: 'page2'});	
+		appContainer.add({xtype: 'page2'});	
 		console.log(this);	
 
 		// @TODO

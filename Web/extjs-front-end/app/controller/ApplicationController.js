@@ -2,6 +2,7 @@ Ext.define('CrisisTracker.controller.ApplicationController', {
     extend: 'Ext.app.Controller',
 	views: [
 		'AppMenu',
+		'AppContainer'
 	],	
 	stores: [],
 	models: [],
@@ -35,7 +36,7 @@ Ext.define('CrisisTracker.controller.ApplicationController', {
 			// PAGE 1
 			case "page1":	
 				// Runtime Load Controller. **	call the init method manually		
-				var controller = this.application.getController('Page1Controller');				
+				var controller = this.application.getController('latestnews.LatestNewsController');				
 				controller.init();	
 				
 			break;
