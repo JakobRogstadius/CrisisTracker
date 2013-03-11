@@ -21,13 +21,6 @@ namespace CrisisTracker.TweetParser
 {
     class TweetParser
     {
-        class Word
-        {
-            public long ID { get; set; }
-            public bool IsStopWord { get; set; }
-            public double Idf { get; set; }
-        }
-
         class UserMention
         {
             public long UserID { get; set; }
@@ -67,6 +60,8 @@ namespace CrisisTracker.TweetParser
                     List<TrackFilter> filters = GetActiveTrackFilters();
                     Console.Write(".");
 
+                    HashSet<string> stopwords = GetStopwords();
+
                     //Get a batch of tweets
                     Dictionary<long, string> randomTweetsJson = new Dictionary<long, string>();
                     Dictionary<long, string> filteredTweetsJson = new Dictionary<long, string>();
@@ -80,14 +75,14 @@ namespace CrisisTracker.TweetParser
 
                     //Extract (stemmed) words from tweets
                     WordCount wordCounts = new WordCount();
-                    ExtractWords(randomTweets, wordCounts);
-                    ExtractWords(filteredTweets, wordCounts); //Tweets are appended with a "words" string array
+                    ExtractWords(randomTweets, wordCounts, stopwords);
+                    ExtractWords(filteredTweets, wordCounts, stopwords); //Tweets are appended with a "words" string array
                     Console.Write(".");
 
                     //Insert words into Word and WordScores
-                    Dictionary<string, Word> wordInfo = null;
+                    Dictionary<string, long> wordIDs = null;
                     if (wordCounts.HasWords)
-                        wordInfo = InsertWords(wordCounts);
+                        wordIDs = InsertWords(wordCounts, stopwords);
                     Console.Write(".");
 
                     if (filteredTweets.Count > 0)
@@ -113,7 +108,7 @@ namespace CrisisTracker.TweetParser
                         Console.Write(".");
 
                         //Insert into Tweet, TwitterUser, WordTweet, TweetUrl
-                        MySqlCommand bigInsertCommand = BuildInsertSql(filteredTweets, wordInfo);
+                        MySqlCommand bigInsertCommand = BuildInsertSql(filteredTweets, wordIDs, stopwords);
                         Console.Write(".");
 
                         int rowCount = Helpers.RunSqlStatement(Name, bigInsertCommand);
@@ -241,6 +236,14 @@ namespace CrisisTracker.TweetParser
             return activeFilters;
         }
 
+        HashSet<string> GetStopwords()
+        {
+            HashSet<string> stopwords = new HashSet<string>();
+            string query = "select Word.Word from Word natural join WordScore left join TwitterTrackFilter f on Word.Word=f.Word where Score4d > (select value from Constants where name = 'WordScore4dHigh') and f.Word is null order by Score4d desc";
+            Helpers.RunSelect(Name, query, stopwords, (sw, reader) => { sw.Add(reader.GetString("Word")); });
+            return stopwords;
+        }
+
         void GetTweets(Dictionary<Int64, string> parseTweets, Dictionary<Int64, string> wordStatTweets)
         {
             string query = "select ID, WordStatsOnly, Json from TweetJson order by ID limit " + Settings.TweetParser_BatchSize + ";";
@@ -336,7 +339,7 @@ namespace CrisisTracker.TweetParser
             return parsedTweets;
         }
 
-        void ExtractWords(List<Hashtable> tweets, WordCount wc)
+        void ExtractWords(List<Hashtable> tweets, WordCount wc, HashSet<string> stopwords)
         {
             foreach (Hashtable tweet in tweets)
             {
@@ -345,23 +348,16 @@ namespace CrisisTracker.TweetParser
                     continue;
 
                 text = Helpers.DecodeEncodedNonAsciiCharacters(text);
-                string[] wordsInTweet = WordCount.GetWordsInString(text, useStemming: true);
+                string[] wordsInTweet = WordCount.GetWordsInStringWithBigrams(text, stopwords, useStemming: true);
                 if (wordsInTweet.Length == 0)
                     continue;
 
                 string[] uniqueWordsArr = wordsInTweet.Distinct().ToArray();
                 tweet.Add("words", uniqueWordsArr);
 
-                wc.AddWords(uniqueWordsArr);
+                bool isRetweet = text.StartsWith("RT @") || tweet.ContainsKey("retweeted_status") && ((Hashtable)tweet["retweeted_status"]).ContainsKey("id_str");
+                    wc.AddWords(uniqueWordsArr, isRetweet);
             }
-
-            //Word co-occurrence
-            /*
-             * Remove stopwords (maybe do on insert?)
-             * Record all co-occurrences
-             * 
-             * 
-             */
         }
 
         void ExtractUrls(List<Hashtable> tweets)
@@ -409,12 +405,12 @@ namespace CrisisTracker.TweetParser
             }
         }
 
-        Dictionary<string, Word> InsertWords(WordCount wc)
+        Dictionary<string, long> InsertWords(WordCount wc, HashSet<string> stopwords)
         {
             //Get unique words
             IEnumerable<string> uniqueWords = wc.GetWords();
             if (uniqueWords == null || uniqueWords.Count() == 0)
-                return new Dictionary<string, Word>();
+                return new Dictionary<string, long>();
 
             //Insert new words into Word (insert all, skip if exists)
             MySqlCommand insertCommand = new MySqlCommand();
@@ -444,23 +440,20 @@ namespace CrisisTracker.TweetParser
 
             //Get WordID for each word
             //Track keywords may be counted as stopwords if they have been stemmed before insert into WordTweet
-            MySqlCommand selectCommand = new MySqlCommand();
+            MySqlCommand getAllWordsCommand = new MySqlCommand();
             StringBuilder selectSql = new StringBuilder();
             selectSql.Append(
                 @"SELECT
                     Word,
-                    Word.WordID
-                FROM Word left join WordScore on WordScore.WordID = Word.WordID WHERE Word IN (");
-            AppendList(selectSql, selectCommand, uniqueWords.Cast<object>().ToArray());
+                    WordID
+                FROM Word WHERE Word IN (");
+            AppendList(selectSql, getAllWordsCommand, uniqueWords.Cast<object>().ToArray());
             selectSql.Append(");");
-            selectCommand.CommandText = selectSql.ToString();
+            getAllWordsCommand.CommandText = selectSql.ToString();
 
-            Dictionary<string, Word> wordIDs = new Dictionary<string, Word>();
-            Helpers.RunSelect(Name, selectCommand, wordIDs,
-                (values, reader) => values.Add(reader.GetString("Word"), new Word()
-                {
-                    ID = reader.GetInt64("WordID")
-                }));
+            Dictionary<string, long> wordIDs = new Dictionary<string, long>();
+            Helpers.RunSelect(Name, getAllWordsCommand, wordIDs,
+                (values, reader) => values.Add(reader.GetString("Word"), reader.GetInt64("WordID") ));
 
             Console.Write("'");
 
@@ -481,7 +474,7 @@ namespace CrisisTracker.TweetParser
                     sbWordScore.Append(',');
 
                 sbWordScore.Append('(');
-                sbWordScore.Append(wordIDs[wordCount.Key].ID);
+                sbWordScore.Append(wordIDs[wordCount.Key]);
                 sbWordScore.Append(',');
                 sbWordScore.Append(wordCount.Value);
                 sbWordScore.Append(',');
@@ -493,29 +486,6 @@ namespace CrisisTracker.TweetParser
             Helpers.RunSqlStatement(Name, sbWordScore.ToString(), false);
 
             Console.Write("'");
-
-            //Get wordscores and stopword status for words. Stopwords are never inserted into WordTweet.
-            Dictionary<long, Word> wordIDsByID = new Dictionary<long, Word>();
-            foreach (Word word in wordIDs.Values)
-                wordIDsByID.Add(word.ID, word);
-
-            string getScoresSql =
-                @"SELECT 
-                    WordID,
-                    ScoreToIdf(Score4d) as Idf,
-                    coalesce(
-                        if(Word like '#%', 0, null),
-                        (select 0 from TwitterTrackFilter where FilterType = 0 and Word = Word.Word and IsActive limit 1),
-                        Score4d > (select value from Constants where name = 'WordScore4dHigh')
-                    ) as IsStopWord
-                FROM WordScore ws natural join Word WHERE WordID IN (" + string.Join(",", wordIDsByID.Keys.Select(n => n.ToString()).ToArray()) + ");";
-            Helpers.RunSelect(Name, getScoresSql, wordIDsByID,
-                (values, reader) =>
-                {
-                    Word word = values[reader.GetInt64("WordID")];
-                    word.Idf = reader.GetDouble("Idf");
-                    word.IsStopWord = reader.GetBoolean("IsStopword");
-                });
 
             return wordIDs;
         }
@@ -595,7 +565,7 @@ namespace CrisisTracker.TweetParser
             Helpers.RunSqlStatement(Name, sb.ToString());
         }
 
-        MySqlCommand BuildInsertSql(List<Hashtable> tweets, Dictionary<string, Word> words)
+        MySqlCommand BuildInsertSql(List<Hashtable> tweets, Dictionary<string, long> words, HashSet<string> stopwords)
         {
             //Insert into Tweet, TwitterUser, TweetUrl and WordTweet
 
@@ -606,7 +576,7 @@ namespace CrisisTracker.TweetParser
             StringBuilder sbTweetUrl = new StringBuilder();
             StringBuilder sbTwitterUser = new StringBuilder();
 
-            sbTweet.Append("INSERT IGNORE INTO Tweet (TweetID, UserID, CreatedAt, WordScore, HasUrl, RetweetOf, Text, Longitude, Latitude) VALUES ");
+            sbTweet.Append("INSERT IGNORE INTO Tweet (TweetID, UserID, CreatedAt, HasUrl, RetweetOf, Text, Longitude, Latitude) VALUES ");
             sbWordTweet.Append("INSERT IGNORE INTO WordTweet (WordID, TweetID) VALUES ");
             sbTweetUrl.Append("INSERT IGNORE INTO TweetUrl (TweetID, Url) VALUES ");
             sbTwitterUser.Append("INSERT INTO TwitterUser (UserID, ScreenName, RealName, ProfileImageUrl) VALUES ");
@@ -632,11 +602,9 @@ namespace CrisisTracker.TweetParser
                     if (tWords.Length == 0)
                         continue;
 
-                    //Does the tweet contain any words other than stopwords, and are they specific enough?
-                    double tweetWordScore = tWords.Sum(n => !words.ContainsKey(n) || words[n].IsStopWord ? 0 : words[n].Idf);
-                    int tweetwordCount = tWords.Where(n => words.ContainsKey(n) && !words[n].IsStopWord).Count();
-                    if (tweetWordScore <= Settings.TweetParser_MinTweetVectorLength
-                        && tweetwordCount <= Settings.TweetParser_MinTweetWordCount)
+                    //Does the tweet contain enough non-stopwords?
+                    int tweetwordCount = tWords.Where(n => words.ContainsKey(n) && !stopwords.Contains(n)).Count();
+                    if (tweetwordCount <= Settings.TweetParser_MinTweetWordCount)
                     {
                         Console.WriteLine(t["text"]);
                         continue;
@@ -669,7 +637,6 @@ namespace CrisisTracker.TweetParser
                         tweetID,
                         userID,
                         (DateTime)t["created_at_datetime"],
-                        tweetWordScore,
                         t.ContainsKey("urls"),
                         (retweetOf.HasValue ? retweetOf.Value : (long?)null),
                         t["text"],
@@ -684,12 +651,12 @@ namespace CrisisTracker.TweetParser
                     );
 
                     //Insert into WordTweet
-                    foreach (string word in tWords.Where(n => words.ContainsKey(n) && !words[n].IsStopWord))
+                    foreach (string word in tWords.Where(n => words.ContainsKey(n) && !stopwords.Contains(n)))
                     {
                         if (firstWord) firstWord = false;
                         else sbWordTweet.AppendLine(",");
 
-                        sbWordTweet.Append("(" + words[word].ID + "," + tweetID + ")");
+                        sbWordTweet.Append("(" + words[word] + "," + tweetID + ")");
                     }
 
                     //Insert into TweetUrl

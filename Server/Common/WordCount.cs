@@ -101,6 +101,45 @@ namespace CrisisTracker.Common
             }
         }
 
+        static Regex _stripTweetPattern = new Regex(@"(^|\s)rt\s|@\S+|http\S+|www\.\S+|[^(\s|\w)]|\(|\)");
+        public static string[] GetWordsInStringWithBigrams(string inputText, HashSet<string> stopwords, bool useStemming = true)
+        {
+            //remove URLs and anything that is not a a-z, 0-9, whitespace //or _#@+-
+            string text = inputText;
+            text = text.ToLowerInvariant();
+            text = _stripTweetPattern.Replace(text, "");
+            List<string> words = text.Split(new char[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                .Where(n => n.Length > 2 && n.Length <= 30).ToList();
+
+            //Stem words
+            if (useStemming)
+            {
+                List<string> stemmedWords = words.Select(n => NaiveStemming(n)).ToList();
+                words = stemmedWords;
+            }
+
+            //Make bigrams
+            List<string> bigrams = new List<string>();
+            for (int i = 0; i < words.Count-1; i++)
+            {
+                string w1 = words[i];
+                if (stopwords.Contains(w1))
+                    continue;
+                string w2 = "";
+                int j = i+1;
+                while (j < words.Count && stopwords.Contains(w2 = words[j]))
+                    j++;
+                if (!stopwords.Contains(w2))
+                    bigrams.Add(w1 + "_" + w2);
+            }
+            words.AddRange(bigrams);
+
+            if (!words.Any())
+                return new string[0];
+            else
+                return words.ToArray();
+        }
+
         static Regex _stemmingPattern = new Regex("(es|ed|s|ing|ly|n)$");
         public static string NaiveStemming(string str)
         {
@@ -112,7 +151,7 @@ namespace CrisisTracker.Common
             return str;
         }
 
-        public void AddWords(IEnumerable<string> words)
+        public void AddWords(IEnumerable<string> words, bool onlyAddNew = false)
         {
             foreach (string word in words)
             {
@@ -128,7 +167,10 @@ namespace CrisisTracker.Common
                         wordCounts = _wordCounts;
 
                     if (wordCounts.ContainsKey(word))
-                        wordCounts[word]++;
+                    {
+                        if (!onlyAddNew)
+                            wordCounts[word]++;
+                    }
                     else
                         wordCounts.Add(word, 1);
                 }

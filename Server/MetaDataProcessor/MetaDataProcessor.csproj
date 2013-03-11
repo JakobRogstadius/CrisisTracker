@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>MetaDataProcessor</RootNamespace>
     <AssemblyName>MetaDataProcessor</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>Mono</TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

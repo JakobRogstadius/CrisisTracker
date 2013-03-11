@@ -38,15 +38,17 @@ namespace CrisisTracker.TweetParser
 
                 //Remove all references to words with too low scores
                 //Delete if word has been mentioned less than 100 times in four days and no time in the past two hours
-                Helpers.RunSqlStatement(Name, "create temporary table tmpWordsToDelete (WordID bigint(20) unsigned not null, primary key (WordID)) select WordID from WordScore where score4d < 50 and score1h < 0.5;", false);
+                Helpers.RunSqlStatement(Name, "create temporary table tmpWordsToDelete (WordID bigint(20) unsigned not null, primary key (WordID)) select WordID from WordScore where (score4d < 50 and score1h < 0.5) or score1h < 0.2;", false);
                 Helpers.RunSqlStatement(Name, "delete w.* from Word w, tmpWordsToDelete wd where wd.WordID = w.WordID;", false); //Trigger on Word deletes from WordScore and WordTweet
                 Helpers.RunSqlStatement(Name, "drop table tmpWordsToDelete;", false);
                 Console.Write(".");
 
                 //Decrease user scores and delete when score is too low
                 //0.995198 every 10 minutes gives 50% decrease per 12 hours
-                Helpers.RunSqlStatement(Name, "update TwitterUser set Score12h = Score12h * 0.995198;", false);
+                Helpers.RunSqlStatement(Name, "update TwitterUser set Score12h = Score12h * 0.990419 where Score12h > 0.4;", false);
+                Console.Write(".");
                 Helpers.RunSqlStatement(Name, "delete from TwitterUser where not exists (select 1 from Tweet where Tweet.UserID = TwitterUser.UserID limit 1) and Score12h < 0.5;", false);
+                Console.Write(".");
                 //Update top user index
                 Helpers.RunSqlStatement(Name,
                     @"update TwitterUser u,

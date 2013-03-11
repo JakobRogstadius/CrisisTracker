@@ -40,34 +40,6 @@ namespace CrisisTracker.FilterStreamConsumer
 
         void Reload(object sender, System.Timers.ElapsedEventArgs args)
         {
-            /*
-             * Instead of
-             *  ID
-             *  IsActive
-             *  IsStrong
-             *  Hits1d
-             *  Discards1d
-             *  FilterType
-             *  Word
-             *  UserID
-             *  UserName
-             *  Region
-             * 
-             * Replace with
-             *  ID
-             *  IsActive
-             *  Track
-             *  Hits1d
-             *  Discards1d
-             *  Tag
-             *  Weight
-             *  FilterType
-             *  Word
-             *  UserID
-             *  UserName
-             *  Region
-             * */
-
             string sql = "select FilterType, Word, UserID, Region from TwitterTrackFilter where IsActive;";
 
             List<TrackFilter> newFilters = new List<TrackFilter>();

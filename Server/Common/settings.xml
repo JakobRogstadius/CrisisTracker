@@ -12,7 +12,7 @@
     <sourceID>2</sourceID>
   </filterStreamConsumer>
   <tweetParser>
-    <wordScore4dMaxToStopwordRatio>0.1</wordScore4dMaxToStopwordRatio>
+    <wordScore4dMaxToStopwordRatio>0.07</wordScore4dMaxToStopwordRatio>
     <maxWordTweetTableLength>10000000</maxWordTweetTableLength>
     <batchSize>500</batchSize>
     <minTweetVectorLength>0.1</minTweetVectorLength>
