@@ -24,6 +24,7 @@ Ext.define('CrisisTracker.controller.ApplicationController', {
 				click: this.onApplicationPageSwitch		
 			}			
         });
+	
 		
     },
 	
@@ -37,26 +38,24 @@ Ext.define('CrisisTracker.controller.ApplicationController', {
 			case "page1":	
 				// Runtime Load Controller. **	call the init method manually		
 				var controller = this.application.getController('latestnews.LatestNewsController');				
-				controller.init();	
-				
+				controller.init();				
 			break;
 			
 			
 			// PAGE 2
-			case "page2":		
+			case "page2":
 				// Runtime Load Controller. **	call the init method manually		
-				var controller = this.application.getController('Page2Controller');				
-				controller.init();				
+				var controller = this.application.getController('tagstories.TagStoriesController');				
+				controller.init();			
 			break;
 			
 			
 			// PAGE 3
 			case "page3":
-				console.log('page 3');
-				var currentPage = viewport.getComponent(1);
-				
-			break;
-		
+				// Runtime Load Controller. **	call the init method manually		
+				var controller = this.application.getController('readstories.ReadStoriesController');				
+				controller.init();
+			break;		
 		
 		}
 	}

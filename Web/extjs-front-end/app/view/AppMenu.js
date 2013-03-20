@@ -8,17 +8,17 @@ Ext.define('CrisisTracker.view.AppMenu', {
 	items: [
 		{
 			xtype: 'button',			
-			text: 'page 1',
+			text: 'Latest News',
 			action: 'page1'
 		}, 
 		{
 			xtype: 'button',					
-			text: 'page 2',
+			text: 'Tag Stories',
 			action: 'page2'			
 		}, 
 		{
 			xtype: 'button',					
-			text: 'page 3',
+			text: 'Read Stories',
 			action: 'page3'			
 		} 								
 	],	

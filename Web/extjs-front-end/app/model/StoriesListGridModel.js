@@ -1,7 +1,7 @@
 /**
  * Latest News Model *JSON
  */ 
-Ext.define('CrisisTracker.model.LatestNewsModel', {
+Ext.define('CrisisTracker.model.StoriesListGridModel', {
     extend: 'Ext.data.Model',
     fields: [
         {name: 'story_id',  type: 'int'},

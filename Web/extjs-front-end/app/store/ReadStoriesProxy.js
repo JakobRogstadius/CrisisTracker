@@ -1,8 +1,5 @@
-/**
- * Latest News Store
- */ 
-Ext.define('CrisisTracker.store.LatestNewsProxy', {
-	storeId:'ajaxProxyLatestNews',
+Ext.define('CrisisTracker.store.ReadStoriesProxy', {
+	storeId:'ajaxProxyReadStories',
     extend: 'Ext.data.Store',	
 	model: 'CrisisTracker.model.StoriesListGridModel',	
 	autoLoad: false,
@@ -13,7 +10,7 @@ Ext.define('CrisisTracker.store.LatestNewsProxy', {
         type: 'ajax',
 		extraParams : 'option',		
 		autoAbort: true,
-		url: 'data/dummy/latest_news.json',
+		url: 'data/dummy/tag_stories.json',
 		reader: {
 			type: 'json',	//or xml
 			root: 'stories'	// root of JSON results

@@ -38,12 +38,11 @@ Ext.override(Ext.app.EventBus, {
 Ext.Loader.setConfig({
     enabled: true,
     disableCaching: false,
-	
 	// mapping from namespaces to file paths
     paths: {
-        //GeoExt: "GeoExt",
-	    //Ext: "ext-4/src"
-    }	
+        GeoExt: "libraries/full/GeoExt"
+	    //Ext: "ext-4.1.1a/src"
+    }
 });
 
 
@@ -66,7 +65,9 @@ Ext.application({
 	
 	requires: [
 		'CrisisTracker.controller.latestnews.LatestNewsController',
-		'CrisisTracker.controller.Page2Controller'
+		'CrisisTracker.controller.readstories.ReadStoriesController',
+		'CrisisTracker.controller.tagstories.TagStoriesController',
+		'CrisisTracker.view.readstories.Map'
 	],
 	
     launch: function() {
