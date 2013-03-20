@@ -717,7 +717,7 @@ namespace CrisisTracker.TweetClusterer
                         group by d,h
                     ) T
                     on duplicate key update MaxGrowth=if(VALUES(MaxGrowth)>Story.MaxGrowth,VALUES(MaxGrowth),Story.MaxGrowth);
-                    ;");
+                    ");
             }
 
             if (mergeActions.Count > 0)
@@ -729,100 +729,5 @@ namespace CrisisTracker.TweetClusterer
 
             Console.WriteLine("Merged " + mergeActions.Count + " story pairs.");
         }
-
-//        static void ClusterStories(Dictionary<long, SimpleStory> stories)
-//        {
-//            if (stories.Count < 2)
-//                return;
-
-//            bool changed = true;
-//            while (changed)
-//            {
-//                Dictionary<long, long> mergeActions = new Dictionary<long, long>();
-//                long[] ids = stories.Keys.OrderBy(n => n).ToArray();
-
-//                //Find all stories that are near each other
-//                foreach (long id1 in ids)
-//                {
-//                    if (stories[id1].MergedWith.HasValue)
-//                        continue;
-
-//                    long targetID;
-//                    if (mergeActions.ContainsKey(id1))
-//                        targetID = mergeActions[id1];
-//                    else
-//                        targetID = id1;
-
-//                    var neighbors = ids.Where(
-//                        id2 => id2 > id1
-//                        && !stories[id2].MergedWith.HasValue
-//                        && stories[id1].Vector * stories[id2].Vector < 0.6);
-
-//                    foreach (long id in neighbors)
-//                        mergeActions.Add(id, targetID);
-//                }
-//                changed = mergeActions.Count > 0;
-
-//                //Reverse the merge actions to get groups
-//                Dictionary<long, List<long>> mergeGroups = new Dictionary<long, List<long>>();
-//                foreach (var mergeAction in mergeActions)
-//                {
-//                    if (!mergeGroups.ContainsKey(mergeAction.Value))
-//                        mergeGroups.Add(mergeAction.Value, new List<long>());
-//                    mergeGroups[mergeAction.Value].Add(mergeAction.Key);
-//                }
-
-//                //Perform story merges
-//                foreach (var group in mergeGroups)
-//                {
-//                    long storyID = group.Key;
-//                    List<long> members = group.Value;
-//                    List<SimpleStory> memberStories = members.Select(n => stories[n]).ToList();
-//                    memberStories.Add(stories[storyID]);
-//                    stories[storyID].Vector = WordVector.GetNormalizedAverage(memberStories.Select(n => n.Vector));
-
-//                    foreach (long deleteStoryID in members)
-//                        stories[deleteStoryID].MergedWith = storyID;
-//                }
-//            }
-
-
-//        }
-
-//        static void AutoMergeSimilarStories(IEnumerable<long> newStoryIDs)
-//        {
-//            if (!newStoryIDs.Any())
-//                return;
-
-//            string idStr = string.Join(",", newStoryIDs.Select(n => n.ToString()).ToArray());
-//            string sql =
-//                @"insert into PendingStoryMerges (StoryID1, StoryID2)
-//                select StoryID2, StoryID1
-//                from (
-//                    select
-//                        s1.StoryID as StoryID1, s2.StoryID as StoryID2, TagCount1, count(*) as CommonTags
-//                    from
-//                        (
-//                            select s.StoryID, count(t.StoryID) as TagCount1
-//                            from Story s left join StoryInfoKeywordTag t on t.StoryID=s.StoryID
-//                            where s.StoryID in (" + idStr + @")
-//                            group by s.StoryID
-//                        ) s1
-//                        join StoryInfoKeywordTag t1 on t1.StoryID=s1.StoryID
-//                        join StoryInfoKeywordTag t2 on t2.InfoKeywordID=t1.InfoKeywordID
-//                        join Story s2 on s2.StoryID=t2.StoryID
-//                    where 
-//                        s2.StoryID<s1.StoryID
-//                        and not s2.IsArchived
-//                    group by s1.StoryID, s2.StoryID
-//                    having CommonTags > 5
-//                ) T
-//                join StoryInfoKeywordTag t3 on t3.StoryID=T.StoryID2
-//                group by StoryID1, StoryID2
-//                having CommonTags/least(TagCount1,count(*)) > 0.7;";
-//            Helpers.RunSqlStatement(Name, sql);
-
-//            ApplyPendingStoryMerges();
-//        }
     }
 }

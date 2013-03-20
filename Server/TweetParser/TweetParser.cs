@@ -226,7 +226,7 @@ namespace CrisisTracker.TweetParser
                     }
                     else //Word
                     {
-                        filter.Word = reader.GetString("Word");
+                        filter.SetWords(reader.GetString("Word"));
                     }
                     values.Add(filter);
                 }

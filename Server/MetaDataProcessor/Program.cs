@@ -23,6 +23,24 @@ namespace MetaDataProcessor
         public string Name;
         public string ParentCountry;
         public int Count;
+
+        public static double Distance(Geotag g1, Geotag g2)
+        {
+            return Math.Sqrt(Math.Pow(g1.Latitude - g2.Latitude, 2) + Math.Pow(g1.Longitude - g2.Longitude, 2));
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is Geotag))
+                return false;
+            Geotag other = (Geotag)obj;
+            return other.Longitude == Longitude && other.Latitude == Latitude;
+        }
+    }
+    class Story
+    {
+        public string Text;
+        public List<Geotag> TwitterGeotags;
     }
     class StoryTagCollection
     {
@@ -165,70 +183,91 @@ namespace MetaDataProcessor
         private static void ProcessBatch()
         {
             Console.Write("Fetching stories...");
-            Dictionary<long, string> stories = GetStories();
+            Dictionary<long, Story> stories = GetStories();
             Console.WriteLine(" done");
             Dictionary<long, StoryTagCollection> storyTags = new Dictionary<long, StoryTagCollection>();
 
             foreach (var story in stories)
             {
-                string text = story.Value;
+                string text = story.Value.Text;
                 text = Regex.Replace(text, "[A-Z]+(,\\s+[A-Z][a-z]+)?(\\s+\\((AP|ap|Reuters|reuters)\\))?:?\\s+(—?\\s+)?", "");
                 text = Regex.Replace(text, "RT @[a-zA-Z0-9_]+: ", "");
                 text = Regex.Replace(text, " @[a-zA-Z0-9_]+ ", "");
                 text = text.Replace("#", "");
+                story.Value.Text = text;
 
-                storyTags.Add(story.Key, OCGetTags(text));
+                storyTags.Add(story.Key, OCGetTags(story.Value));
 
                 Console.WriteLine(storyTags[story.Key]);
             }
 
-            Console.Write("Saving geotags...");
             StoreGeotags(storyTags);
-            Console.WriteLine(" done");
         }
 
-        static Dictionary<long, string> GetStories()
+        static Dictionary<long, Story> GetStories()
         {
-            Dictionary<long, string> stories = new Dictionary<long, string>();
+            Dictionary<long, Story> stories = new Dictionary<long, Story>();
 
-//            stories.Add(1, "A small fire at a seniors' complex in Halifax forced more than 30 residents from their rooms Monday morning.");
-//            stories.Add(2, "A roadside bomb killed three pilgrims walking to a major Shi'ite religious event south of Baghdad on Monday.");
-//            stories.Add(3, "Issac's brother Ramzi Issac, who was arrested along with the London suspect, was also charged with possessing false documents");
-//            stories.Add(4, "More than 250 people died when torrential rains and flooding swept China last month, according to the China Daily.");
-//            stories.Add(5, "Ariel Sharon and Mahmoud Abbas are scheduled to meet with U.S. President Bush on Wednesday at Aqaba, Jordan, to discuss the U.S.-backed road map to Middle East peace.");
-//            stories.Add(10, "LONDON (Reuters): GAZIANTEP, Turkey — Syria pulled both Turkey and Israel closer to military entanglements in its civil war on Monday, bombing a rebel-held Syrian village a few yards from the Turkish border in a deadly aerial assault and provoking Israeli tank commanders in the disputed Golan Heights into blasting a mobile Syrian artillery unit across their own armistice line.");
-//            stories.Add(8,
-//                @"Insurgent attacks kill 21, wound dozens in Iraq: Insurgents launched attacks against security forces and civilia... http://t.co/oui6eEqd 
-//                Multiple car bomb explosions in Iraq kill at least 21: Insurgents launched attacks against security forces and c... http://t.co/zfgmgToV
-//                Insurgent attacks kill 15, wound dozens in Iraq: Insurgents launched attacks against security forces and civilia... http://t.co/9bgBz5NI
-//                Deaths in Iraq bomb explosions: At least 21 people killed, 70 injured in attacks on security forces and civilian... http://t.co/euBS90Jm
-//                DTN Iraq: Insurgent attacks kill 21, wound dozens in Iraq: Insurgents launched attacks against security forces a... http://t.co/vtTjaz2v");
-//            return stories;
+            //            stories.Add(1, "A small fire at a seniors' complex in Halifax forced more than 30 residents from their rooms Monday morning.");
+            //            stories.Add(2, "A roadside bomb killed three pilgrims walking to a major Shi'ite religious event south of Baghdad on Monday.");
+            //            stories.Add(3, "Issac's brother Ramzi Issac, who was arrested along with the London suspect, was also charged with possessing false documents");
+            //            stories.Add(4, "More than 250 people died when torrential rains and flooding swept China last month, according to the China Daily.");
+            //            stories.Add(5, "Ariel Sharon and Mahmoud Abbas are scheduled to meet with U.S. President Bush on Wednesday at Aqaba, Jordan, to discuss the U.S.-backed road map to Middle East peace.");
+            //            stories.Add(10, "LONDON (Reuters): GAZIANTEP, Turkey — Syria pulled both Turkey and Israel closer to military entanglements in its civil war on Monday, bombing a rebel-held Syrian village a few yards from the Turkish border in a deadly aerial assault and provoking Israeli tank commanders in the disputed Golan Heights into blasting a mobile Syrian artillery unit across their own armistice line.");
+            //            stories.Add(8,
+            //                @"Insurgent attacks kill 21, wound dozens in Iraq: Insurgents launched attacks against security forces and civilia... http://t.co/oui6eEqd 
+            //                Multiple car bomb explosions in Iraq kill at least 21: Insurgents launched attacks against security forces and c... http://t.co/zfgmgToV
+            //                Insurgent attacks kill 15, wound dozens in Iraq: Insurgents launched attacks against security forces and civilia... http://t.co/9bgBz5NI
+            //                Deaths in Iraq bomb explosions: At least 21 people killed, 70 injured in attacks on security forces and civilian... http://t.co/euBS90Jm
+            //                DTN Iraq: Insurgent attacks kill 21, wound dozens in Iraq: Insurgents launched attacks against security forces a... http://t.co/vtTjaz2v");
+            //            return stories;
 
             Helpers.RunSelect(Name, @"select 
-                StoryID, 
-                group_concat(' ', Text) Text from (
+	            StoryID, 
+	            group_concat(Geo separator '\n') Geo,
+	            group_concat(Text separator '\n') Text from (
             select T.*,
-                @n:=if(StoryID=@sid,@n+1,1) as itemnumber,
-                @sid:=StoryID
+	            @n:=if(StoryID=@sid,@n+1,1) as itemnumber,
+	            @sid:=StoryID
             from
-                (select @sid:=-1, @n:=0) initvars,
-                (
-                select 
-                    s.StoryID,
-                    count(*) as Cnt,
-                    replace(replace(replace(Text,'\r',''),'\n',' '),'""','') Text
-                from 
-                    (select StoryID from Story where not ProcessedForMetadata and TagScore=0 and TweetCount>10 limit 50) s
-                    join TweetCluster tc on tc.StoryID=s.StoryID
-                    join Tweet t on t.TweetClusterID=tc.TweetClusterID
-                group by s.StoryID, lcase(IF(left(Text, 30) REGEXP '^RT @[a-zA-Z0-9_]+: ', SUBSTR(Text, LOCATE(':', Text) + 2, 30), left(Text, 30)))
-                order by 1,2 desc
-                ) T
+	            (select @sid:=-1, @n:=0) initvars,
+	            (
+	            select 
+		            s.StoryID,
+		            count(*) as Cnt,
+		            replace(replace(replace(Text,'\r',''),'\n',' '),'""','') Text,
+		            group_concat(concat(Latitude, ',', Longitude) separator '\n') Geo
+	            from 
+		            (select StoryID from Story 
+			            where not ProcessedForMetadata and TagScore=0 and TweetCount>10 limit 50) s
+		            join TweetCluster tc on tc.StoryID=s.StoryID
+		            join Tweet t on t.TweetClusterID=tc.TweetClusterID
+            		where RetweetOf is null
+	            group by s.StoryID, lcase(IF(left(Text, 30) REGEXP '^RT @[a-zA-Z0-9_]+: ', SUBSTR(Text, LOCATE(':', Text) + 2, 30), left(Text, 30)))
+	            order by 1,2 desc
+	            ) T
             ) T 
             where itemnumber <= 10
             group by StoryID
-            limit 100;", stories, (values, reader) => stories.Add(reader.GetInt64("StoryID"), reader.GetString("Text")));
+            limit 100;",
+                stories, (values, reader) =>
+                {
+                    string text = reader.GetString("Text");
+                    string geo = reader["Geo"] == DBNull.Value ? null : reader.GetString("Geo");
+                    List<Geotag> tags = new List<Geotag>();
+                    if (geo != null)
+                    {
+                        foreach (string tag in geo.Split("\n".ToArray(), StringSplitOptions.RemoveEmptyEntries))
+                        {
+                            string[] latlon = tag.Split(",".ToArray(), StringSplitOptions.RemoveEmptyEntries);
+                            if (latlon.Length == 2)
+                                tags.Add(new Geotag() { Latitude = Convert.ToDouble(latlon[0]), Longitude = Convert.ToDouble(latlon[1]) });
+                        }
+                    }
+                    stories.Add(reader.GetInt64("StoryID"),
+                    new Story() { Text = text, TwitterGeotags = tags });
+                }
+            );
 
             return stories;
         }
@@ -237,6 +276,8 @@ namespace MetaDataProcessor
         {
             if (stories.Count == 0)
                 return;
+
+            Console.Write("Saving geotags...");
 
             var hasTags = stories.Where(n => n.Value.HasTags);
             foreach (var item in hasTags)
@@ -251,26 +292,30 @@ namespace MetaDataProcessor
                 //Insert keywords
                 foreach (string tag in item.Value.Keywords)
                 {
-                    Helpers.RunSqlStatement(Name, "insert ignore into InfoKeyword (Keyword) values ('" + tag + "');");
+                    string tag2 = tag.Replace("'", "&#39;").ToLower();
+                    Helpers.RunSqlStatement(Name, "insert ignore into InfoKeyword (Keyword) values ('" + tag2 + "');");
                     List<long> tagID = new List<long>();
-                    Helpers.RunSelect(Name, "select InfoKeywordID from InfoKeyword where Keyword = '" + tag + "';", tagID, (values, reader) => values.Add(reader.GetInt64("InfoKeywordID")));
+                    Helpers.RunSelect(Name, "select InfoKeywordID from InfoKeyword where Keyword = '" + tag2 + "';", tagID, (values, reader) => values.Add(reader.GetInt64("InfoKeywordID")));
                     Helpers.RunSqlStatement(Name, "call AddRemoveStoryTag(1, 'keyword', 1, 1, " + item.Key + ", " + tagID[0] + ", null, null);");
                 }
                 //Insert entities
                 foreach (string tag in item.Value.Entities)
                 {
-                    Helpers.RunSqlStatement(Name, "insert ignore into InfoEntity (Entity) values ('" + tag + "');");
+                    string tag2 = tag.Replace("'", "&#39;").ToLower();
+                    Helpers.RunSqlStatement(Name, "insert ignore into InfoEntity (Entity) values ('" + tag2 + "');");
                     List<long> tagID = new List<long>();
-                    Helpers.RunSelect(Name, "select InfoEntityID from InfoEntity where Entity = '" + tag + "';", tagID, (values, reader) => values.Add(reader.GetInt64("InfoEntityID")));
+                    Helpers.RunSelect(Name, "select InfoEntityID from InfoEntity where Entity = '" + tag2 + "';", tagID, (values, reader) => values.Add(reader.GetInt64("InfoEntityID")));
                     Helpers.RunSqlStatement(Name, "call AddRemoveStoryTag(1, 'entity', 1, 1, " + item.Key + ", " + tagID[0] + ", null, null);");
                 }
             }
 
             //Update Story.ProcessedForMetadata
             Helpers.RunSqlStatement(Name, "update Story set ProcessedForMetadata=1 where StoryID in (" + string.Join(",", stories.Keys.Select(n => n.ToString()).ToArray()) + ");");
+
+            Console.WriteLine(" done");
         }
 
-        static StoryTagCollection OCGetTags(string text)
+        static StoryTagCollection OCGetTags(Story story)
         {
             StoryTagCollection tagCollection = new StoryTagCollection();
 
@@ -292,7 +337,7 @@ namespace MetaDataProcessor
 
                 //Append text as byte array
                 StringBuilder data = new StringBuilder();
-                data.Append(text);
+                data.Append(story.Text);
                 byte[] byteData = UTF8Encoding.UTF8.GetBytes(data.ToString());
 
                 //Set the content length in the request headers  
@@ -353,20 +398,65 @@ namespace MetaDataProcessor
                     }
 
                     //Pick geotags to use
-                    List<Geotag> geotags = new List<Geotag>();
-                    if (allGeotags.Count > 0)
+                    if (allGeotags.Count > 0 || story.TwitterGeotags.Count > 0)
                     {
-                        //1) Cities for which the parent country is also mentioned, exept all caps cities (e.g. "LONDON (AP)")
-                        geotags.AddRange(allGeotags.Where(n => n.Type == "City" && n.ParentCountry == "" || allGeotags.Any(m => m.Name == n.ParentCountry)));
-                        //2) else: Top city if no country was mentioned
-                        if (geotags.Count == 0 && allGeotags.Any(n => n.Type == "City") && !allGeotags.Any(n => n.Type == "Country"))
-                            geotags.Add(allGeotags.Where(n => n.Type == "City").OrderByDescending(n => n.Count).First());
-                        //3) else: All countries
-                        if (geotags.Count == 0 && allGeotags.Any(n => n.Type == "Country"))
-                            geotags.AddRange(allGeotags.Where(n => n.Type == "Country"));
+                        //Calculate a weighted average location based on OC tags and Twitter geotags, then take the nearest tag and use it as the story location
+
+                        double lonSum = 0;
+                        double latSum = 0;
+                        double weightSum = 0;
+
+                        foreach (Geotag g in allGeotags.Distinct())
+                        {
+                            double weight = 0;
+                            if (g.Type == "Country")
+                                weight = 2;
+                            else if (g.Type == "ProvinceOrState")
+                                weight = 3;
+                            else //if (g.Type == "City")
+                                weight = 4;
+                            lonSum += weight * g.Longitude;
+                            latSum += weight * g.Latitude;
+                            weightSum += weight;
+                        }
+
+                        foreach (Geotag g in story.TwitterGeotags.Distinct())
+                        {
+                            double weight = 5;
+                            lonSum += weight * g.Longitude;
+                            latSum += weight * g.Latitude;
+                            weightSum += weight;
+                        }
+
+                        Geotag meanLoc = new Geotag() { Latitude = latSum / weightSum, Longitude = lonSum / weightSum };
+                        Geotag nearestTag = allGeotags.Union(story.TwitterGeotags).OrderBy(n => Geotag.Distance(n, meanLoc)).First();
+
+                        Console.WriteLine("OC: " + allGeotags.Count + ", Twitter: " + story.TwitterGeotags.Count);
+
+                        tagCollection.Geotags.Add(nearestTag);
                     }
 
-                    tagCollection.Geotags.AddRange(geotags);
+                    //List<Geotag> geotags = new List<Geotag>();
+                    //if (allGeotags.Count > 0)
+                    //{
+                    //    //1) Cities for which the parent country is also mentioned, exept all caps cities (e.g. "LONDON (AP)")
+                    //    geotags.AddRange(allGeotags.Where(n => n.Type == "City" && n.ParentCountry == "" || allGeotags.Any(m => m.Name == n.ParentCountry)));
+                    //    //2) else: Top city if no country was mentioned
+                    //    if (geotags.Count == 0 && allGeotags.Any(n => n.Type == "City") && !allGeotags.Any(n => n.Type == "Country"))
+                    //        geotags.Add(allGeotags.Where(n => n.Type == "City").OrderByDescending(n => n.Count).First());
+                    //    //3) else: All countries
+                    //    if (geotags.Count == 0 && allGeotags.Any(n => n.Type == "Country"))
+                    //        geotags.AddRange(allGeotags.Where(n => n.Type == "Country"));
+                    //}
+
+                    //if (story.TwitterGeotags.Count > 0)
+                    //{
+                    //    double meanLon = story.TwitterGeotags.Average(n => n.Longitude);
+                    //    double meanLat = story.TwitterGeotags.Average(n => n.Latitude);
+                    //    geotags.Add(new Geotag() { Longitude = meanLon, Latitude = meanLat });
+                    //}
+
+                    //tagCollection.Geotags.AddRange(geotags);
                 }
             }
             catch (Exception e)

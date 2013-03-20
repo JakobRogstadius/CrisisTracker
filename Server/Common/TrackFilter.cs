@@ -21,20 +21,13 @@ namespace CrisisTracker.Common
         public int? ID { get; set; }
         public bool? IsStrong { get; set; }
         public FilterType Type { get; set; }
-        private string _word;
-        public string Word
+        private string[] _words;
+        private string[] _stemmedWords;
+        public void SetWords(string words)
         {
-            get
-            {
-                return _word;
-            }
-            set
-            {
-                _word = value;
-                _stemmedWord = WordCount.NaiveStemming(_word);
-            }
+            _words = words.Split(' ');
+            _stemmedWords = _words.Select(n => WordCount.NaiveStemming(n)).ToArray();
         }
-        private string _stemmedWord;
         public long? UserID { get; set; }
         public double? Longitude1 { get; set; }
         public double? Longitude2 { get; set; }
@@ -58,7 +51,7 @@ namespace CrisisTracker.Common
             switch (Type)
             {
                 case FilterType.Word:
-                    return Word;
+                    return string.Join(" ", _words);
                 case FilterType.User:
                     return UserID.ToString();
                 case FilterType.Region:
@@ -73,12 +66,22 @@ namespace CrisisTracker.Common
             switch (Type)
             {
                 case FilterType.Word:
-                    if (words != null 
-                        && words.Length > 0 
-                        && Word != null 
-                        && (useStemming && words.Contains(_stemmedWord)) || (!useStemming && words.Contains(_word)))
-                        return true;
-                    return false;
+                    if (words == null || words.Length == 0 || _words == null || _words.Length == 0)
+                        return false;
+                    if (_words.Length == 1)
+                    {
+                        if (useStemming)
+                            return words.Contains(_stemmedWords[0]);
+                        else
+                            return words.Contains(_words[0]);
+                    }
+                    else
+                    {
+                        if (useStemming)
+                            return _stemmedWords.Count(n => words.Contains(n)) == _stemmedWords.Length;
+                        else
+                            return _words.Count(n => words.Contains(n)) == _words.Length;
+                    }
                 case FilterType.User:
                     if (userID == UserID)
                         return true;
