@@ -6,18 +6,25 @@
  * http://opensource.org/licenses/eclipse-1.0.php
  *******************************************************************************/
 
+ /*
 @import url(reset.css);
+*/
 @import url(http://fonts.googleapis.com/css?family=Bevan);
+
 
 /**********************/
 /* GENERAL FORMATTING */
 /**********************/
+
+
 body {
     font-family: helvetica, 'Trebuchet MS', Trebuchet, 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
     font-size: 12px;
     background-color: #e3e2d9;
     text-align: center;
 }
+
+
 h1 {
     color: #222;
     font-family: helvetica, 'Trebuchet MS', Trebuchet, 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
@@ -33,10 +40,13 @@ h2 {
     font-weight: bold;
     text-transform: uppercase;
 }
+
+
 p {
     margin-top: 0.5em;
     margin-bottom: 0.5em;
 }
+
 a {outline: 0;}
 a img {border: 0px; text-decoration: none;}
 a:link, a:visited {
@@ -71,6 +81,7 @@ a:hover, a:active {
 }
 strong, b {font-weight: bold;}
 em, i {font-style: italic;}
+
 .normal-table td {
     padding: 3px;
 }
@@ -165,6 +176,7 @@ em, i {font-style: italic;}
     clear: both;
     display: block;
 }
+
 #content {
     display: block;
     clear: both;
@@ -173,4 +185,4 @@ em, i {font-style: italic;}
     border: none;
     border-radius: 5px;
     margin: 7px;
-    padding: 7px;}
+}

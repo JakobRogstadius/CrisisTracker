@@ -2,9 +2,9 @@
  * Store for acessing the data in WebService
   * @extends Ext.data.Store
  */
-Ext.define('CSMap.store.MapItems', {
+Ext.define('CrisisTracker.store.MapItems', {
 	storeId:'mapItems',    
-	model: 'CSMap.model.MapItem',		
+	model: 'CrisisTracker.model.MapItem',		
 	extend: 'Ext.data.Store',	
 	autoLoad: false,
 	
@@ -12,7 +12,7 @@ Ext.define('CSMap.store.MapItems', {
         type: 'ajax',
 		extraParams : 'boundingbox',		
 		autoAbort: true,
-		url: 'data/features.php',
+		url: 'data/dummy/read_stories.php',
 		reader: {
 			type: 'json',	//or xml
 			root: 'features'

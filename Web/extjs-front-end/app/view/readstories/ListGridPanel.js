@@ -45,18 +45,18 @@ Ext.define('CrisisTracker.view.readstories.ListGridPanel', {
 	
 	// Event Handler
 	listeners: {
-		beforerender: function() {
-			console.log(this);		
-			this.getStore().load({
-				params: {
-					// specify params for the first page load if using paging
-					start: 0,
-					limit: 5,
-					// other params
-					//foo:   'bar'
-				}
-			});		
-		}
+		// beforerender: function() {
+			// console.log(this);		
+			// this.getStore().load({
+				// params: {
+					// // specify params for the first page load if using paging
+					// start: 0,
+					// limit: 10,
+					// // other params
+					// //foo:   'bar'
+				// }
+			// });		
+		// }
 	}
 
 });

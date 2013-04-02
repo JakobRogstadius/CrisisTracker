@@ -2,7 +2,7 @@ Ext.define('CrisisTracker.view.readstories.BorderPanelLayout', {
     extend: 'Ext.panel.Panel',
     alias: 'widget.readStoriesBorderPanelLayout', 
 	width: 1000,
-	height: 650,
+	height: 700,
 	border: false,
 	layout: 'border',
 	

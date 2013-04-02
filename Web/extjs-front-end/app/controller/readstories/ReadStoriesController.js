@@ -9,12 +9,17 @@ Ext.define('CrisisTracker.controller.readstories.ReadStoriesController', {
 		'readstories.TagWhat',		
 		'readstories.TagWho',		
 		'readstories.TagWhen',		
-		'readstories.Map'		
+		'readstories.Map',		
+		'readstories.SearchBtn',
 	],	
 	
-	models: ['StoriesListGridModel'],	
+	models: ['StoriesListGridModel',
+			'MapItem'],	
+			
 	stores: ['ReadStoriesProxy',
-			'SortererCombo'],
+			'SortererCombo',
+			'MapItems',
+			'WhatTagData'],
 	
 	config: { initialized: false },
 	
@@ -44,26 +49,98 @@ Ext.define('CrisisTracker.controller.readstories.ReadStoriesController', {
 			this.config.initialized = true;	
 			// 4. Listening and Handling Events from the VIEWS under responsability of this Controller
 			this.control({								
-			
-				'sortererPanel': {
-					beforeshow: this.borderLayoutRendered,
+				'searchBtnPanel > button': {
+					click: this.onSearchBtnClick
+				},
+				
+				'sortererPanel': {					
 					select: this.comboBoxItemSelect
 				},
 				
 				'mapPanel': {
-					beforerender: this.onMapPanelBeforeRender,
-					mapPan: this.onMapPan		
+					'beforerender': this.onMapPanelBeforeRender,
+					'mapPan': this.onMapPan		
 				}
+				
 			});	
 		}			
     },
 
 	
-	borderLayoutRendered: function(args) {
-		console.log('borderLayoutRendered');
+	onSearchBtnClick: function(args) {		
+		// Data Containers		
+		var buttons = new Array();
+		var whoKeywords = new Array();
+		var whatKeywords = new Array();
+		var whenFrom;
+		var whenTo;
+		var boundingBox;
+
+		// Load all the pressed buttons		
+		var	whatBtnTagsLeftPanel = Ext.ComponentQuery.query('#tagButtonsPanelLeft')[0];	
+		var	whatBtnTagsRightPanel = Ext.ComponentQuery.query('#tagButtonsPanelRight')[0];		
+		var buttonsLeft = whatBtnTagsLeftPanel.query('button');
+		var buttonsRight = whatBtnTagsRightPanel.query('button');
+		
+		Ext.each(buttonsLeft, function(button) {
+			if(button.pressed) {
+				buttons.push(button.text);
+			}
+		});
+		Ext.each(buttonsRight, function(button) {
+			if(button.pressed) {
+				buttons.push(button.text);
+			}
+		});		
+		
+		// Load all Keywords
+		var what = Ext.ComponentQuery.query('tagWhat > textfield')[0];
+		if (what.edited) {
+			whatKeywords = what.value.split(",");
+		}
+		var	who = Ext.ComponentQuery.query('tagWho > textfield')[0];
+		if (who.edited) {
+			whoKeywords = who.value.split(",");
+		}
+		
+		// Load Dates
+		var	whenFromRaw = Ext.ComponentQuery.query('tagWhen > datefield')[0];
+		if (whenFromRaw.edited) {
+			whenFrom = whenFromRaw.rawValue;
+		}		
+		var	whenToRaw = Ext.ComponentQuery.query('tagWhen > datefield')[1];
+		if (whenToRaw.edited) {
+			whenTo = whenToRaw.rawValue;
+		}
+		
+		// Load BoundingBox
+		var mapPanel = Ext.ComponentQuery.query('mapPanel')[0];
+		var bbox = mapPanel.getCurrentBoundingBox();
+
+		// Force Load (w/ search parameters) on Grid/Map Store	
+		var store = Ext.getStore('ReadStoriesProxy'); // class name	
+		store.load({
+			params: {
+				boundingbox: bbox,
+				whatcategories: buttons,
+				what: whatKeywords,
+				who: whoKeywords,
+				from: whenFrom,
+				to: whenTo			
+			},
+			callback : function(records, options, success) {
+				if(success) {
+					var	mapPanel = Ext.ComponentQuery.query('mapPanel')[0];	
+					console.log(mapPanel);					
+					if(records) {
+						mapPanel.injectPoints(records);		
+					}		
+				}				
+			}			
+		});
+		
 	},
-	
-	
+		
 	/**
 	*  EVENT HANDLER - Add Layers to the Map before Map is rendered in ExtJS
 	**/	
@@ -99,55 +176,47 @@ Ext.define('CrisisTracker.controller.readstories.ReadStoriesController', {
 		
         var style = new OpenLayers.Style(template, {context: pointColors});	//@params: style, options
 		
+		
 		// Vector Layer
         var vectorLayer = new OpenLayers.Layer.Vector("vector", {
             styleMap: new OpenLayers.StyleMap({
                 'default': style
             })
-			
-			//@ OPTIONAL: The following code defines an automatic HTTP feeder for the Map Vector Layer, which fetches new data when bounding box changes according to user defined ratio.
-            // protocol: new OpenLayers.Protocol.HTTP({
-                // url: "data/features.php",
-                // format: new OpenLayers.Format.GeoJSON()
-            // }),
-			// strategies: [new OpenLayers.Strategy.BBOX({ratio: 0.5})],
-        });
-		
-		//@ TODO
-		// Bind an ExtJS store to update automatically the Map vector layer
-        // myContext.getMapItemsStore().bind(vectorLayer, {'initDir': 'STORE_TO_LAYER'});
-		
+        });					
         mapLayers.push(vectorLayer);
         mapPanel.map.addLayers(mapLayers);
 
+		
         // Controls
         mapPanel.map.addControls([
 			new OpenLayers.Control.MousePosition(),
 			new OpenLayers.Control.LayerSwitcher({'ascending':false})
-		]);
-		
+		]);		
 		mapPanel.map.zoomToMaxExtent();		
     },	
+	
 	
 	/**
 	*  EVENT HANDLER - Call API with the bounding box values	
 	**/	
-	onMapPan :function(map,currentBoundingBox) {				
-		// var store = this.getMapItemsStore();
-		// store.load({		
-			// params:{
-				// boundingbox: currentBoundingBox
-			// },
+	onMapPan :function(map,currentBoundingBox) {	
+		console.log('onMapPan');
+		var store = this.getReadStoriesProxyStore();
+		store.load({		
+			params:{
+				boundingbox: currentBoundingBox
+			},
 			
-			// callback : function(records, options, success) {
-				// if(success) {
-					// var	mapPanel = Ext.ComponentQuery.query('mappanel')[0];					
-					// if(records) {
-						// mapPanel.injectPoints(records);		
-					// }		
-				// }				
-			// }				
-		// });	
+			callback : function(records, options, success) {
+				if(success) {
+					var	mapPanel = Ext.ComponentQuery.query('mapPanel')[0];	
+					console.log(mapPanel);					
+					if(records) {
+						mapPanel.injectPoints(records);		
+					}		
+				}				
+			}				
+		});	
 	},
 	
 	

@@ -2,24 +2,97 @@
  * Model for a Map Item -  This class specificies the  fields for any "MAP ITEM" data object.
   * @extends Ext.data.Model
  */
-Ext.define('CSMap.model.MapItem', {	
+Ext.define('CrisisTracker.model.MapItem', {	
     extend: 'Ext.data.Model',	
 	
-    fields: [
-		
-        {name: 'story', type: 'string',
+    fields: [		
+        {
+			name: 'story', type: 'string',
 			convert: function(value, record) {
 				return record.raw.properties.story;
             }
 		},
 		
-        {name: 'tags', type: 'int',
+        {
+			name: 'title', type: 'string',
+			convert: function(value, record) {
+				return record.raw.properties.title;
+            }
+		},
+		
+        {
+			name: 'tags', type: 'int',
 			convert: function(value, record) {
 				return record.raw.properties.tags;
             }
 		},
+
+        {
+			name: 'max_growth', type: 'int',
+			convert: function(value, record) {
+				return record.raw.properties.max_growth;
+            }
+		},
+
+        {
+			name: 'popularity', type: 'int',
+			convert: function(value, record) {
+				return record.raw.properties.popularity;
+            }
+		},
+
+        {
+			name: 'start_time_str', type: 'string',
+			convert: function(value, record) {
+				return record.raw.properties.start_time_str;
+            }
+		},
+
+        {
+			name: 'start_time', type: 'string',
+			convert: function(value, record) {
+				return record.raw.properties.start_time;
+            }
+		},
+
+        {
+			name: 'story_id', type: 'int',
+			convert: function(value, record) {
+				return record.raw.properties.story_id;
+            }
+		},		
+
+        {
+			name: 'category_count', type: 'int',
+			convert: function(value, record) {
+				return record.raw.properties.category_count;
+            }
+		},	
+
+        {
+			name: 'custom_title', type: 'string', defaultValue: 'Title Unavailable',
+			convert: function(value, record) {
+				return record.raw.properties.custom_title;
+            }
+		},			
+
+        {
+			name: 'entity_count', type: 'int',
+			convert: function(value, record) {
+				return record.raw.properties.entity_count;
+            }
+		},
 		
-		{name: 'id', type: 'int'},
+        {
+			name: 'keyword_count', type: 'int',
+			convert: function(value, record) {
+				return record.raw.properties.keyword_count;
+            }
+		},			
+		
+		{
+			name: 'id', type: 'int'
+		},
 		
         {
             name: 'lon',

@@ -1,19 +1,26 @@
 Ext.define('CrisisTracker.store.ReadStoriesProxy', {
 	storeId:'ajaxProxyReadStories',
     extend: 'Ext.data.Store',	
-	model: 'CrisisTracker.model.StoriesListGridModel',	
+	model: 'CrisisTracker.model.MapItem',	
 	autoLoad: false,
 	selType: 'cellmodel',
 	stateful: true,
-    pageSize: 20,
+    //pageSize: 20,
     proxy: {
         type: 'ajax',
-		extraParams : 'option',		
+		extraParams : {
+			'boundingbox' : null,
+			'whatcategories' : null,
+			'what'  : null,
+			'who'  : null,
+			'from'  : null,
+			'to'  : null,
+		},
 		autoAbort: true,
-		url: 'data/dummy/tag_stories.json',
+		url: 'data/dummy/read_stories.php',
 		reader: {
 			type: 'json',	//or xml
-			root: 'stories'	// root of JSON results
+			root: 'features'	// root of JSON results
 		}
     },
 	

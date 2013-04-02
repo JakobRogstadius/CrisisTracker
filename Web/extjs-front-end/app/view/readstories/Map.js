@@ -31,13 +31,11 @@ Ext.define('CrisisTracker.view.readstories.Map', {
 		console.log('Map Created');
 		// ExtJS Event s
 		this.addEvents('mapPan');	
-
 		// OpenLayers Map
         this.map = new OpenLayers.Map();		
 		this.map.panel = this;		
 		// OpenLayers Events
-		this.map.events.register('moveend', this.map, this.mapMoveHandler); 
-                
+		this.map.events.register('moveend', this.map, this.mapMoveHandler);                 
         this.callParent(arguments);
     },
 	
@@ -47,11 +45,15 @@ Ext.define('CrisisTracker.view.readstories.Map', {
 	 * OpenLayers Map - 'mapMoveHandler' Event Handler
 	 */	
 	mapMoveHandler: function () {
-		var currentBoundingBox = this.getExtent().toArray(); // left, bottom, right, top								
+		console.log('mapMoveHandler');		
+		var	bbox = this.getExtent().toArray();	
 		// ExtJS Event Firing
-		this.panel.fireEvent("mapPan", this, currentBoundingBox);
+		this.panel.fireEvent("mapPan", this, bbox);
 	},	
 	
+	getCurrentBoundingBox: function() {
+		return this.map.getExtent().toArray(); // left, bottom, right, top								
+	},
 	
 	
 	/**

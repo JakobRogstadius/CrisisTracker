@@ -3,79 +3,77 @@ Ext.define('CrisisTracker.view.readstories.TagWhat', {
 	title: 'WHAT',
 	alias: 'widget.tagWhat',
 	layout: 'anchor',
-	items: [
-	
+	items: [	
 		{	
-			xtype: 'gridpanel',
-			anchor: '100% 80%',
-			hideHeaders: true,
-			rowLines: false,
-			disableSelection: true,
-			store: Ext.create('Ext.data.Store', {
-				fields: ['name', 'toggled'],
-				data: [
-					{ 'name': 'Bomb' , 'toggled': "true" },
-					{ 'name': 'Grenade', 'toggled': "false" },
-					{ 'name': 'Missile', 'toggled': "false" },
-					{ 'name': 'Suicide', 'toggled': "false" },
-					{ 'name': 'Ship', 'toggled': "false" },
-					{ 'name': 'Xplosion', 'toggled': "false" }			
-				]
-			}),
-			columns: [
-				{		
-					flex: 1,
-					renderer: function (v, m, r) {
-						var id = Ext.id();
-						var press = false;
-						if (r.get('toggled') == "true") {
-							press = true;
-						};
-						
-						Ext.defer(function () {
-							Ext.widget('button', {
-								renderTo: id,
-								text: r.get('name'),
-								width: 80,
-								enableToggle: true,
-								pressed: press,
-								//handler: function () { Ext.Msg.alert('Info', r.get('name')) }
-							});
-						}, 10);
-						return Ext.String.format('<div id="{0}"></div>', id);
-					}
-				},
-				{
-					flex: 1,
-					renderer: function (v, m, r) {
-						var id = Ext.id();
-						var press = false;
-						if (r.get('toggled') == "true") {
-							press = true;
-						};
-						
-						Ext.defer(function () {
-							Ext.widget('button', {
-								renderTo: id,
-								text: r.get('name'),
-								width: 80,
-								enableToggle: true,
-								pressed: press,
-								//handler: function () { Ext.Msg.alert('Info', r.get('name')) }
-							});
-						}, 10);
-						return Ext.String.format('<div id="{0}"></div>', id);
-					}
-				}
-			],		
+			xtype: 'panel',
+			id:'tagButtonsPanel',
+			anchor: '100% 85%',		
+			layout: 'hbox',
+			align: 'stretch',
+			items: 
+			[{
+				xtype: 'panel',
+				layout: 'vbox',
+				align : 'stretch',
+				id:'tagButtonsPanelLeft',
+				flex: 1
+			},{
+				xtype: 'panel',
+				layout: 'vbox',
+				align : 'stretch',				
+				id:'tagButtonsPanelRight',
+				flex: 1					
+			}]
 		},
 		
-		{xtype: 'panel', anchor: '100% 20%'}
-	
+		{
+			xtype: 'textfield',
+			id: 'whatTextfield',
+			anchor: '100% 15%',
+			height: 10,
+			name: 'whatTextfield',
+			value: 'Enter keyword',
+			edited: false,
+			// Remove text once
+			listeners: {
+				focus: function() {	
+					if(this.value == 'Enter keyword') {
+						this.setValue("");
+						this.edited = true;
+					}
+				}
+			}		
+		},	
 	],
     initComponent: function() {
 		this.callParent();	
-		this.center();		
+		this.center();
+		
+		var left = this.query('#tagButtonsPanelLeft')[0];
+		var right = this.query('#tagButtonsPanelRight')[0];			
+		var store = Ext.getStore('WhatTagData'); // class name
+	
+		store.load(function(records) {		
+			Ext.each(records, function(record) {
+				//Add a button for each record
+				left.add({
+					xtype: 'button',
+					scale: 'medium',
+					width: 150,
+					enableToggle: true,
+					pressed: false,						
+					text: record.data.left
+				});
+				right.add({
+					xtype: 'button',
+					scale: 'medium',
+					width: 150,
+					enableToggle: true,
+					pressed: false,						
+					text: record.data.right
+				});				
+			});
+		});	
 	}
 
 });

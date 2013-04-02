@@ -20,7 +20,7 @@ Ext.define('CrisisTracker.view.AppMenu', {
 			xtype: 'button',					
 			text: 'Read Stories',
 			action: 'page3'			
-		} 								
+		}	
 	],	
 
     initComponent: function() {

@@ -70,17 +70,7 @@ include_once ('login/login.php');
                     <div style="position: relative">
                         <div id="top-title"><h1>CRISIS TRACKER</h1></div>
                         <div id="login-box" style="z-index: 100; position: absolute; right:4px; bottom: 8px;"><?php //printLogin(); ?></div>
-                    </div>
-                    <div id="menu"><nav>
-                        <ul>
-                            <!-- TODO: Add menu highlights -->
-                            <li><a href="explorestories.php">Read stories</a></li>
-                            <li><a href="tagstorylist.php">Tag stories</a></li>
-                            <li><a href="performance.php">Performance</a></li>
-                            <li><a href="about.php">About</a></li>
-                            <li><a href="evaluation.php">Evaluation</a></li>
-                        </ul>
-                    </nav></div>
+                    </div>  
                 </header>
             </div>
 			
