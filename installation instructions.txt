@@ -28,6 +28,14 @@ Example: IsActive=1, IsStrong=1, FilterType=0, Word=earthquake (this will collec
 
 4. Modify /Server/Common/settings.xml to contain a correct connection string to the database, and login info to the two Twitter accounts.
 
+NOTE: on some Linux distibutions the following needs to be done, so that mysql can write to the /tmp folder: 
+
+# chown root:root /tmp
+# chmod 1777 /tmp
+# /etc/init.d/mysqld start 
+
+restart mysql.
+
 
 === ADD TWITTER'S ROOT CERTIFICATE TO MONO'S TRUST STORE ===
 This only applies if you are using Mono. There may be an equivalent step if you are using the .NET framework.

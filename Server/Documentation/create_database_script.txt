@@ -520,13 +520,6 @@ update Story set TagScore := TagScore+1 where Story.StoryID = new.StoryID
 $$
 
 CREATE
-TRIGGER StoryInfoCategoryTag_Insert
-AFTER INSERT ON StoryInfoCategoryTag
-FOR EACH ROW
-update Story set TagScore := TagScore+1 where Story.StoryID = new.StoryID
-$$
-
-CREATE
 TRIGGER StoryInfoCategoryTag_UPDATE
 AFTER UPDATE ON StoryInfoCategoryTag
 FOR EACH ROW

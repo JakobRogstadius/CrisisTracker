@@ -590,7 +590,7 @@ namespace CrisisTracker.TweetParser
                     sb.AppendLine(",");
                 sb.Append("(" + perf.Key.ID + "," + perf.Value.Matches + "," + perf.Value.Discards + ")");
             }
-            sb.AppendLine("ON DUPLICATE KEY UPDATE Hits1d=Hits1d+VALUES(Hits1d), Discards1d=Discards1d+VALUES(Discards1d);");
+            sb.AppendLine(" ON DUPLICATE KEY UPDATE Hits1d=Hits1d+VALUES(Hits1d), Discards1d=Discards1d+VALUES(Discards1d);");
             
             Helpers.RunSqlStatement(Name, sb.ToString());
         }

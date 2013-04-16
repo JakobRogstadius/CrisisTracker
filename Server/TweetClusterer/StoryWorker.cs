@@ -716,7 +716,7 @@ namespace CrisisTracker.TweetClusterer
                         where s.StoryID=" + action.Key + @" and not coalesce(IsBlacklisted,0)
                         group by d,h
                     ) T
-                    on duplicate key update MaxGrowth=if(VALUES(MaxGrowth)>Story.MaxGrowth,VALUES(MaxGrowth),Story.MaxGrowth);
+                    on duplicate key update MaxGrowth=if(VALUES(MaxGrowth)>Story.MaxGrowth,VALUES(MaxGrowth),Story.MaxGrowth)
                     ;");
             }
 
