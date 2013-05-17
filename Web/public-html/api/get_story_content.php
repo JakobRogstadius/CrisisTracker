@@ -83,12 +83,12 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
     // First 50 versions
     $storySummaryResult = mysql_query(
     "select * from (
-      select T.TweetCount, t.TweetID, T.TweetClusterID, t.Text, t.CreatedAt, ShortDate(t.CreatedAt) as CreatedAtShort, u.ScreenName, u.RealName, u.UserID
+      select T1.TweetCount, t.TweetID, T1.TweetClusterID, t.Text, t.CreatedAt, ShortDate(t.CreatedAt) as CreatedAtShort, u.ScreenName, u.RealName, u.UserID
       from (
           select Tweet.TweetClusterID, min(TweetID) as FirstID, count(*) as TweetCount from Tweet natural join TweetCluster where StoryID=$storyID
           group by lcase(IF(left(Text, 30) REGEXP '^RT @[a-zA-Z0-9_]+: ', SUBSTR(Text, LOCATE(':', Text) + 2, 30), left(Text, 30)))
-      ) T
-      join Tweet t on t.TweetID = T.FirstID
+      ) T1
+      join Tweet t on t.TweetID = T1.FirstID
       join TwitterUser u on u.UserID = t.UserID
         left join PendingStorySplits pss on pss.TweetClusterID = t.TweetClusterID
       where Text!='' and pss.TweetClusterID is null
@@ -100,12 +100,12 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
     // Summary of tweets
     $storySummaryResult = mysql_query(
     "select * from (
-        select T.TweetCount, t.TweetID, T.TweetClusterID, t.Text, t.CreatedAt, ShortDate(t.CreatedAt) as CreatedAtShort, u.ScreenName, u.RealName, u.UserID
+        select T1.TweetCount, t.TweetID, T1.TweetClusterID, t.Text, t.CreatedAt, ShortDate(t.CreatedAt) as CreatedAtShort, u.ScreenName, u.RealName, u.UserID
         from (
             select Tweet.TweetClusterID, min(TweetID) as FirstID, count(*) as TweetCount from Tweet natural join TweetCluster where StoryID=$storyID
             group by lcase(IF(left(Text, 30) REGEXP '^RT @[a-zA-Z0-9_]+: ', SUBSTR(Text, LOCATE(':', Text) + 2, 30), left(Text, 30)))
-        ) T
-        join Tweet t on t.TweetID = T.FirstID
+        ) T1
+        join Tweet t on t.TweetID = T1.FirstID
         join TwitterUser u on u.UserID = t.UserID
         left join PendingStorySplits pss on pss.TweetClusterID = t.TweetClusterID
         where Text!='' and pss.TweetClusterID is null

@@ -38,6 +38,7 @@ CREATE TABLE TwitterTrackFilter (
 CREATE TABLE HourStatistics (
   DateHour datetime NOT NULL,
   TweetsProcessed int(10) unsigned NOT NULL DEFAULT '0',
+  TweetsDiscarded int(10) unsigned NOT NULL DEFAULT '0',
   TweetClustersCreated int(10) unsigned NOT NULL DEFAULT '0',
   StoriesCreated int(10) unsigned NOT NULL DEFAULT '0',
   StoriesAutoMerged int(10) unsigned NOT NULL DEFAULT '0',
@@ -104,6 +105,7 @@ CREATE TABLE Story (
   Importance double unsigned NOT NULL DEFAULT '0',
   ImportanceRecent double unsigned NOT NULL DEFAULT '0',
   Trend int(10) NOT NULL DEFAULT '0',
+  MaxGrowth int(10) NOT NULL DEFAULT '0',
   IsHidden bit(1) NOT NULL DEFAULT b'0',
   Title varchar(140) DEFAULT NULL,
   PRIMARY KEY (StoryID),

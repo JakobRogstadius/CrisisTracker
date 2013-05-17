@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using CrisisTracker.Common;
+using System.Globalization;
 
 namespace CrisisTracker.TweetClusterer
 {
@@ -205,7 +206,7 @@ namespace CrisisTracker.TweetClusterer
                 sqlSB.Append(',');
                 sqlSB.Append(relation.TweetID2);
                 sqlSB.Append(',');
-                sqlSB.Append(relation.Similarity);
+                sqlSB.Append(relation.Similarity.ToString(CultureInfo.InvariantCulture));
                 sqlSB.Append(')');
             }
             sqlSB.Append(';');
