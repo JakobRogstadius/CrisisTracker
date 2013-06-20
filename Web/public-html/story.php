@@ -11,11 +11,11 @@ include('api/was_story_merged.php');
 include('api/get_story_content.php');
 include_once('api/common_functions.php');
 
-$sortOrder = 'size';
+$sortOrder = 'time';
 if (isset($_GET['sortorder'])) {
   $sortOrder = stripMaliciousSql($_GET['sortorder']);
-  if ($sortOrder != 'time' && $sortOrder != 'size' && $sortOrder != 'first50') {
-    $sortOrder = 'size';
+  if ($sortOrder != 'time' && $sortOrder != 'size' && $sortOrder != 'first20') {
+    $sortOrder = 'time';
   }
 }
 
@@ -43,7 +43,7 @@ include('storymanagementincludes.php');
 ?>
   <!-- CSS -->
   <link rel="stylesheet" href="resources/css/story.css" type="text/css" media="screen" />
-  
+
   <!-- User Point Creation -->
   <script type="text/javascript" src="resources/javascript/ses.userpointcreation.js"></script>
   <!-- Active Story Management (update story_tagger.active_story with database returns) -->
@@ -52,18 +52,18 @@ include('storymanagementincludes.php');
   <script type="text/javascript" src="resources/javascript/ses.features.js"></script>
   <!-- Popup timer -->
   <script type="text/javascript" src="resources/javascript/ses.popuptimer.js"></script>
-  <script type="text/javascript">  
+  <script type="text/javascript">
   // Objects
   var environment = new storyTagger();
-  
-  // Global Variables  
+
+  // Global Variables
   var drawControls, selectControl;
   var select_feature_control;
   var drag_feature_control;
-  
+
   // JQuery Document Ready Handler *autostart
   $(document).ready(function(){
-   
+
     // Map
     environment.map = new OpenLayers.Map('map');
     /*environment.map = new OpenLayers.Map('map',{
@@ -72,72 +72,72 @@ include('storymanagementincludes.php');
         -128 * 156543.0339,
         128 * 156543.0339,
         128 * 156543.0339),
-        maxResolution: 156543.0339,      // fitting the map's extent into 256 pixels      
+        maxResolution: 156543.0339,      // fitting the map's extent into 256 pixels
         sphericalMercator: true,
         units: 'm',              // Spherical Mercator is a projection that uses meters 'm'
         projection: new OpenLayers.Projection('EPSG:900913'),  // Spherical Mercator Projection
         displayProjection: new OpenLayers.Projection("EPSG:4326"),  // User see this
     });*/
 
-    // Google Maps Layer  
-    var google_streets= new OpenLayers.Layer.Google("Google",{type: google.maps.MapTypeId.ROADMAP, numZoomLevels: 20});  
-    var google_satellite = new OpenLayers.Layer.Google("Google Satellite",{type: google.maps.MapTypeId.SATELLITE, numZoomLevels: 20}); 
-    
+    // Google Maps Layer
+    var google_streets= new OpenLayers.Layer.Google("Google",{type: google.maps.MapTypeId.ROADMAP, numZoomLevels: 20});
+    var google_satellite = new OpenLayers.Layer.Google("Google Satellite",{type: google.maps.MapTypeId.SATELLITE, numZoomLevels: 20});
+
     // Vector Layer
-    environment.vector_layer = new OpenLayers.Layer.Vector('Vector Layer', { 
+    environment.vector_layer = new OpenLayers.Layer.Vector('Vector Layer', {
       projection: new OpenLayers.Projection('EPSG:4326')
-    });        
-        
+    });
+
     // Vector Layer StyleMap
-    var vector_style_default_map = new OpenLayers.StyleMap({ 
-      'default': generateStyleMap('tag_default'),  
+    var vector_style_default_map = new OpenLayers.StyleMap({
+      'default': generateStyleMap('tag_default'),
       'select': generateStyleMap('tag_select')
-    });  
-    
+    });
+
     // Apply StyleMap to environment.vector_layer
     environment.vector_layer.styleMap = vector_style_default_map;
-        
+
     // Map Layers
     environment.map.addLayers([google_streets,google_satellite,environment.vector_layer]);
-    environment.map.zoomToMaxExtent();  
-    
-    // MAP CONTROLS  
+    environment.map.zoomToMaxExtent();
+
+    // MAP CONTROLS
     // Layer Switcher
-    environment.map.addControl(new OpenLayers.Control.LayerSwitcher());  
+    environment.map.addControl(new OpenLayers.Control.LayerSwitcher());
     // Select Feature
-    select_feature_control = new OpenLayers.Control.SelectFeature(environment.vector_layer, 
+    select_feature_control = new OpenLayers.Control.SelectFeature(environment.vector_layer,
       {onSelect: handleOnClickFeatureSelect,   // on_select handler
-      onUnselect: handleOnFeatureUnselect});  // on_unselect handler  
+      onUnselect: handleOnFeatureUnselect});  // on_unselect handler
     environment.map.addControl(select_feature_control);
     select_feature_control.activate();
     // Mouse Position
     mousePosition = new OpenLayers.Control.MousePosition();    // used for move_feature
-    environment.map.addControl(mousePosition);    
+    environment.map.addControl(mousePosition);
     // Drag Feature
-    drag_feature_control = new OpenLayers.Control.DragFeature(environment.vector_layer, 
-      {onComplete : handleFeatureEndOfDragging, 
+    drag_feature_control = new OpenLayers.Control.DragFeature(environment.vector_layer,
+      {onComplete : handleFeatureEndOfDragging,
       onStart : handleFeatureStartOfDragging });
-    environment.map.addControl(drag_feature_control);  
-    
-    
+    environment.map.addControl(drag_feature_control);
+
+
     // TextTag Boxes (Entities, Categories, Keywords)
     $('#tags_entities').tagsInput({width:'350', height:'50px', defaultText:'add a tag', minChars : 0, maxChars : 45, placeholderColor : '#9C9C9C', removeWithBackspace:false,onAddTag:onAddTagEntities,onRemoveTag:onRemoveTagEntities,onChange: onChangeTagEntities});
-           
-    $('#tags_keywords').tagsInput({width:'350',height:'50px', defaultText:'add a tag', minChars : 0,  maxChars : 45,  placeholderColor : '#9C9C9C', removeWithBackspace:false, onAddTag:onAddTagKeywords,onRemoveTag:onRemoveTagKeywords,onChange: onChangeTagKeywords}); 
-	
+
+    $('#tags_keywords').tagsInput({width:'350',height:'50px', defaultText:'add a tag', minChars : 0,  maxChars : 45,  placeholderColor : '#9C9C9C', removeWithBackspace:false, onAddTag:onAddTagKeywords,onRemoveTag:onRemoveTagKeywords,onChange: onChangeTagKeywords});
+
     // Data Structures Initializations
     active_user = null;
     addedCategories = new Array();
     addedEntities = new Array();
-    addedKeywords = new Array();  
+    addedKeywords = new Array();
     removedCategories = new Array();
     removedEntities = new Array();
     removedKeywords = new Array();
     environment.texttag_flag = true;
-    
-    // Scripts    
-    registerMouseClickEvent();          
-    zoomMap(1);  
+
+    // Scripts
+    registerMouseClickEvent();
+    zoomMap(1);
     userSearchMapLocation();
     resetTextTagsList();
     // Load Story
@@ -148,17 +148,17 @@ include('storymanagementincludes.php');
   // ---------------------------------------------------------------------------------------
   /**
    * Initial Load of a Story with sequence of 'Local -> Webservice -> Local' callbacks to render a story to local datastructure
-   *@param  storyId{int}  
-  **/    
+   *@param  storyId{int}
+  **/
   function firstStoryLoad(storyId) {
     ajaxGetItems(storyId); // xmlParser HTTP Request to WebService
   }
-  
+
   //Login alerts
   function mergeStoryCheck() {
-    
+
   }
-  
+
   function addClass(itemID, name) {
     document.getElementById(itemID).className += " " + name;
   }
@@ -240,13 +240,13 @@ $hasCT = $story['customTitle'] != '';
                   title="<?php echo $hideStoryTooltip; ?>"
                   href="#"
                   onclick="if(confirm('<?php echo $hideStoryConfirm; ?>')) window.location='hidestory.php?storyid=<?php echo $storyID; ?>&hidden=<?php echo (1-$story['isHidden']); ?>';"><?php echo $hideStoryCaption; ?></a>
-            </span>        
+            </span>
             <h2 style="clear: none;">Content summary</h2>
         </div>
         <p>Sort by:
             <?php if($sortOrder=='size') echo '<strong>Size</strong>'; else echo '<a href="?storyid='.$storyID.'&amp;sortorder=size">Size</a>'; ?> |
             <?php if($sortOrder=='time') echo '<strong>Time</strong>'; else echo '<a href="?storyid='.$storyID.'&amp;sortorder=time">Time</a>'; ?> |
-            <?php if($sortOrder=='first50') echo '<strong>First 50</strong>'; else echo '<a href="?storyid='.$storyID.'&amp;sortorder=first50">First 50</a>'; ?>
+            <?php if($sortOrder=='first20') echo '<strong>First 20</strong>'; else echo '<a href="?storyid='.$storyID.'&amp;sortorder=first20">First 20</a>'; ?>
         </p>
         <div class="gui-subpanel story-summary">
             <ol>
@@ -271,7 +271,7 @@ $hasCT = $story['customTitle'] != '';
     </div>
 </div>
 <div class="right-column-narrow">
-    <?php if (!isLoggedIn()) { ?>
+    <?php if (!is_logged_in()) { ?>
     <div class="gui-panel" style="font-weight: bold; color: white; background-color: red;">
       Logging in will enable you to curate stories in CrisisTracker, e.g. by geo-tagging, and merging duplicates. Any changes you make before you log in will be discarded.
     </div>
@@ -289,7 +289,7 @@ $hasCT = $story['customTitle'] != '';
             </div>
         </div>
     </div>
-	
+
     <!-- CATEGORIES and KEYWORDS -->
     <div class="gui-panel what-panel">
         <h2>What</h2>
@@ -299,21 +299,21 @@ $hasCT = $story['customTitle'] != '';
             <form>
                  <input name="tags_keywords" id="tags_keywords" value="" />
             </form>
-        </div>		
+        </div>
     </div>
-	
+
     <!-- ENTITIES -->
-    <div class="gui-panel who-panel">		
-        <h2>Who</h2>		
-        <div id="entities" class="what-content"> 
-            <form>	
-                 <input name="tags_entities" id="tags_entities" value="" />	
+    <div class="gui-panel who-panel">
+        <h2>Who</h2>
+        <div id="entities" class="what-content">
+            <form>
+                 <input name="tags_entities" id="tags_entities" value="" />
             </form>
-        </div>		
+        </div>
     </div>
-    
+
     <!-- RELATED STORIES -->
-    <div class="gui-panel related-panel">	
+    <div class="gui-panel related-panel">
         <h2>Related Stories</h2>
         <div class="related-content">
             <ol>
@@ -334,9 +334,9 @@ $hasCT = $story['customTitle'] != '';
             </ol>
         </div>
     </div>
-    
+
     <!-- DUPLICATE STORIES -->
-    <div class="gui-panel related-panel">	
+    <div class="gui-panel related-panel">
         <h2>Possible Duplicate Stories</h2>
         <div class="related-content">
             <ol>
@@ -361,13 +361,13 @@ include('footer.php');
 
 //Log page view
 $ip = $_SERVER['REMOTE_ADDR'];
-$userID = getUserID();
+$userID = get_user_id();
 if ($userID == NULL)
   $userID = 0;
 mysql_query(
   "insert into StoryLog (IP, UserID, Timestamp, EventType, StoryID, StoryAgeInSeconds, TweetCount, RetweetCount, UserCount, TopUserCount, Trend)
-  select 
-      INET_ATON('$ip'), $userID, utc_timestamp(), 20, StoryID, 
+  select
+      INET_ATON('$ip'), $userID, utc_timestamp(), 20, StoryID,
       unix_timestamp(utc_timestamp())-unix_timestamp(StartTime),
       TweetCount, RetweetCount, UserCount, TopUserCount, Trend
   from Story where StoryID=$storyID;", $db_conn);

@@ -22,13 +22,15 @@ namespace CrisisTracker.Common
 
             _connectionString = xmlDoc.SelectSingleNode("/settings/connectionString").InnerText;
 
-            _sampleStreamConsumer_Username = xmlDoc.SelectSingleNode("/settings/sampleStreamConsumer/twitterUsername").InnerText;
-            _sampleStreamConsumer_Password = xmlDoc.SelectSingleNode("/settings/sampleStreamConsumer/twitterPassword").InnerText;
-            _sampleStreamConsumer_SourceID = int.Parse(xmlDoc.SelectSingleNode("/settings/sampleStreamConsumer/sourceID").InnerText);
+            _sampleStreamConsumer_ConsumerKey = xmlDoc.SelectSingleNode("/settings/sampleStreamConsumer/consumerKey").InnerText;
+            _sampleStreamConsumer_ConsumerSecret = xmlDoc.SelectSingleNode("/settings/sampleStreamConsumer/consumerSecret").InnerText;
+            _sampleStreamConsumer_AccessToken = xmlDoc.SelectSingleNode("/settings/sampleStreamConsumer/accessToken").InnerText;
+            _sampleStreamConsumer_AccessTokenSecret = xmlDoc.SelectSingleNode("/settings/sampleStreamConsumer/accessTokenSecret").InnerText;
 
-            _filterStreamConsumer_Username = xmlDoc.SelectSingleNode("/settings/filterStreamConsumer/twitterUsername").InnerText;
-            _filterStreamConsumer_Password = xmlDoc.SelectSingleNode("/settings/filterStreamConsumer/twitterPassword").InnerText;
-            _filterStreamConsumer_SourceID = int.Parse(xmlDoc.SelectSingleNode("/settings/filterStreamConsumer/sourceID").InnerText);
+            _filterStreamConsumer_ConsumerKey = xmlDoc.SelectSingleNode("/settings/filterStreamConsumer/consumerKey").InnerText;
+            _filterStreamConsumer_ConsumerSecret = xmlDoc.SelectSingleNode("/settings/filterStreamConsumer/consumerSecret").InnerText;
+            _filterStreamConsumer_AccessToken = xmlDoc.SelectSingleNode("/settings/filterStreamConsumer/accessToken").InnerText;
+            _filterStreamConsumer_AccessTokenSecret = xmlDoc.SelectSingleNode("/settings/filterStreamConsumer/accessTokenSecret").InnerText;
 
             _tweetParser_WordScore4dMaxToStopwordRatio = double.Parse(xmlDoc.SelectSingleNode("/settings/tweetParser/wordScore4dMaxToStopwordRatio").InnerText, CultureInfo.InvariantCulture);
             _tweetParser_MaxWordTweetTableLength = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetParser/maxWordTweetTableLength").InnerText);
@@ -39,9 +41,9 @@ namespace CrisisTracker.Common
             _tweetClusterer_TCW_InitializeSize = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/tweetClusterWorker/initializeSize").InnerText);
             _tweetClusterer_TCW_BatchSize = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/tweetClusterWorker/batchSize").InnerText);
             _tweetClusterer_TCW_HistorySize = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/tweetClusterWorker/historySize").InnerText);
-            _tweetClusterer_TCW_DictionaryWordCount = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/tweetClusterWorker/dictionaryWordCount").InnerText);
             _tweetClusterer_TCW_HashTableCount = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/tweetClusterWorker/hashTableCount").InnerText);
             _tweetClusterer_TCW_HyperPlaneCount = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/tweetClusterWorker/hyperPlaneCount").InnerText);
+            _tweetClusterer_TCW_WordsPerHyperPlane = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/tweetClusterWorker/wordsPerHyperPlane").InnerText);
             _tweetClusterer_TCW_HashBinSize = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/tweetClusterWorker/hashBinSize").InnerText);
             _tweetClusterer_TCW_MaxLinksPerTweet = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/tweetClusterWorker/maxLinksPerTweet").InnerText);
             _tweetClusterer_TCW_MinTweetVectorLength = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/tweetClusterWorker/minTweetVectorLength").InnerText);
@@ -49,9 +51,10 @@ namespace CrisisTracker.Common
             _tweetClusterer_TCW_MinTweetSimilarityForLink = double.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/tweetClusterWorker/minTweetSimilarityForLink").InnerText, CultureInfo.InvariantCulture);
             _tweetClusterer_TCW_IdentityThreshold = double.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/tweetClusterWorker/identityThreshold").InnerText, CultureInfo.InvariantCulture);
 
-            _tweetClusterer_SW_MergeUpperThreshold = double.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/storyWorker/mergeUpperThreshold").InnerText, CultureInfo.InvariantCulture);
-            _tweetClusterer_SW_MergeLowerThreshold = double.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/storyWorker/mergeLowerThreshold").InnerText, CultureInfo.InvariantCulture);
+            _tweetClusterer_SW_MergeThreshold = double.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/storyWorker/mergeThreshold").InnerText, CultureInfo.InvariantCulture);
+            _tweetClusterer_SW_MergeThresholdWithDrop = double.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/storyWorker/mergeThresholdWithDrop").InnerText, CultureInfo.InvariantCulture);
             _tweetClusterer_SW_MergeDropScale = double.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/storyWorker/mergeDropScale").InnerText, CultureInfo.InvariantCulture);
+            _tweetClusterer_SW_TopStoryCount = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/storyWorker/topStoryCount").InnerText);
             _tweetClusterer_SW_TweetClusterBatchSize = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/storyWorker/tweetClusterBatchSize").InnerText);
             _tweetClusterer_SW_CandidateStoryCount = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/storyWorker/candidateStoryCount").InnerText);
             _tweetClusterer_SW_MaxWordsInStoryVector = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/storyWorker/maxWordsInStoryVector").InnerText);
@@ -69,20 +72,24 @@ namespace CrisisTracker.Common
         public static string ConnectionString { get { return GetInstance()._connectionString; } }
 
         //SampleStreamConsumer
-        private string _sampleStreamConsumer_Username;
-        private string _sampleStreamConsumer_Password;
-        private int _sampleStreamConsumer_SourceID;
-        public static string SampleStreamConsumer_Username { get { return GetInstance()._sampleStreamConsumer_Username; } }
-        public static string SampleStreamConsumer_Password { get { return GetInstance()._sampleStreamConsumer_Password; } }
-        public static int SampleStreamConsumer_SourceID { get { return GetInstance()._sampleStreamConsumer_SourceID; } }
+        private string _sampleStreamConsumer_ConsumerKey;
+        private string _sampleStreamConsumer_ConsumerSecret;
+        private string _sampleStreamConsumer_AccessToken;
+        private string _sampleStreamConsumer_AccessTokenSecret;
+        public static string SampleStreamConsumer_ConsumerKey { get { return GetInstance()._sampleStreamConsumer_ConsumerKey; } }
+        public static string SampleStreamConsumer_ConsumerSecret { get { return GetInstance()._sampleStreamConsumer_ConsumerSecret; } }
+        public static string SampleStreamConsumer_AccessToken { get { return GetInstance()._sampleStreamConsumer_AccessToken; } }
+        public static string SampleStreamConsumer_AccessTokenSecret { get { return GetInstance()._sampleStreamConsumer_AccessTokenSecret; } }
 
         //FilterStreamConsumer
-        private string _filterStreamConsumer_Username;
-        private string _filterStreamConsumer_Password;
-        private int _filterStreamConsumer_SourceID;
-        public static string FilterStreamConsumer_Username { get { return GetInstance()._filterStreamConsumer_Username; } }
-        public static string FilterStreamConsumer_Password { get { return GetInstance()._filterStreamConsumer_Password; } }
-        public static int FilterStreamConsumer_SourceID { get { return GetInstance()._filterStreamConsumer_SourceID; } }
+        private string _filterStreamConsumer_ConsumerKey;
+        private string _filterStreamConsumer_ConsumerSecret;
+        private string _filterStreamConsumer_AccessToken;
+        private string _filterStreamConsumer_AccessTokenSecret;
+        public static string FilterStreamConsumer_ConsumerKey { get { return GetInstance()._filterStreamConsumer_ConsumerKey; } }
+        public static string FilterStreamConsumer_ConsumerSecret { get { return GetInstance()._filterStreamConsumer_ConsumerSecret; } }
+        public static string FilterStreamConsumer_AccessToken { get { return GetInstance()._filterStreamConsumer_AccessToken; } }
+        public static string FilterStreamConsumer_AccessTokenSecret { get { return GetInstance()._filterStreamConsumer_AccessTokenSecret; } }
 
         //TweetParser
         double _tweetParser_WordScore4dMaxToStopwordRatio;
@@ -100,9 +107,9 @@ namespace CrisisTracker.Common
         int _tweetClusterer_TCW_InitializeSize;
         int _tweetClusterer_TCW_BatchSize;
         int _tweetClusterer_TCW_HistorySize;
-        int _tweetClusterer_TCW_DictionaryWordCount;
         int _tweetClusterer_TCW_HashTableCount;
         int _tweetClusterer_TCW_HyperPlaneCount;
+        int _tweetClusterer_TCW_WordsPerHyperPlane;
         int _tweetClusterer_TCW_HashBinSize;
         int _tweetClusterer_TCW_MaxLinksPerTweet;
         int _tweetClusterer_TCW_MinTweetVectorLength;
@@ -112,9 +119,9 @@ namespace CrisisTracker.Common
         public static int TweetClusterer_TCW_InitializeSize { get { return GetInstance()._tweetClusterer_TCW_InitializeSize; } }
         public static int TweetClusterer_TCW_BatchSize { get { return GetInstance()._tweetClusterer_TCW_BatchSize; } }
         public static int TweetClusterer_TCW_HistorySize { get { return GetInstance()._tweetClusterer_TCW_HistorySize; } }
-        public static int TweetClusterer_TCW_DictionaryWordCount { get { return GetInstance()._tweetClusterer_TCW_DictionaryWordCount; } }
         public static int TweetClusterer_TCW_HashTableCount { get { return GetInstance()._tweetClusterer_TCW_HashTableCount; } }
         public static int TweetClusterer_TCW_HyperPlaneCount { get { return GetInstance()._tweetClusterer_TCW_HyperPlaneCount; } }
+        public static int TweetClusterer_TCW_WordsPerHyperPlane { get { return GetInstance()._tweetClusterer_TCW_WordsPerHyperPlane; } }
         public static int TweetClusterer_TCW_HashBinSize { get { return GetInstance()._tweetClusterer_TCW_HashBinSize; } }
         public static int TweetClusterer_TCW_MaxLinksPerTweet { get { return GetInstance()._tweetClusterer_TCW_MaxLinksPerTweet; } }
         public static int TweetClusterer_TCW_MinTweetVectorLength { get { return GetInstance()._tweetClusterer_TCW_MinTweetVectorLength; } }
@@ -123,15 +130,17 @@ namespace CrisisTracker.Common
         public static double TweetClusterer_TCW_IdentityThreshold { get { return GetInstance()._tweetClusterer_TCW_IdentityThreshold; } }
 
         //StoryWorker
-        double _tweetClusterer_SW_MergeUpperThreshold;
-        double _tweetClusterer_SW_MergeLowerThreshold;
+        double _tweetClusterer_SW_MergeThreshold;
+        double _tweetClusterer_SW_MergeThresholdWithDrop;
         double _tweetClusterer_SW_MergeDropScale;
+        int _tweetClusterer_SW_TopStoryCount;
         int _tweetClusterer_SW_TweetClusterBatchSize;
         int _tweetClusterer_SW_CandidateStoryCount;
         int _tweetClusterer_SW_MaxWordsInStoryVector;
-        public static double TweetClusterer_SW_MergeUpperThreshold { get { return GetInstance()._tweetClusterer_SW_MergeUpperThreshold; } }
-        public static double TweetClusterer_SW_MergeLowerThreshold { get { return GetInstance()._tweetClusterer_SW_MergeLowerThreshold; } }
+        public static double TweetClusterer_SW_MergeThreshold { get { return GetInstance()._tweetClusterer_SW_MergeThreshold; } }
+        public static double TweetClusterer_SW_MergeThresholdWithDrop { get { return GetInstance()._tweetClusterer_SW_MergeThresholdWithDrop; } }
         public static double TweetClusterer_SW_MergeDropScale { get { return GetInstance()._tweetClusterer_SW_MergeDropScale; } }
+        public static int TweetClusterer_SW_TopStoryCount { get { return GetInstance()._tweetClusterer_SW_TopStoryCount; } }
         public static int TweetClusterer_SW_TweetClusterBatchSize { get { return GetInstance()._tweetClusterer_SW_TweetClusterBatchSize; } }
         public static int TweetClusterer_SW_CandidateStoryCount { get { return GetInstance()._tweetClusterer_SW_CandidateStoryCount; } }
         public static int TweetClusterer_SW_MaxWordsInStoryVector { get { return GetInstance()._tweetClusterer_SW_MaxWordsInStoryVector; } }

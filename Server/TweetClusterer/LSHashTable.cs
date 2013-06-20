@@ -33,18 +33,20 @@ namespace CrisisTracker.TweetClusterer
         /// </summary>
         /// <param name="vector"></param>
         /// <returns></returns>
-        public List<LSHashTweet> Add(LSHashTweet tweet)
+        public List<LSHashTweet> Add(LSHashTweet tweet, out bool anyTrue)
         {
             lock (accessLock)
             {
-                CustomBitArray hash = _hashFunction.CalculateHashScore(tweet.Vector);
+                CustomBitArray hash = _hashFunction.CalculateHashScore(tweet.Vector, out anyTrue);
                 LSHashTableCell cell;
                 if (_values.TryGetValue(hash, out cell))
                 {
                     List<LSHashTweet> neighbors = cell.GetTweets();
                     cell.Add(tweet);
                     _lastUpdatedCell = cell;
-                    return neighbors;
+                    if (anyTrue)
+                        return neighbors;
+                    return new List<LSHashTweet>();
                 }
                 else
                 {
@@ -77,7 +79,8 @@ namespace CrisisTracker.TweetClusterer
                 {
                     foreach (LSHashTweet tweet in oldCell.GetTweets())
                     {
-                        CustomBitArray hash = _hashFunction.CalculateHashScore(tweet.Vector);
+                        bool anyTrue = false;
+                        CustomBitArray hash = _hashFunction.CalculateHashScore(tweet.Vector, out anyTrue);
                         LSHashTableCell cell;
                         if (_values.TryGetValue(hash, out cell))
                         {
@@ -94,24 +97,7 @@ namespace CrisisTracker.TweetClusterer
             }
         }
 
-        public int GetItemCount()
-        {
-            return _values.Values.Sum(n => n.Count);
-        }
-
-        public HashSet<long> GetTweetIDs()
-        {
-            HashSet<long> tweetIDs = new HashSet<long>();
-            foreach (LSHashTableCell cell in _values.Values)
-            {
-                var values = cell.GetTweets();
-                foreach (var item in values)
-                {
-                    tweetIDs.Add(item.ID);
-                }
-            }
-            return tweetIDs;
-        }
+        public IEnumerable<long> GetTweetIDs() { return _values.Values.SelectMany(n => n.GetTweetIDs()).Distinct(); }
 
         public void RemoveTweetsByID(IEnumerable<long> tweetIDs)
         {

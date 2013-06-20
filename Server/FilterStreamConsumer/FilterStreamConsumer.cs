@@ -10,6 +10,9 @@ using System;
 using System.Net;
 using System.IO;
 using CrisisTracker.Common;
+using System.Linq;
+using LinqToTwitter;
+using System.Linq.Expressions;
 
 namespace CrisisTracker.FilterStreamConsumer
 {
@@ -28,24 +31,40 @@ namespace CrisisTracker.FilterStreamConsumer
             _filterTracker.Start();
         }
 
-        protected override HttpWebRequest GetRequest()
+        protected override InMemoryCredentials GetCredentials()
         {
-            string trackString = _filterTracker.GetTrackString();
-            Console.WriteLine(trackString);
-
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create("https://stream.twitter.com/1/statuses/filter.json");
-            webRequest.Method = "POST";
-            webRequest.Credentials = new NetworkCredential(Settings.FilterStreamConsumer_Username, Settings.FilterStreamConsumer_Password);
-            webRequest.ContentType = "application/x-www-form-urlencoded";
-            webRequest.ContentLength = trackString.Length;
-
-            //Add track keywords as parameters to request
-            using (StreamWriter stOut = new StreamWriter(webRequest.GetRequestStream(), System.Text.Encoding.ASCII))
+            return new InMemoryCredentials()
             {
-                stOut.Write(trackString);
-            }
+                ConsumerKey = Common.Settings.FilterStreamConsumer_ConsumerKey,
+                ConsumerSecret = Common.Settings.FilterStreamConsumer_ConsumerSecret,
+                OAuthToken = Common.Settings.FilterStreamConsumer_AccessToken, //LinkToTwitter uses strange parameter naming here
+                AccessToken = Common.Settings.FilterStreamConsumer_AccessTokenSecret
+            };
+        }
 
-            return webRequest;
+        protected override IQueryable<Streaming> GetStreamQuery(TwitterContext context)
+        {
+            if (!_filterTracker.HasFilters)
+                throw new Exception("No filters have been defined. Cannot start " + Name);
+
+            Console.WriteLine("Track={0}", _filterTracker.GetKeywordFilterString());
+            Console.WriteLine("Follow={0}", _filterTracker.GetUserFilterString());
+            Console.WriteLine("Locations={0}", _filterTracker.GetGeoFilterString());
+
+            var query = from stream in context.Streaming
+                        where stream.Type == StreamingType.Filter
+                        select stream;
+
+            if (_filterTracker.HasKeywordFilters)
+                query = query.Where(stream => stream.Track == _filterTracker.GetKeywordFilterString());
+
+            if (_filterTracker.HasUserFilters)
+                query = query.Where(stream => stream.Follow == _filterTracker.GetUserFilterString());
+
+            if (_filterTracker.HasGeoFilters)
+                query = query.Where(stream => stream.Locations == _filterTracker.GetGeoFilterString());
+
+            return query;
         }
     }
 }

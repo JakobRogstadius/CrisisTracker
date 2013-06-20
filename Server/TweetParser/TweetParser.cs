@@ -16,6 +16,7 @@ using Procurios.Public;
 using System.Collections;
 using CrisisTracker.Common;
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace CrisisTracker.TweetParser
 {
@@ -41,6 +42,12 @@ namespace CrisisTracker.TweetParser
         DateTime _lastTweetTime = DateTime.MinValue;
 
         public string Name { get; set; }
+
+        //TODO: Move to settings
+        class LocalSettings
+        {
+            public static bool ApplyFilters = false;
+        }
 
         public TweetParser()
         {
@@ -75,8 +82,8 @@ namespace CrisisTracker.TweetParser
 
                     //Extract (stemmed) words from tweets
                     WordCount wordCounts = new WordCount();
-                    ExtractWords(randomTweets, wordCounts, stopwords);
-                    ExtractWords(filteredTweets, wordCounts, stopwords); //Tweets are appended with a "words" string array
+                    ExtractWords(randomTweets, wordCounts);
+                    ExtractWords(filteredTweets, wordCounts); //Tweets are appended with a "words" string array
                     Console.Write(".");
 
                     //Insert words into Word and WordScores
@@ -90,17 +97,19 @@ namespace CrisisTracker.TweetParser
                         //Make note of the time of the last tweet
                         _lastTweetTime = (DateTime)filteredTweets.Last()["created_at_datetime"];
 
-                        //Remove the off-topic tweets from further processing
                         List<Hashtable> filteredTweetsBefore = new List<Hashtable>(filteredTweets);
-                        var filterPerf = RemoveOffTopicTweets(filteredTweets, filters); //Tweets are appended with longitude and latitude
-                        Console.Write(".");
+                        if (LocalSettings.ApplyFilters)
+                        {
+                            //Remove the off-topic tweets from further processing
+                            var filterPerf = RemoveOffTopicTweets(filteredTweets, filters); //Tweets are appended with longitude and latitude
+                            Console.Write(".");
 
+                            //Insert filter performance
+                            InsertFilterPerformance(filterPerf);
+                            Console.Write(".");
+                        }
                         //Count number of tweets per hour
                         StoreTweetCountPerHour(filteredTweets, filteredTweetsBefore);
-                        Console.Write(".");
-
-                        //Insert filter performance
-                        InsertFilterPerformance(filterPerf);
                         Console.Write(".");
 
                         //Extract URLs
@@ -113,6 +122,8 @@ namespace CrisisTracker.TweetParser
 
                         int rowCount = Helpers.RunSqlStatement(Name, bigInsertCommand);
                         Console.Write(".");
+
+                        ParseAidrMetatags(filteredTweets);
                     }
 
                     if (filteredTweets.Count + randomTweetsJson.Count > 0)
@@ -310,11 +321,14 @@ namespace CrisisTracker.TweetParser
                 //Is it a status message?
                 if (status == null)
                 {
-                    Output.Print(Name, "Unknown parsing error.");
-                    Output.Print(Name, jsonTweet.Value);
+                    if (!jsonTweet.Value.EndsWith("}"))
+                        Console.WriteLine("Incomplete tweet:\n" + jsonTweet.Value);
+                    else
+                        Output.Print(Name, "Unknown parsing error:\n" + jsonTweet.Value);
                     continue;
                 }
-                else if (status.ContainsKey("delete") || status.ContainsKey("scrub_geo")) //ignore delete and scrub_geo messages
+                //ignore delete and scrub_geo messages
+                else if (status.ContainsKey("delete") || status.ContainsKey("scrub_geo"))
                 {
                     continue;
                 }
@@ -323,23 +337,18 @@ namespace CrisisTracker.TweetParser
                     Output.Print(Name, "Odd message: " + jsonTweet.Value);
                     continue;
                 }
-                //else if (status.ContainsKey("user")) //ignore non-English messages
-                //{
-                //    Hashtable user = (Hashtable)status["user"];
-                //    if (user.ContainsKey("lang") && !user["lang"].Equals("en"))
-                //        continue;
-                //}
 
                 //status.Add("sourceid", jsonTweet.Value.Value2);
                 status.Add("created_at_datetime", ParseTwitterTime(status["created_at"].ToString()));
                 status.Add("json_id", jsonTweet.Key);
+
                 parsedTweets.Add(status);
             }
 
             return parsedTweets;
         }
 
-        void ExtractWords(List<Hashtable> tweets, WordCount wc, HashSet<string> stopwords)
+        void ExtractWords(List<Hashtable> tweets, WordCount wc)
         {
             foreach (Hashtable tweet in tweets)
             {
@@ -348,7 +357,8 @@ namespace CrisisTracker.TweetParser
                     continue;
 
                 text = Helpers.DecodeEncodedNonAsciiCharacters(text);
-                string[] wordsInTweet = WordCount.GetWordsInStringWithBigrams(text, stopwords, useStemming: true);
+                string[] wordsInTweet = WordCount.GetWordsInString(text, useStemming: true);
+                //string[] wordsInTweet = WordCount.GetWordsInStringWithBigrams(text, stopwords, useStemming: true);
                 if (wordsInTweet.Length == 0)
                     continue;
 
@@ -447,7 +457,7 @@ namespace CrisisTracker.TweetParser
                     Word,
                     WordID
                 FROM Word WHERE Word IN (");
-            AppendList(selectSql, getAllWordsCommand, uniqueWords.Cast<object>().ToArray());
+            Helpers.AppendList(selectSql, getAllWordsCommand, uniqueWords.Cast<object>().ToArray());
             selectSql.Append(");");
             getAllWordsCommand.CommandText = selectSql.ToString();
 
@@ -501,7 +511,7 @@ namespace CrisisTracker.TweetParser
             {
                 //Extract words, userID, long, lat
                 string[] words = (string[])tweet["words"];
-                long userID = Convert.ToInt64(((Hashtable)tweet["user"])["id"]);
+                long userID = Convert.ToInt64(((Hashtable)tweet["user"])["id_str"]);
                 double? longitude = null, latitude = null;
                 if (tweet.ContainsKey("geo") && tweet["geo"] is Hashtable)
                 {
@@ -565,8 +575,11 @@ namespace CrisisTracker.TweetParser
             Helpers.RunSqlStatement(Name, sb.ToString());
         }
 
+        static Regex _retweetNormalizationPattern = new Regex("^RT @[a-zA-Z0-9_]+: ");
         MySqlCommand BuildInsertSql(List<Hashtable> tweets, Dictionary<string, long> words, HashSet<string> stopwords)
         {
+            /*TODO: Somewhere there is a bug that inserts the wrong tweet ID with the wrong content. */
+
             //Insert into Tweet, TwitterUser, TweetUrl and WordTweet
 
             MySqlCommand command = new MySqlCommand();
@@ -576,9 +589,9 @@ namespace CrisisTracker.TweetParser
             StringBuilder sbTweetUrl = new StringBuilder();
             StringBuilder sbTwitterUser = new StringBuilder();
 
-            sbTweet.Append("INSERT IGNORE INTO Tweet (TweetID, UserID, CreatedAt, HasUrl, RetweetOf, Text, Longitude, Latitude) VALUES ");
+            sbTweet.Append("INSERT IGNORE INTO Tweet (TweetID, UserID, CreatedAt, RetweetOf, RetweetOfUserID, Text, TextHash, Longitude, Latitude, ProcessedMetatags) VALUES ");
             sbWordTweet.Append("INSERT IGNORE INTO WordTweet (WordID, TweetID) VALUES ");
-            sbTweetUrl.Append("INSERT IGNORE INTO TweetUrl (TweetID, Url) VALUES ");
+            sbTweetUrl.Append("INSERT IGNORE INTO TweetUrl (TweetID, UrlHash, Url) VALUES ");
             sbTwitterUser.Append("INSERT INTO TwitterUser (UserID, ScreenName, RealName, ProfileImageUrl) VALUES ");
 
             bool hasTweets = false;
@@ -594,17 +607,17 @@ namespace CrisisTracker.TweetParser
                 try
                 {
                     //Has some random bug occured during parsing?
-                    if (!(t.ContainsKey("words") && t["words"] is string[]) || !t.ContainsKey("id") || !t.ContainsKey("text") || !t.ContainsKey("user") || (string)t["text"] == "")
+                    if (!(t.ContainsKey("words") && t["words"] is string[]) || !t.ContainsKey("id_str") || !t.ContainsKey("text") || !t.ContainsKey("user") || (string)t["text"] == "")
                         continue;
 
-                    long tweetID = Convert.ToInt64(t["id"]);
+                    long tweetID = Convert.ToInt64(t["id_str"]);
                     string[] tWords = t["words"] as string[];
                     if (tWords.Length == 0)
                         continue;
 
                     //Does the tweet contain enough non-stopwords?
                     int tweetwordCount = tWords.Where(n => words.ContainsKey(n) && !stopwords.Contains(n)).Count();
-                    if (tweetwordCount <= Settings.TweetParser_MinTweetWordCount)
+                    if (tweetwordCount < Settings.TweetParser_MinTweetWordCount)
                     {
                         Console.WriteLine(t["text"]);
                         continue;
@@ -613,15 +626,19 @@ namespace CrisisTracker.TweetParser
 
                     //Get values to insert
                     Hashtable user = (Hashtable)t["user"];
-                    long userID = Convert.ToInt64(user["id"]);
+                    long userID = Convert.ToInt64(user["id_str"]);
                     string userRealName = (string)user["name"];
                     string userScreenName = (string)user["screen_name"];
                     string userImageUrl = (string)user["profile_image_url"];
                     double? longitude = t.ContainsKey("longitude") ? (double)t["longitude"] : (double?)null;
                     double? latitude = t.ContainsKey("latitude") ? (double)t["latitude"] : (double?)null;
-                    long? retweetOf = null;
+                    long? retweetOf = null, retweetOfUserID = null;
                     if (t.ContainsKey("retweeted_status") && ((Hashtable)t["retweeted_status"]).ContainsKey("id_str"))
-                        retweetOf = Convert.ToInt64(((Hashtable)t["retweeted_status"])["id_str"]);
+                    {
+                        var sourcetweet = (Hashtable)t["retweeted_status"];
+                        retweetOf = Convert.ToInt64(sourcetweet["id_str"]);
+                        retweetOfUserID = Convert.ToInt64(((Hashtable)sourcetweet["user"])["id_str"]);
+                    }
 
                     //Is this the first tweet being processed?
                     if (firstTweet)
@@ -633,17 +650,20 @@ namespace CrisisTracker.TweetParser
                     }
 
                     //Insert into Tweet and TwitterUser
-                    AppendTuple(sbTweet, command,
+                    string normText = _retweetNormalizationPattern.Replace((string)t["text"], "");
+                    Helpers.AppendTuple(sbTweet, command,
                         tweetID,
                         userID,
                         (DateTime)t["created_at_datetime"],
-                        t.ContainsKey("urls"),
                         (retweetOf.HasValue ? retweetOf.Value : (long?)null),
+                        (retweetOfUserID.HasValue ? retweetOfUserID.Value : (long?)null),
                         t["text"],
+                        normText.Substring(0, Math.Min(normText.Length, 40)).GetHashCode(),
                         (longitude.HasValue ? longitude.Value : (double?)null),
-                        (longitude.HasValue ? latitude.Value : (double?)null)
+                        (longitude.HasValue ? latitude.Value : (double?)null),
+                        1
                     );
-                    AppendTuple(sbTwitterUser, command,
+                    Helpers.AppendTuple(sbTwitterUser, command,
                         userID,
                         userScreenName,
                         userRealName,
@@ -668,7 +688,7 @@ namespace CrisisTracker.TweetParser
                             if (firstUrl) firstUrl = false;
                             else sbTweetUrl.AppendLine(",");
 
-                            sbTweetUrl.Append("(" + tweetID + ",'" + Helpers.EscapeSqlString(url) + "')");
+                            sbTweetUrl.Append("(" + tweetID + "," + url.GetHashCode() + ",'" + Helpers.EscapeSqlString(url) + "')");
                         }
                     }
                 }
@@ -699,36 +719,10 @@ namespace CrisisTracker.TweetParser
                 sql.Append(sbTweetUrl.ToString());
                 sql.AppendLine(";");
             }
-            //End by calculating total word scores of newly inserted Tweets.
-            //sql.AppendLine("update Tweet t set WordScore = (select sum(ScoreToIdf(Score4d)) from WordScore natural join WordTweet where TweetID = t.TweetID) where WordScore is null;");
             sql.AppendLine("commit;");
             command.CommandText = sql.ToString();
 
             return command;
-        }
-
-        void AppendTuple(StringBuilder sb, MySqlCommand command, params object[] values)
-        {
-            sb.Append('(');
-            AppendList(sb, command, values);
-            sb.Append(')');
-        }
-
-        int _paramCounter = 0;
-        private void AppendList(StringBuilder sb, MySqlCommand command, object[] values)
-        {
-            for (int i = 0; i < values.Length; i++)
-            {
-                string paramName = "@p" + _paramCounter;
-
-                if (i > 0)
-                    sb.Append(",");
-                sb.Append(paramName);
-                command.Parameters.AddWithValue(paramName, values[i]);
-
-                _paramCounter++;
-                _paramCounter = _paramCounter % int.MaxValue;
-            }
         }
 
         static DateTime ParseTwitterTime(string date)
@@ -737,156 +731,166 @@ namespace CrisisTracker.TweetParser
             return DateTime.ParseExact(date, format, CultureInfo.InvariantCulture).ToUniversalTime();
         }
 
+        bool tweetHasAidrTags(Hashtable tweet)
+        {
+            return tweet.ContainsKey("aidr") && ((Hashtable)tweet["aidr"]).ContainsKey("nominal_labels");
+        }
+
+        void ParseAidrMetatags(List<Hashtable> tweets)
+        {
+            var hasNominalLabels = tweets.Where(n => tweetHasAidrTags(n));
+            if (!hasNominalLabels.Any())
+                return;
+
+            Dictionary<long, List<AidrLabel>> tweetLabels = new Dictionary<long, List<AidrLabel>>();
+            foreach (var item in hasNominalLabels)
+            {
+                long tweetID = Convert.ToInt64(item["id_str"]);
+                Hashtable aidr = (Hashtable)item["aidr"];
+                ArrayList nominalLabels = (ArrayList)aidr["nominal_labels"];
+                foreach (Hashtable labelData in nominalLabels)
+                {
+                    AidrLabel label = new AidrLabel();
+                    label.AttributeCode = labelData["attribute_code"].ToString();
+                    label.AttributeName = labelData["attribute_name"].ToString();
+                    label.LabelCode = labelData["label_code"].ToString();
+                    label.LabelName = labelData["label_name"].ToString();
+                    label.Confidence = Convert.ToDouble(labelData["confidence"]);
+
+                    //Don't store null tags or tags with low confidence
+                    if (label.LabelCode == "null" || label.Confidence < 0.7)
+                        continue;
+
+                    if (!tweetLabels.ContainsKey(tweetID))
+                        tweetLabels.Add(tweetID, new List<AidrLabel>());
+                    tweetLabels[tweetID].Add(label);
+                }
+            }
+
+            if (!tweetLabels.Any())
+                return;
+
+            //Group all tweetLabels into an attribute->label structure
+            var attributeDefinitions = from item in tweetLabels.Values.SelectMany(n => n)
+                group item by item.AttributeCode into attributeGroup
+                select new { 
+                    AttributeCode = attributeGroup.Key, 
+                    AttributeName = attributeGroup.First().AttributeName, 
+                    Labels = from label in attributeGroup.ToList()
+                            group label by label.LabelCode into labelGroup
+                            select new {
+                                LabelCode = labelGroup.Key,
+                                LabelName = labelGroup.First().LabelName
+                            }
+                    };
+
+            //Insert attribute definitions
+            StringBuilder sbAttr = new StringBuilder();
+            sbAttr.Append("insert into AidrAttribute (AttributeCode, AttributeName) values ");
+            bool firstLine = true;
+            foreach (var attribute in attributeDefinitions) 
+            {
+                if (firstLine)
+                    firstLine = false;
+                else
+                    sbAttr.Append(",");
+
+                sbAttr.Append("('");
+                sbAttr.Append(attribute.AttributeCode);
+                sbAttr.Append("','");
+                sbAttr.Append(attribute.AttributeName);
+                sbAttr.Append("')");
+            }
+            sbAttr.Append(" on duplicate key update AttributeName=values(AttributeName)");
+            Helpers.RunSqlStatement(Name, sbAttr.ToString(), false);
+
+            //Get attribute IDs
+            string attributeCodesStr = string.Join("','", attributeDefinitions.Select(n => n.AttributeCode));
+            Dictionary<string, uint> attributeIDs = new Dictionary<string,uint>();
+            Helpers.RunSelect(Name, 
+                "select AttributeID, AttributeCode from AidrAttribute", 
+                attributeIDs,
+                (values, reader) => attributeIDs.Add(reader.GetString("AttributeCode"), reader.GetUInt32("AttributeID")));
+
+            //Insert label definitions
+            var labelDefinitions =
+                from attrDef in attributeDefinitions
+                from lblDef in attrDef.Labels
+                select new
+                {
+                    AttributeID = attributeIDs[attrDef.AttributeCode],
+                    LabelCode = lblDef.LabelCode,
+                    LabelName = lblDef.LabelName
+                };
+
+            StringBuilder sbLabel = new StringBuilder();
+            sbLabel.Append("insert into AidrLabel (AttributeID, LabelCode, LabelName) values ");
+            firstLine = true;
+            foreach (var label in labelDefinitions)
+            {
+                if (firstLine)
+                    firstLine = false;
+                else
+                    sbLabel.Append(",");
+
+                sbLabel.Append("(");
+                sbLabel.Append(label.AttributeID);
+                sbLabel.Append(",'");
+                sbLabel.Append(label.LabelCode);
+                sbLabel.Append("','");
+                sbLabel.Append(label.LabelName);
+                sbLabel.Append("')");
+            }
+            sbLabel.Append(" on duplicate key update LabelName=values(LabelName)");
+            Helpers.RunSqlStatement(Name, sbLabel.ToString(), false);
+
+            //Get IDs for labels
+            string labelCodesStr = string.Join("','", labelDefinitions.Select(n => n.LabelCode));
+            Dictionary<uint, Dictionary<string, uint>> labelIDs = new Dictionary<uint, Dictionary<string, uint>>();
+            Helpers.RunSelect(Name, 
+                "select AttributeID, LabelCode, LabelID from AidrLabel", 
+                labelIDs,
+                (values, reader) => 
+                {
+                    uint attrId = reader.GetUInt32("AttributeID");
+                    string lblCode = reader.GetString("LabelCode");
+                    uint lblId = reader.GetUInt32("LabelID");
+                    if (!labelIDs.ContainsKey(attrId))
+                        labelIDs.Add(attrId, new Dictionary<string,uint>());
+                    labelIDs[attrId].Add(lblCode, lblId);
+                });
+
+            //Insert tweet tags
+            StringBuilder sbTweetTag = new StringBuilder();
+            sbTweetTag.Append("insert ignore into TweetAidrAttributeTag (TweetID, AttributeID, LabelID) values ");
+            firstLine = true;
+            foreach (var tweet in tweetLabels)
+            {
+                foreach (var label in tweet.Value)
+	            {
+                    if (firstLine)
+                        firstLine = false;
+                    else
+                        sbTweetTag.Append(",");
+
+                    sbTweetTag.Append("(");
+                    sbTweetTag.Append(tweet.Key);
+                    sbTweetTag.Append(",");
+                    sbTweetTag.Append(attributeIDs[label.AttributeCode]);
+                    sbTweetTag.Append(",");
+                    sbTweetTag.Append(labelIDs[attributeIDs[label.AttributeCode]][label.LabelCode]);
+                    sbTweetTag.Append(")");
+	            }
+            }
+            Helpers.RunSqlStatement(Name, sbTweetTag.ToString(), false);
+
+            Helpers.RunSqlStatement(Name, "update Tweet set ProcessedMetatags=0 where TweetID in (" + String.Join(",", tweetLabels.Keys) + ")", false);
+        }
+
         int DeleteParsedJsonTweets(IEnumerable<Int64> IDs)
         {
             string sql = "delete from TweetJson where ID in (" + String.Join(",", IDs.Select(n => n.ToString()).ToArray()) + ");";
             return Helpers.RunSqlStatement(Name, sql);
         }
-
-        #region Obsolete
-
-        Dictionary<long, UserMention> ExtractMentions(List<Hashtable> tweets)
-        {
-            //Count tweets, mentions(@screen_name in text) and in_reply_to_screen_name values
-
-            Dictionary<long, UserMention> mentions = new Dictionary<long, UserMention>();
-            foreach (Hashtable tweet in tweets)
-            {
-                if (!tweet.ContainsKey("text"))
-                    continue;
-
-                //Check in-reply-to field
-                long? replyToUserID = null;
-                if (tweet.ContainsKey("in_reply_to_user_id")
-                    && tweet["in_repl_to_user_id"] != null)
-                {
-                    replyToUserID = Convert.ToInt64(tweet["in_reply_to_user_id"]);
-                    string screenName = Convert.ToString(tweet["in_reply_to_screen_name"]);
-
-                    AddUserMention(mentions, replyToUserID.Value, screenName, null);
-                }
-
-                //Check mentions
-                if (tweet.ContainsKey("entities")
-                    && tweet["entities"] is Hashtable
-                    && ((Hashtable)tweet["entities"]).ContainsKey("user_mentions")
-                    && ((Hashtable)tweet["entities"])["user_mentions"] is ArrayList)
-                {
-                    ArrayList list = ((Hashtable)tweet["entities"])["user_mentions"] as ArrayList;
-                    foreach (var userItem in list)
-                    {
-                        if (userItem is Hashtable
-                            && ((Hashtable)userItem).ContainsKey("id")
-                            && ((Hashtable)userItem).ContainsKey("screen_name")
-                            && ((Hashtable)userItem).ContainsKey("name"))
-                        {
-                            long id = Convert.ToInt64(((Hashtable)userItem)["id"]);
-                            if (replyToUserID == id)
-                                continue;
-
-                            string screenName = Convert.ToString(((Hashtable)userItem)["screen_name"]);
-                            string realName = Convert.ToString(((Hashtable)userItem)["name"]);
-
-                            AddUserMention(mentions, id, screenName, realName);
-                        }
-                    }
-                }
-
-                long? retweetOf = null;
-                if (tweet.ContainsKey("retweeted_status") && ((Hashtable)tweet["retweeted_status"]).ContainsKey("id_str"))
-                    retweetOf = Convert.ToInt64(((Hashtable)tweet["retweeted_status"])["id_str"]);
-                if (!retweetOf.HasValue) //If it's a retweet, then the points have been awarded from mentions
-                {
-                    Hashtable user = (Hashtable)(tweet["user"]);
-                    AddUserMention(mentions,
-                        Convert.ToInt64(user["id"]),
-                        user["screen_name"].ToString(),
-                        user["name"].ToString());
-                }
-            }
-
-            return mentions;
-        }
-
-        void AddUserMention(Dictionary<long, UserMention> mentions, long id, string screenName, string realName)
-        {
-            if (!mentions.ContainsKey(id))
-            {
-                mentions.Add(id, new UserMention()
-                {
-                    UserID = id,
-                    ScreenName = screenName,
-                    RealName = realName,
-                    Count = 1
-                });
-            }
-            else
-            {
-                mentions[id].Count++;
-            }
-        }
-
-        void InsertUserScores(Dictionary<long, UserMention> mentions)
-        {
-            if (mentions.Count == 0)
-                return;
-
-            MySqlCommand command = new MySqlCommand();
-            StringBuilder insertSql = new StringBuilder();
-
-            insertSql.AppendLine("insert into TwitterUser (UserID, ScreenName, RealName, Score12h) values");
-            bool first = true;
-            foreach (var mention in mentions.Values)
-            {
-                if (first)
-                    first = false;
-                else
-                    insertSql.AppendLine(",");
-
-                AppendTuple(insertSql, command,
-                    mention.UserID,
-                    mention.ScreenName,
-                    mention.RealName,
-                    mention.Count);
-            }
-            insertSql.AppendLine();
-            insertSql.AppendLine(" on duplicate key update ScreenName=coalesce(VALUES(ScreenName),ScreenName), RealName=coalesce(VALUES(RealName),RealName), Score12h=Score12h+VALUES(Score12h);");
-            command.CommandText = insertSql.ToString();
-
-            Helpers.RunSqlStatement(Name, command);
-        }
-
-        #endregion
-
-        //void PrintJsonToFile(IEnumerable<Hashtable> tweets)
-        //{
-        //    TextWriter file = null;
-        //    DateTime fileDate = new DateTime();
-
-        //    foreach (Hashtable tweet in tweets.OrderBy(n => (DateTime)n["created_at_datetime"]))
-        //    {
-        //        DateTime time = (DateTime)tweet["created_at_datetime"];
-
-        //        if (time.Date != fileDate)
-        //        {
-        //            if (file != null)
-        //            {
-        //                file.Close();
-        //                file.Dispose();
-        //            }
-
-        //            fileDate = time.Date;
-        //            file = new StreamWriter(path: "json/twitter_json_" + fileDate.ToString("yyyy-MM-dd") + ".txt", append: true);
-        //        }
-
-        //        file.WriteLine(tweet["id"] + "," + tweet["json"]);
-        //    }
-
-        //    if (file != null)
-        //    {
-        //        file.Close();
-        //        file.Dispose();
-        //    }
-        //}
     }
 }

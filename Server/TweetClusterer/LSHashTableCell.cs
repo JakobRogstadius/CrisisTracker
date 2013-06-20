@@ -54,6 +54,6 @@ namespace CrisisTracker.TweetClusterer
             _content = new Queue<LSHashTweet>(tmp);
         }
 
-        public int Count { get { return _content.Count; } }
+        public IEnumerable<long> GetTweetIDs() { return _content.Select(n => n.ID); }
     }
 }

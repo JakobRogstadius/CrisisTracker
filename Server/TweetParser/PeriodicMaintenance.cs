@@ -45,7 +45,7 @@ namespace CrisisTracker.TweetParser
 
                 //Decrease user scores and delete when score is too low
                 //0.995198 every 10 minutes gives 50% decrease per 12 hours
-                Helpers.RunSqlStatement(Name, "update TwitterUser set Score12h = Score12h * 0.990419 where Score12h > 0.4;", false);
+                Helpers.RunSqlStatement(Name, "update TwitterUser set Score12h = Score12h * 0.990419 where Score12h >= 0.5;", false);
                 Console.Write(".");
                 Helpers.RunSqlStatement(Name, "delete from TwitterUser where not exists (select 1 from Tweet where Tweet.UserID = TwitterUser.UserID limit 1) and Score12h < 0.5;", false);
                 Console.Write(".");

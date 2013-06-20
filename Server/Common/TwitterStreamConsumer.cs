@@ -16,23 +16,33 @@ using MySql.Data.MySqlClient;
 using System.Threading;
 using System.Text.RegularExpressions;
 using System.Globalization;
+using System.Collections;
+using Procurios.Public;
+using System.Linq;
+using LinqToTwitter;
 
 namespace CrisisTracker.Common
 {
     public abstract class TwitterStreamConsumer
     {
-        DateTime _lastDBWrite;
+        DateTime _lastDBWrite = new DateTime(1000, 1, 1);
         Queue<string> _tweetQueue;
         BackgroundWorker _worker;
         string _connectionString;
         bool _wordStatsOnly;
         bool _dbFail = false;
+        protected int RateLimitPerMinute = 3000;
+        bool _isConsuming = false;
+        TwitterContext _twitterContext = null;
 
         public string OutputFileDirectory { get; set; }
 
         public bool ResetPending { get; set; }
 
         public string Name { get; set; }
+
+        protected abstract InMemoryCredentials GetCredentials();
+        protected abstract IQueryable<Streaming> GetStreamQuery(TwitterContext context);
 
         public TwitterStreamConsumer(string connectionString, bool useForWordStatsOnly)
         {
@@ -49,12 +59,14 @@ namespace CrisisTracker.Common
             DateTime executionStart = DateTime.Now;
             while (true)
             {
-                Console.Write("-");
+                Console.WriteLine("Resetting connection");
                 try
                 {
                     executionStart = DateTime.Now;
                     ResetPending = false;
                     ConsumeStream();
+                    while (_isConsuming)
+                        Thread.Sleep(1000);
                 }
                 catch (Exception e)
                 {
@@ -75,78 +87,70 @@ namespace CrisisTracker.Common
             }
         }
 
-        void ConsumeStream()
+        void CreateContext()
         {
-            HttpWebRequest webRequest = GetRequest();
-
-            if (webRequest == null)
-                Output.Print(Name, "webRequest is null");
-
-            using (HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse())
+            SingleUserAuthorizer authorizer = new SingleUserAuthorizer()
             {
-                if (webResponse == null)
-                    Output.Print(Name, "webResponse is null");
-
-                using (StreamReader streamReader = new StreamReader(webResponse.GetResponseStream(), Encoding.UTF8))
-                {
-                    if (streamReader == null)
-                        Output.Print(Name, "streamReader is null");
-
-                    int nonMessages = 0;
-                    while (true)
-                    {
-                        if (ResetPending)
-                            break;
-
-                        string streamContent = streamReader.ReadLine();
-                        if (streamContent == null) //Connection lost
-                        {
-                            Output.Print(Name, "Content of stream was null. Resetting connection.");
-                            break;
-                        }
-                        else if (streamContent == "" || !streamContent.StartsWith("{")) //Keep-alive (\r) or unhandled data
-                        {
-                            nonMessages++;
-                            if (nonMessages > 10)
-                            {
-                                Output.Print(Name, "Many non-messages in a row. Resetting connection.");
-                                break; //10 non-messages in a row probably means that something went wrong
-                            }
-                            continue;
-                        }
-                        if (nonMessages > 0)
-                            nonMessages--;
-
-                        _tweetQueue.Enqueue(streamContent);
-
-                        AllowAsyncDBWrite();
-                    }
-
-                    try
-                    {
-                        webRequest.Abort(); //The HttpWebRequest cannot be used again after this, because its WebResponse will be disposed.
-                        streamReader.Close();
-                        webResponse.Close();
-                    }
-                    catch (Exception e)
-                    {
-                        Output.Print(Name, "Exception when cleaning up connection resources:" + Environment.NewLine + e.ToString());
-                    }
-                }
-            }
-
-            webRequest = null;
-            GC.Collect();
+                Credentials = GetCredentials()
+            };
+            _twitterContext = new TwitterContext(authorizer)
+            {
+                Log = Console.Out
+            };
         }
 
-        protected abstract HttpWebRequest GetRequest();
+        void ConsumeStream()
+        {
+            _isConsuming = true;
+            int nonMessageCount = 0;
+
+            if (_twitterContext == null)
+                CreateContext();
+
+            Console.WriteLine("Consuming stream");
+            var selection = GetStreamQuery(_twitterContext);
+            selection.StreamingCallback(stream =>
+            {
+                //Did any connection error occur?
+                if (ResetPending
+                    || stream.Status == TwitterErrorStatus.RequestProcessingException
+                    || stream.Content == null
+                    || nonMessageCount > 10)
+                {
+                    stream.CloseStream();
+                    _isConsuming = false;
+                    return;
+                }
+
+                //Unhandled data
+                if (stream.Status != TwitterErrorStatus.Success)
+                {
+                    Console.WriteLine(stream.Content);
+                    nonMessageCount++;
+                    return;
+                }
+
+                //Normal message
+                if (nonMessageCount > 0)
+                    nonMessageCount--;
+
+                //if (stream.Content.StartsWith("{") && stream.Content.EndsWith("}"))
+                //    Console.Write(".");
+                //else
+                //    Console.Write(stream.Content.Substring(stream.Content.Length - Math.Min(stream.Content.Length, 3)));
+
+                _tweetQueue.Enqueue(stream.Content);
+                AllowAsyncDBWrite();
+            })
+            .SingleOrDefault();
+        }
 
         object _workerLock = new object();
         void AllowAsyncDBWrite()
         {
             lock (_workerLock)
             {
-                if (_worker.IsBusy || _tweetQueue.Count == 0 || (_tweetQueue.Count < 50 && (DateTime.Now - _lastDBWrite).TotalSeconds < 20))
+                if (_worker.IsBusy || _tweetQueue.Count == 0 || (_tweetQueue.Count < 100 && (DateTime.Now - _lastDBWrite).TotalSeconds < 20))
                     return;
 
                 _worker.RunWorkerAsync();
@@ -155,20 +159,28 @@ namespace CrisisTracker.Common
 
         void DBWrite(object sender, DoWorkEventArgs args)
         {
+            //Check rate limit
+            DateTime writeTime = DateTime.Now;
+            int maxWrites = (int)Math.Ceiling(RateLimitPerMinute * (writeTime - _lastDBWrite).TotalMinutes);
+            _lastDBWrite = writeTime;
+
             int discardedCount = 0;
             List<string> tweets = new List<string>();
             while (_tweetQueue.Count > 0)
             {
                 string tweet = _tweetQueue.Dequeue();
-                if (tweets.Count < 500)
+                if (tweets.Count < maxWrites)
                     tweets.Add(tweet);
                 else
                     discardedCount++;
             }
 
             if (discardedCount > 0)
-                Output.Print(Name, "Discarded " + discardedCount + " tweets from the stream.");
-            
+                Console.WriteLine("Rate limited: Discarding " + discardedCount + " tweets (saving " + tweets.Count + ")");
+
+            if (tweets.Count == 0)
+                return;
+
             MySqlConnection connection = null;
             try
             {
@@ -222,10 +234,6 @@ namespace CrisisTracker.Common
                     Output.Print(Name, "Exception when trying to close DB connection:" + Environment.NewLine + e);
                 }
             }
-
-            //PrintJsonToFile(tweets);
-
-            _lastDBWrite = DateTime.Now;
         }
 
         void SetInsertStatement(MySqlCommand command, List<string> tweets)

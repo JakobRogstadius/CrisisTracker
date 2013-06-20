@@ -9,10 +9,10 @@
 
 function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStories = true) {
   $story = array('storyID' => $storyID);
-  
+
   // Story info
   $storyInfoResult = mysql_query(
-  "select 
+  "select
       Title,
       CustomTitle,
       UserCount,
@@ -26,7 +26,7 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
     from Story left join StoryCustomTitle t on t.StoryID=Story.StoryID
     where Story.StoryID = $storyID", $db_conn);
   $storyInfo = mysql_fetch_array($storyInfoResult);
-  
+
   $story['title'] = $storyInfo['Title'];
   $story['customTitle'] = urldecode($storyInfo['CustomTitle']);
   $story['userCount'] = $storyInfo['UserCount'];
@@ -37,7 +37,7 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
   $story['startTimeShort'] = $storyInfo['StartTimeShort'];
   $story['endTimeShort'] = $storyInfo['EndTimeShort'];
   $story['isHidden'] = $storyInfo['IsHidden'];
-  
+
   /*
   // URLs
   $storyUrlsResult = mysql_query(
@@ -47,7 +47,7 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
   group by 1
   order by count(*) desc, CreatedAt
   limit 10", $db_conn);
-  
+
   if (mysql_num_rows($storyUrlsResult) > 0) {
     $story['topUrls'] = array();
     while($row = mysql_fetch_array($storyUrlsResult)) {
@@ -55,17 +55,17 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
     }
   }
   */
-  
+
   // First Tweet
   $firstTweetResult = mysql_query(
   "select TweetID, RealName, ScreenName, CreatedAt, ShortDate(CreatedAt) as CreatedAtShort, Text
   from Tweet natural join TwitterUser natural join TweetCluster
-    left join PendingStorySplits pss on pss.TweetClusterID = Tweet.TweetClusterID
+    left join StorySplits pss on pss.TweetClusterID = Tweet.TweetClusterID
   where TweetCluster.StoryID=$storyID and pss.TweetClusterID is null
   order by CreatedAt
   limit 1", $db_conn);
   $firstTweet = mysql_fetch_array($firstTweetResult);
-  
+
   $story['firstTweet'] = array();
   $story['firstTweet']['tweetID'] = $firstTweet['TweetID'];
   $story['firstTweet']['screenName'] = htmlspecialchars($firstTweet['ScreenName']);
@@ -73,50 +73,57 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
   $story['firstTweet']['createdAt'] = $firstTweet['CreatedAt'];
   $story['firstTweet']['createdAtShort'] = $firstTweet['CreatedAtShort'];
   $story['firstTweet']['text'] = $firstTweet['Text'];
-  
-  
-  $orderby = 'TweetCount desc';
+
+
+  $orderby = 'NoveltyWeight desc';
   if ($sortOrder != 'size')
     $orderby = 'CreatedAt';
-  
-  if ($sortOrder == "first50") {
-    // First 50 versions
+
+  if ($sortOrder == "first20") {
+    // First 20 versions
     $storySummaryResult = mysql_query(
     "select * from (
-      select T.TweetCount, t.TweetID, T.TweetClusterID, t.Text, t.CreatedAt, ShortDate(t.CreatedAt) as CreatedAtShort, u.ScreenName, u.RealName, u.UserID
+      select T.UserCount, t.TweetID, T.TweetClusterID, t.Text, t.CreatedAt, ShortDate(t.CreatedAt) as CreatedAtShort, u.ScreenName, u.RealName, u.UserID
       from (
-          select Tweet.TweetClusterID, min(TweetID) as FirstID, count(*) as TweetCount from Tweet natural join TweetCluster where StoryID=$storyID
+          select Tweet.TweetClusterID, min(TweetID) as FirstID, count(distinct UserID) as UserCount from Tweet natural join TweetCluster where StoryID=$storyID
           group by lcase(IF(left(Text, 30) REGEXP '^RT @[a-zA-Z0-9_]+: ', SUBSTR(Text, LOCATE(':', Text) + 2, 30), left(Text, 30)))
+          having max(Novelty) > 0.2
       ) T
       join Tweet t on t.TweetID = T.FirstID
       join TwitterUser u on u.UserID = t.UserID
-        left join PendingStorySplits pss on pss.TweetClusterID = t.TweetClusterID
+        left join StorySplits pss on pss.TweetClusterID = t.TweetClusterID
       where Text!='' and pss.TweetClusterID is null
       order by t.CreatedAt
-      limit 50) T2
-    order by $orderby", $db_conn);    
+      limit 20) T2
+    order by $orderby", $db_conn);
   }
   else {
     // Summary of tweets
     $storySummaryResult = mysql_query(
     "select * from (
-        select T.TweetCount, t.TweetID, T.TweetClusterID, t.Text, t.CreatedAt, ShortDate(t.CreatedAt) as CreatedAtShort, u.ScreenName, u.RealName, u.UserID
+        select T.UserCount, T.NoveltyWeight, t.TweetID, T.TweetClusterID, t.Text, t.CreatedAt, ShortDate(t.CreatedAt) as CreatedAtShort, u.ScreenName, u.RealName, u.UserID
         from (
-            select Tweet.TweetClusterID, min(TweetID) as FirstID, count(*) as TweetCount from Tweet natural join TweetCluster where StoryID=$storyID
+            select
+              Tweet.TweetClusterID,
+              min(TweetID) as FirstID,
+              count(distinct UserID) as UserCount,
+              log(1+count(distinct UserID))*pow(max(Novelty),2) as NoveltyWeight
+            from Tweet natural join TweetCluster where StoryID=$storyID
             group by lcase(IF(left(Text, 30) REGEXP '^RT @[a-zA-Z0-9_]+: ', SUBSTR(Text, LOCATE(':', Text) + 2, 30), left(Text, 30)))
+            having max(Novelty) > 0.2
         ) T
         join Tweet t on t.TweetID = T.FirstID
         join TwitterUser u on u.UserID = t.UserID
-        left join PendingStorySplits pss on pss.TweetClusterID = t.TweetClusterID
+        left join StorySplits pss on pss.TweetClusterID = t.TweetClusterID
         where Text!='' and pss.TweetClusterID is null
-        order by TweetCount desc
-        limit 50) T2
+        order by NoveltyWeight desc
+        limit 20) T2
     order by $orderby", $db_conn);
   }
-  
+
   if (mysql_num_rows($storySummaryResult) > 0) {
     $story['topTweets'] = array();
-    
+
     while($row = mysql_fetch_array($storySummaryResult)) {
       $tweet = array();
       $tweet['firstCreatedAt'] = $row['CreatedAt'];
@@ -126,26 +133,26 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
       $tweet['firstScreenName'] = htmlspecialchars($row['ScreenName']);
       $tweet['firstRealName'] = htmlspecialchars($row['RealName']);
       $tweet['tweetClusterID'] = $row['TweetClusterID'];
-      $tweet['count'] = $row['TweetCount'];
+      $tweet['count'] = $row['UserCount'];
       $tweet['text'] = $row['Text'];
-  
+
       $story['topTweets'][] = $tweet;
     }
   }
-  
+
   if ($includeRelatedStories) {
     // Related stories
 /*    $relatedStoriesResult = mysql_query(
-      "select 
+      "select
           StoryID2 as StoryID,
           Title,
           ShortDate(StartTime) as StartTimeShort,
           ceil(least(UserCount, TweetCount + 0.5*log(10+RetweetCount))) as Popularity
       from (
           select
-              StoryID1, 
-              StoryID2, 
-              (1+log10(UserCount)) * 0.5*T.CommonTags/(T.TagCount1+count(*)) / (1+0.2*dayDiff) as Similarity, 
+              StoryID1,
+              StoryID2,
+              (1+log10(UserCount)) * 0.5*T.CommonTags/(T.TagCount1+count(*)) / (1+0.2*dayDiff) as Similarity,
               CommonTags
           from (
               select
@@ -166,7 +173,7 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
                   join StoryInfoKeywordTag t1 on t1.StoryID=s1.StoryID
                   join StoryInfoKeywordTag t2 on t2.InfoKeywordID=t1.InfoKeywordID and t2.StoryID!=t1.StoryID
                   join Story s2 on s2.StoryID=t2.StoryID
-                  left join PendingStoryMerges psm on psm.StoryID2 = s2.StoryID
+                  left join StoryMerges psm on psm.StoryID2 = s2.StoryID
                   where psm.StoryID2 is null
               group by s1.StoryID, s2.StoryID
           ) T
@@ -182,12 +189,12 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
 
     /* Query looks complicated, but consists of three unions. Similarity is the sum of similarity by geotags, people and categories */
     $relatedStoriesResult = mysql_query(
-      "select 
+      "select
           s.StoryID as StoryID,
           Title,
           CustomTitle,
           ShortDate(StartTime) as StartTimeShort,
-          ceil(exp(Importance)) as Popularity
+          round(WeightedSize) as Popularity
       from (
           select
               StoryID, sum(Hits) as Hits
@@ -202,7 +209,7 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
                   ) tags
                   join StoryLocationTag t on t.Longitude between MinLon and MaxLon and t.Latitude between MinLat and MaxLat and t.StoryID!=tags.StoryID
                   join Story s on s.StoryID=t.StoryID
-                  left join PendingStoryMerges psm on psm.StoryID2 = s.StoryID
+                  left join StoryMerges psm on psm.StoryID2 = s.StoryID
                   where psm.StoryID2 is null
               group by s.StoryID
               union
@@ -216,7 +223,7 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
                   ) tags
                   join StoryInfoEntityTag t on t.InfoEntityID = tags.InfoEntityID and t.StoryID!=tags.StoryID
                   join Story s on s.StoryID=t.StoryID
-                  left join PendingStoryMerges psm on psm.StoryID2 = s.StoryID
+                  left join StoryMerges psm on psm.StoryID2 = s.StoryID
                   where psm.StoryID2 is null
               group by s.StoryID
               union
@@ -230,7 +237,7 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
                   ) tags
                   join StoryInfoCategoryTag t on t.InfoCategoryID = tags.InfoCategoryID and t.StoryID!=tags.StoryID
                   join Story s on s.StoryID=t.StoryID
-                  left join PendingStoryMerges psm on psm.StoryID2 = s.StoryID
+                  left join StoryMerges psm on psm.StoryID2 = s.StoryID
                   where psm.StoryID2 is null
               group by s.StoryID
           ) T
@@ -239,10 +246,10 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
       ) T
       natural join Story s
       left join StoryCustomTitle sct on sct.StoryID=s.StoryID;", $db_conn);
-    
+
     if (mysql_num_rows($relatedStoriesResult) > 0) {
       $story['relatedStories'] = array();
-      
+
       while($row = mysql_fetch_array($relatedStoriesResult)) {
         $relStory = array();
         $relStory['storyID'] = $row['StoryID'];
@@ -252,21 +259,21 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
           $relStory['title'] = urldecode($row['CustomTitle']);
         $relStory['popularity'] = $row['Popularity'];
         $relStory['startTimeShort'] = $row['StartTimeShort'];
-    
+
         $story['relatedStories'][] = $relStory;
       }
     }
-    
+
     $duplicateStoriesResult = mysql_query(
-      "select 
+      "select
         s.StoryID as StoryID,
         Title,
         CustomTitle,
         ShortDate(StartTime) as StartTimeShort,
-        ceil(exp(Importance)) as Popularity
+        round(WeightedSize) as Popularity
       from (
         select
-            StoryID2 as StoryID, 
+            StoryID2 as StoryID,
             count(*)/(TagCount1+TagCount2) as Hits
         from (
             select
@@ -291,17 +298,17 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
                         StoryInfoKeywordTag t
                         natural join
                         (
-                            select 
-                                Story.StoryID, 
-                                Story.UserCount, 
+                            select
+                                Story.StoryID,
+                                Story.UserCount,
                                 (select count(*) from StoryInfoKeywordTag t where t.StoryID=Story.StoryID) as TagCount2
                             from (select StoryID, StartTime-interval 24 hour t1, EndTime+interval 6 hour t2 from Story where StoryID=$storyID) T,
                                 Story
-                                left join PendingStoryMerges psm on psm.StoryID2 = Story.StoryID
-                            where StartTime between t1 and t2 
+                                left join StoryMerges psm on psm.StoryID2 = Story.StoryID
+                            where StartTime between t1 and t2
                                 and Story.StoryID != T.StoryID
                                 and psm.StoryID2 is null
-                            order by Importance desc
+                            order by WeightedSize desc
                             limit 3000
                         ) NearTimeStoryIDs
                     ) sikt2 on sikt2.InfoKeywordID=sikt1.InfoKeywordID
@@ -315,7 +322,7 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
 
     if (mysql_num_rows($duplicateStoriesResult) > 0) {
       $story['duplicateStories'] = array();
-      
+
       while($row = mysql_fetch_array($duplicateStoriesResult)) {
         $relStory = array();
         $relStory['storyID'] = $row['StoryID'];
@@ -325,7 +332,7 @@ function get_story_content($storyID, $sortOrder, $db_conn, $includeRelatedStorie
           $relStory['title'] = urldecode($row['CustomTitle']);
         $relStory['popularity'] = $row['Popularity'];
         $relStory['startTimeShort'] = $row['StartTimeShort'];
-    
+
         $story['duplicateStories'][] = $relStory;
       }
     }

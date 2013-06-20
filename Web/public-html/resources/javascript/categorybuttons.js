@@ -6,23 +6,6 @@
 * http://opensource.org/licenses/eclipse-1.0.php
 *******************************************************************************/
 
-/* Functions for printing and interacting with the category buttons */
-/*
-var categoryNames = ["Civillian&nbsp;involvement",
-  "Military&nbsp;involvement",
-  "Crime",
-  "Violence",
-  "Deaths",
-  "Missing&nbsp;people",
-  "Damaged&nbsp;infrastructure",
-  "Natural&nbsp;hazard",
-  "Political&nbsp;event",
-  "Summary&nbsp;report",
-  "Available&nbsp;resource",
-  "Request/Need",
-  "Warning/Risk/Danger",
-  "High&nbsp;impact&nbsp;event"];
-*/
 var categoryNames = ["Demonstration",
   "Violence",
   "Detained/Missing",
@@ -59,25 +42,25 @@ var categoryTooltips = ["Demonstration, rally, public gathering, etc.",
  */
 function printCategoryButtons(activeIDs) {
   $('div#categorybuttons').html("");
-  
+
   if (activeIDs==null) {
     activeIDs = new Array();
   }
 
   html = "";
-  for (i=1; i<15; i++) {
-    if (i==1 || i==8) {
+  for (i=1; i<categoryNames.length+1; i++) {
+    if (i==1 || i==(categoryNames.length/2 + 1)) {
       html += '<div class="category-button-column">';
     }
-  
+
     inactive="";
     if (activeIDs.indexOf(i) < 0) {
       inactive=" inactive";
     }
-      
+
     html += '<a class="category-button cc' + i + inactive + '" title="' + categoryTooltips[i-1] + '"><span class="value">' + i + '</span><span class="label">' + categoryNames[i-1] + '</span></a>';
-    
-    if (i==7 || i==14) {
+
+    if (i==categoryNames.length/2 || i==categoryNames.length) {
       html += '</div>';
     }
   }
@@ -88,7 +71,7 @@ function printCategoryButtons(activeIDs) {
     $(this).toggleClass("inactive");
     id = parseInt($(this).find('.value').text());
     isSelected = !($(this).hasClass('inactive'));
-    updateCategory(id, isSelected); 
+    updateCategory(id, isSelected);
   });
 }
 
@@ -107,13 +90,13 @@ function getSelectedCategories() {
 }
 
 /**
-Extract name of a category according to provided ID   
+Extract name of a category according to provided ID
 **/
 function getCategoryNameById(id) {
 var tag;
 // since cannot have access to category_names array (not global)
   $('.category-button').each(function(index) {
-    if (id == index+1) {  
+    if (id == index+1) {
       tag = $(this).find('.label').text();
       callbackUpdateActiveStoryAddedCategory(id,tag);
     }
@@ -129,8 +112,8 @@ function updateCategory(id, isSelected) {
     // add to removed_categories_array
     onRemoveTagCategories(id);
   }
-  else {    
+  else {
     // add to added_categories_array
-    onAddTagCategories(id);   
+    onAddTagCategories(id);
   }
 }

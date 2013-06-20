@@ -13,7 +13,7 @@
 //Returns an object of arrays of filter settings
 function loadFilterSettingsFromCookie() {
 	var settings = {};
-	
+
 	var categoryfilter = $.cookie("categoryfilter");
 	if (categoryfilter !== null && categoryfilter !== '') {
 		settings["categoryfilter"] = $.map(categoryfilter.split(","), function (x) { return parseInt(x); });
@@ -80,28 +80,28 @@ function saveQueryParamsToDB() {
 		return;
 
 	removeAllGeometryFromVectorLayer("OpenLayers.Geometry.Point");
-	showLoadingAnimation();	
+	showLoadingAnimation();
 	clearHtmlStoriesList();
 	// removeAllFeaturesFromLayer();
 	// clearDatePickers();
-	console.log("saveQueryParamsToDB.... now calling ajaxSendQuery()");	
-	// -------- Parameters -----------	
+	console.log("saveQueryParamsToDB.... now calling ajaxSendQuery()");
+	// -------- Parameters -----------
 	// Category
 	var categoryfilter = new Array();
 	categoryfilter = crisis_tracker.added_categories_array;
-	
+
 	// Entity
 	var entityfilter = new Array();
 	entityfilter = crisis_tracker.added_entities_array;
-	
+
 	// Keyword
 	var keywordfilter = new Array();
 	keywordfilter = crisis_tracker.added_keywords_array;
-	
+
 	// locationfilter: minLong, minLat, maxLong, maxLat
-	// var locationfilter = "-180,-90,180,90";	
+	// var locationfilter = "-180,-90,180,90";
 	var locationfilter = environment.added_bounds;
-	
+
 	// minstarttime: YYYY-MM-DD hh:mm:ss
 	var minTimeStr = null, minTimeStrShort = null;
 	if (environment.addedMinDate) {
@@ -118,13 +118,13 @@ function saveQueryParamsToDB() {
     maxTimeStrShort = environment.addedMaxDate.getFullYear() + "-" + (m < 10 ? "0" + m : m) + "-" + (d < 10 ? "0" + d : d);
 		maxTimeStr = maxTimeStrShort + "%2000:00:00";
 	}
-		
+
 	// Stories sort order (e.g. largest, trending)
 	var sortorder = environment.priority;
-	
+
 	// limit: int
-	var limit = 50;	
-	
+	var limit = 20;
+
 	console.log("LOCATIONFILTER IS " + locationfilter);
 	saveFilterSettingsToCookie(
 	    categoryfilter,
@@ -135,17 +135,17 @@ function saveQueryParamsToDB() {
 	    locationfilter,
 	    sortorder
 	);
-	
+
   var hideArabic = ($.cookie("hidearabic") == "true");
 	// --------- AJAX Call ------------
 	ajaxSendQuery(categoryfilter,entityfilter,keywordfilter,sortorder,limit,minTimeStr,maxTimeStr,locationfilter,hideArabic);
-	// ajaxSendQuery(categoryfilter,entityfilter,keywordfilter,sortorder,limit,minstarttime,maxstarttime);	//../database/xlm_parser.js	
+	// ajaxSendQuery(categoryfilter,entityfilter,keywordfilter,sortorder,limit,minstarttime,maxstarttime);	//../database/xlm_parser.js
 }
 
 function populateFilterSettings() {
 	console.log("Populating filter settings");
 	var settings = loadFilterSettingsFromCookie();
-	
+
 	//Categories
 	if (settings.hasOwnProperty("categoryfilter")){
 		printCategoryButtons(settings["categoryfilter"]); //Doesn't set global filter variable
@@ -154,28 +154,28 @@ function populateFilterSettings() {
 	}
 	else
 		printCategoryButtons();
-	
+
 	//Entities
 	if (settings.hasOwnProperty("entityfilter")) {
-		for(var i=0; i<settings["entityfilter"].length; i++){ 
+		for(var i=0; i<settings["entityfilter"].length; i++){
 			$('#tags_entities').addTag(settings["entityfilter"][i]);
 		}
 	}
 
 	//Keywords
 	if (settings.hasOwnProperty("keywordfilter")) {
-		for(var i=0; i<settings["keywordfilter"].length; i++){ 
+		for(var i=0; i<settings["keywordfilter"].length; i++){
 			$('#tags_keywords').addTag(settings["keywordfilter"][i]);
 		}
 	}
-	
+
 	//Time range
 	if (settings.hasOwnProperty("minstarttime")) {
 		$("#from").val(settings["minstarttime"]);
 		var dateParts = settings["minstarttime"].split("-");
 		date = new Date(dateParts[0], (dateParts[1] - 1), dateParts[2]);
 		handleDateSelection(date, "from");
-		
+
 	}
 	if (settings.hasOwnProperty("maxstarttime")) {
 		$("#to").val(settings["maxstarttime"]);
@@ -183,17 +183,17 @@ function populateFilterSettings() {
 		date = new Date(dateParts[0], (dateParts[1] - 1), dateParts[2]);
 		handleDateSelection(date, "to");
 	}
-	
+
 	//Location
 	if (settings.hasOwnProperty("locationfilter")) {
 		var minlon = settings["locationfilter"][0];
 		var minlat = settings["locationfilter"][1];
 		var maxlon = settings["locationfilter"][2];
 		var maxlat = settings["locationfilter"][3];
-		
+
 		$("#mapbounds").attr("checked", true);
 		$('.map_inactive').toggleClass("map_active");
-		
+
 		setMapActiveBounds(new OpenLayers.Bounds(minlon, minlat, maxlon, maxlat));
 	}
 
@@ -256,11 +256,11 @@ function callBackQueryStoriesLoaded(stories_container) {
 	var geotags_container = new Array();
 	var lonlat;
 	// console.log(stories_container);
-	
+
 	// Stories Reading
   if (stories_container.length > 0) {
     for(var i=0; i<stories_container.length; i++) {
-      
+
       // params
       var storyId = stories_container[i].storyId;
       var title = stories_container[i].title;
@@ -268,18 +268,18 @@ function callBackQueryStoriesLoaded(stories_container) {
       // console.log("userCount");
       // console.log(userCount);
       var startTime = stories_container[i].startTime;
-  
+
       var entityCount = stories_container[i].entityCount;
-      
+
       var locationCount = stories_container[i].locationCount;
       var locations = stories_container[i].locations;
-          
+
       var categoryCount = stories_container[i].categoryCount;
       var categories = stories_container[i].categories;
-          
+
       // filling html data
       htmlStoriesListFiller(storyId, title, userCount, locationCount, entityCount, startTime, categoryCount, categories);
-  
+
       // GeoTags
       for (var j=0; j<locationCount; j++) {
         lonlat = new OpenLayers.LonLat(locations[j].lon, locations[j].lat);	// Create temporary LonLat
@@ -306,24 +306,24 @@ function callBackQueryStoriesLoaded(stories_container) {
 /**
 **	Fill in the HTML code into the List with the content from the Stories
 **/
-function htmlStoriesListFiller(storyId, title, userCount, locationCount, entityCount, startTime, categoryCount, categories) {	
+function htmlStoriesListFiller(storyId, title, userCount, locationCount, entityCount, startTime, categoryCount, categories) {
 	var colors_html='';
 	var loc_tags_hasvalue = '';
 	var ent_tags_hasvalue = '';
-	
+
 	for(var j=0; j<categoryCount; j++) {
 		var color_code = 'cc'+categories[j];
 		colors_html += '<span class="td '+color_code+'">&nbsp;</span>';
 	}
-	
+
 	if (locationCount != 0) {
 		loc_tags_hasvalue = "hasvalue";
 	}
-	
+
 	if (entityCount != 0) {
 		ent_tags_hasvalue = "hasvalue";
 	}
-	
+
 	var html = '<li class="story-list-item"><a class="wrapper" href="story.php?storyid='+storyId+'">'
 		+ '<span class="column size">'+userCount+'</span>'
 		+ '<span class="column time">'+startTime+'</span>'
@@ -357,7 +357,7 @@ function clearHtmlStoriesList() {
 function addDateTextboxListeners() {
 	$("#from").change(function() {
 		var date = null;
-		if ($("#from").val() != "") { 
+		if ($("#from").val() != "") {
 			var dateParts = $("#from").val().split("-");
 			date = new Date(dateParts[0], (dateParts[1] - 1), dateParts[2]);
 		}
@@ -365,7 +365,7 @@ function addDateTextboxListeners() {
 	});
 	$("#to").change(function() {
 		var date = null;
-		if ($("#to").val() != "") { 
+		if ($("#to").val() != "") {
 			var dateParts = $("#to").val().split("-");
 			date = new Date(dateParts[0], (dateParts[1] - 1), dateParts[2]);
 		}
@@ -382,25 +382,25 @@ function startDatePicker() {
 		changeMonth: true,
 		dateFormat: "yy-mm-dd",
 		numberOfMonths: 3,
-		
+
 		// Event Handlers
 		onSelect: function( selectedDate ) {
-			var option = this.id == "from" ? "minDate" : "maxDate",				
+			var option = this.id == "from" ? "minDate" : "maxDate",
 				instance = $( this ).data( "datepicker" ),
 				date = $.datepicker.parseDate(
 					instance.settings.dateFormat ||
 					$.datepicker._defaults.dateFormat,
-					selectedDate, instance.settings );				
+					selectedDate, instance.settings );
 			dates.not( this ).datepicker( "option", option, date );
 			handleDateSelection(date, this.id);
 		},
-		
+
 		onClose : function( selectedDate ) {
 			instance = $( this ).data( "datepicker" );
 			//handleDateClose(selectedDate, instance);
 		}
 	});
-	
+
 	$("#from").datepicker({dateFormat: 'yyyy-mm-dd'});
 	$("#to").datepicker({dateFormat: 'yyyy-mm-dd'});
 }

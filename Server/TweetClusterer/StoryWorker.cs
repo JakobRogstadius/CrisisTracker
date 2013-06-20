@@ -11,20 +11,38 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using CrisisTracker.Common;
+using Procurios.Public;
+using System.Collections;
+using MySql.Data.MySqlClient;
 
 namespace CrisisTracker.TweetClusterer
 {
     public class StoryWorker
     {
+        class MergeAction
+        {
+            public long KeptStoryID { get; set; }
+            public long MergedStoryID { get; set; }
+        }
+
+        class SplitAction
+        {
+            public long StoryID { get; set; }
+            public long TweetClusterID { get; set; }
+        }
+
         class SimpleTweetCluster
         {
             public long TweetClusterID { get; set; }
             public long? StoryID { get; set; }
-            public WordVector Vector { get; set; }
+            public DateTime StartTime { get; set; }
+            public DateTime EndTime { get; set; }
+            public WordVector WordVector { get; set; }
+            public bool isNewStory { get; set; }
 
             public SimpleTweetCluster()
             {
-                Vector = new WordVector();
+                WordVector = new WordVector();
             }
 
             public override bool Equals(object obj)
@@ -43,59 +61,128 @@ namespace CrisisTracker.TweetClusterer
         class SimpleStory
         {
             public long StoryID { get; set; }
-            public WordVector Vector { get; set; }
-            public bool Changed { get; set; }
-            public bool Created { get; set; }
-            public long? MergedWith { get; set; }
+            public WordVector WordVector { get; set; }
+            public HashSet<string> Tags { get; set; }
+            public DateTime StartTime { get; set; }
+            public DateTime EndTime { get; set; }
 
             public SimpleStory()
             {
-                Vector = new WordVector();
+                WordVector = new WordVector();
             }
 
-            public override bool Equals(object obj)
+            public bool IsSimilarTo(SimpleStory story)
             {
-                if (obj is SimpleStory)
-                    return StoryID.Equals(((SimpleStory)obj).StoryID);
-                return false;
+                return Similarity(story) >= 0.5;
             }
 
-            public override int GetHashCode()
+            public double Similarity(SimpleStory story)
             {
-                return StoryID.GetHashCode();
+                double wordSim = WordVector * story.WordVector;
+                
+                double tagCount = Tags.Union(story.Tags).Count();
+                double commonCount = Tags.Intersect(story.Tags).Count();
+                double commonRatio = commonCount / Tags.Count();
+                double differentRatio = (tagCount - commonCount) / tagCount;
+                double topicCommonality = Math.Max(-1, Math.Min(1, (commonRatio - differentRatio) * 0.2 * Math.Min(5, tagCount)));
+                
+                int sameTime = StartTime > story.StartTime && StartTime < story.EndTime.AddMinutes(30)
+                    || story.StartTime > StartTime && story.StartTime < EndTime.AddMinutes(30) ? 1 : 0;
+                //int sameTopic = wordSim > 0.85 || wordSim > 0.5 && topicCommonality > 0.25 ? 1 : 0;
+                //int similarTopic = wordSim > 0.4 || topicCommonality > 0.25 ? 1 : 0;
+                //int sameLocation = 0;
+                //int sharedUrl = 0;
+                //int samePeople = 0;
+                //int sameCount = sameTopic + samePeople + sameLocation + sameTime;
+
+                ////Weighting scheme based on study of human-rated semantic similarity of tweets
+                //double similarity = Math.Min(1, Math.Max(0, 
+                //    0.3 * (sameCount==1 ? 1 : 0) 
+                //    + 0.5 * (sameCount==2 ? 1 : 0)
+                //    + 0.8 * (sameCount == 3 ? 1 : 0)
+                //    + 1.0 * (sameCount == 4 ? 1 : 0)
+                //    + 0.1 * sharedUrl 
+                //    - 0.2 * (1 - similarTopic) 
+                //    - 0.15 * sameLocation
+                //    - 0.1 * samePeople
+                //    - 0.2 * sameTime
+                //    + 0.5));
+
+                double similarity = (
+                    0.85 * wordSim
+                    + 0.4 * topicCommonality
+                    ) * sameTime;
+
+                return similarity;
             }
         }
 
         const string Name = "StoryWorker";
 
-        public static void Run()
+        public static bool Run()
         {
             try
             {
-                //Get next story id
-                long nextStoryID = GetNextStoryID();
+                Console.WriteLine("Running StoryWorker");
 
-                Dictionary<long, SimpleTweetCluster> tweetClusters;
-                do {
-                    tweetClusters = GetUnassignedTweetClusters();
-                    Console.WriteLine("Fetched " + tweetClusters.Count + " tweet clusters");
+                //Apply user-initiated split and merge actions
+                Console.WriteLine("Processing user-splits and merges...");
+                ApplyPendingStorySplits();
+                ApplyPendingStoryMerges();
 
-                    if (tweetClusters.Count > 0)
-                    {
-                        Dictionary<long, SimpleStory> stories = GetStories();
-                        Console.WriteLine("Fetched " + stories.Count + " stories");
+                //Process new clusters and assign them to existing stories or create new stories
+                var topStories = GetCurrentTopStories(Settings.TweetClusterer_SW_TopStoryCount);
+                Console.WriteLine("Fetched top stories: " + topStories.Count);
+                Console.WriteLine("Processing new clusters...");
+                var unassignedClusters = GetUnassignedTweetClusters();
+                Console.WriteLine("  unassigned clusters: " + unassignedClusters.Count);
+                if (unassignedClusters.Count > 0)
+                {
+                    long nextStoryID = GetNextStoryID();
+                    long nextStoryIDBefore = nextStoryID;
+                    AssignStoryIDToNewClusters(ref nextStoryID, unassignedClusters, topStories);
+                    Console.WriteLine("Clusters->new stories: " + (nextStoryID - nextStoryIDBefore));
+                    Console.WriteLine("Clusters->top stories: " + (unassignedClusters.Count - (nextStoryID - nextStoryIDBefore)));
+                    AssignStoryIDsToClustersInDB(unassignedClusters.Values);
+                }
 
-                        AssignTweetClustersToNearestStory(tweetClusters, stories, ref nextStoryID);
-                        Console.WriteLine("Assigned stories to clusters.");
+                //Check if any of the top stories should be merged
+                Console.WriteLine("Merging stories...");
+                List<MergeAction> mergeActions = FindDuplicateStories(topStories);
+                Console.WriteLine("  top story merges: " + mergeActions.Count);
+                
+                //Process colliding clusters and merge stories where sufficiently similar
+                var mergeCandidatePairs = GetMergeCandidateStoryPairs();
+                Console.WriteLine("  merge candidates: " + mergeCandidatePairs.Count);
+                if (mergeCandidatePairs.Count > 0)
+                {
+                    var mergeCandidateStories = GetStoriesByID(
+                        mergeCandidatePairs.Select(n => n.KeptStoryID)
+                        .Union(mergeCandidatePairs.Select(n => n.MergedStoryID))
+                        .Distinct());
+                    Console.WriteLine("  unique stories:  " + mergeCandidateStories.Count);
+                    var mergeActions2 = EvaluateMergeCandidates(mergeCandidatePairs, mergeCandidateStories);
+                    Console.WriteLine("  actual merges:   " + mergeActions2.Count);
+                    mergeActions.AddRange(mergeActions2);
+                }
 
-                        SaveToDB(tweetClusters, stories);
-                        Console.WriteLine("Stored results in DB.");
+                if (mergeActions.Count > 0)
+                    MergeStories(mergeActions, isAutomerge: true);
 
-                        //AutoMergeSimilarStories(stories.Where(n => n.Value.Created).Select(n => n.Key).ToList());
-                    }
-                } while (tweetClusters.Count > Settings.TweetClusterer_SW_TweetClusterBatchSize * 0.9);
+                //Recompute summary stats for updated stories
+                Console.WriteLine("Updating story stats...");
+                UpateStoriesWithPendingChanges();
+                ProcessTweetMetatags();
+
+                MarkStoriesAsProcessed();
+
+                //Delete processed candidate records from DB
+                Console.WriteLine("Performing maintenance...");
+                DoDBMaintenance();
 
                 Console.WriteLine("StoryWorker complete!");
+
+                return unassignedClusters.Count > 0;
             }
             catch (Exception e)
             {
@@ -128,17 +215,19 @@ namespace CrisisTracker.TweetClusterer
                     cross join
                     (
                         select
-                            TweetClusterID, 
+                            TweetClusterID,
                             WordID, 
                             count(*) * ScoreToIdf(Score4d) as Weight
-                        from (select TweetClusterID from TweetCluster where StoryID is null order by 1 limit " + Settings.TweetClusterer_SW_TweetClusterBatchSize + @") as TweetCluster
-                            natural join Tweet natural join WordTweet natural join WordScore
+                        from (select TweetClusterID from TweetCluster where StoryID is null order by 1) as TweetCluster
+                            natural join Tweet 
+                            natural join WordTweet 
+                            natural join WordScore
                         group by TweetClusterID, WordID
                         order by TweetClusterID, Weight desc
                     ) TT
                 ) TTT
                 where RowNum <= " + Settings.TweetClusterer_SW_MaxWordsInStoryVector + @"
-                ;";
+                limit 1000000;";
 
             //Parse returned word weights and build TweetCluster vectors
             Dictionary<long, SimpleTweetCluster> clusters = new Dictionary<long, SimpleTweetCluster>();
@@ -148,44 +237,30 @@ namespace CrisisTracker.TweetClusterer
                 if (!clusters.ContainsKey(clusterID))
                     clusters.Add(clusterID, new SimpleTweetCluster() { TweetClusterID = clusterID });
 
-                values[reader.GetInt64("TweetClusterID")].Vector.AddItem(
+                values[reader.GetInt64("TweetClusterID")].WordVector.AddItem(
                     reader.GetInt64("WordID"),
                     reader.GetDouble("Weight"));
             });
 
             //Normalize vectors
             foreach (SimpleTweetCluster cluster in clusters.Values)
-                cluster.Vector.Normalize();
+                cluster.WordVector.Normalize();
 
             return clusters;
         }
 
-        static Dictionary<long, SimpleStory> GetStories()
+        static Dictionary<long, SimpleStory> GetCurrentTopStories(int storyCount)
         {
-            //Get word vector for each story
+            //Get word vectors from top N stories
             string query = @"
-                select StoryID, WordID, Weight from (
-                select
-                    TT.*,
-                    @r := IF(@g=StoryID,@r+1,1) RowNum,
-                    @g := StoryID
-                from 
-                    (select @g:=null) initvars
-                    cross join
-                    (
-                        select
-                            T.StoryID,
-                            WordID, 
-                            count(*) * ScoreToIdf(Score4d) as Weight
-                        from (select StoryID from Story where UserCount > 2 and not IsArchived order by EndTime desc limit " + Settings.TweetClusterer_SW_CandidateStoryCount + @") T
-                            join TweetCluster tc on tc.StoryID = T.StoryID
-                            natural join Tweet natural join WordTweet natural join WordScore
-                        group by TweetClusterID, WordID
-                        order by TweetClusterID, Weight desc
-                    ) TT
-                ) TTT
-                where RowNum <= " + Settings.TweetClusterer_SW_MaxWordsInStoryVector + @"
-                ;";
+                select 
+	                StoryID, StartTime, EndTime, WordID, Weight
+                from
+	                (select StoryID, StartTime, EndTime from Story where not IsArchived order by WeightedSizeRecent desc limit " + storyCount + @") s
+	                natural join StoryInfoKeywordTag
+	                natural join InfoKeyword
+	                join Word on Word.Word=InfoKeyword.Keyword
+                ";
 
             //Parse returned word weights and build story vectors
             Dictionary<long, SimpleStory> stories = new Dictionary<long, SimpleStory>();
@@ -193,379 +268,502 @@ namespace CrisisTracker.TweetClusterer
             {
                 long storyID = reader.GetInt64("StoryID");
                 if (!stories.ContainsKey(storyID))
-                    stories.Add(storyID, new SimpleStory() { StoryID = storyID });
+                {
+                    stories.Add(storyID, new SimpleStory()
+                    {
+                        StoryID = storyID,
+                        StartTime = reader.GetDateTime("StartTime"),
+                        EndTime = reader.GetDateTime("EndTime")
+                    });
+                }
 
-                values[storyID].Vector.AddItem(
+                stories[storyID].WordVector.AddItem(
                     reader.GetInt64("WordID"),
                     reader.GetDouble("Weight"));
             });
 
             //Normalize vectors
             foreach (SimpleStory story in stories.Values)
-                story.Vector.Normalize();
+                story.WordVector.Normalize();
 
             return stories;
         }
 
-        public static void ApplyPendingStorySplits()
+        static void AssignStoryIDToNewClusters(ref long nextStoryID, Dictionary<long, SimpleTweetCluster> clusters, Dictionary<long, SimpleStory> stories)
         {
-            //Get split actions
-            Dictionary<long, HashSet<long>> splitActions = new Dictionary<long, HashSet<long>>();
-            Helpers.RunSelect(Name, "select StoryID, TweetClusterID, IP, UserID from PendingStorySplits where SplitAt is null;",
-                splitActions,
-                (values, reader) =>
-                {
-                    long storyID = reader.GetInt64("StoryID");
-                    long clusterID = reader.GetInt64("TweetClusterID");
-                    if (splitActions.ContainsKey(storyID))
-                    {
-                        splitActions[storyID].Add(clusterID);
-                    }
-                    else
-                    {
-                        splitActions.Add(storyID, new HashSet<long>());
-                        splitActions[storyID].Add(clusterID);
-                    }
-                    long ip = reader.GetInt64("IP");
-                    long userID = reader.GetInt64("UserID");
+            if (!clusters.Any())
+                return;
 
-                    string sql = @"insert into StoryLog (IP, UserID, Timestamp, EventType, StoryAgeInSeconds, StoryID, TweetCount, RetweetCount, UserCount, TopUserCount, Trend) 
-                        select " + ip + "," + userID + @", utc_timestamp(), 13, unix_timestamp(utc_timestamp())-unix_timestamp(StartTime), StoryID, TweetCount, RetweetCount, UserCount, TopUserCount, Trend
-                        from Story where StoryID = " + storyID + ";";
-                    Helpers.RunSqlStatement(Name, sql);
-                }
-            );
-
-            //Perform split actions
-            SplitStories(splitActions);
-
-            //Mark actions as handled
-            foreach (var item in splitActions)
-            {
-                foreach (var clusterID in item.Value)
-                {
-                    Helpers.RunSqlStatement(Name, "update PendingStorySplits set SplitAt = utc_timestamp() where StoryID=" + item.Key + " and TweetClusterID=" + clusterID + ";", false);
-                }
-            }
-
-            //Clean old actions
-            Helpers.RunSqlStatement(Name, "delete from PendingStoryMerges where MergedAt is not null and MergedAt < (utc_timestamp() - interval 30 minute);", false);
-        }
-
-        public static void ApplyPendingStoryMerges()
-        {
-            //Get merge actions
-            Dictionary<long, HashSet<long>> mergeActions = new Dictionary<long, HashSet<long>>();
-            Helpers.RunSelect(Name, "select StoryID1 as id1, StoryID2 as id2, IP, UserID from PendingStoryMerges where MergedAt is null;",
-                mergeActions,
-                (values, reader) => {
-                    long id1 = reader.GetInt64("id1");
-                    long id2 = reader.GetInt64("id2");
-                    if (mergeActions.ContainsKey(id2))
-                    {
-                        HashSet<long> tmp = mergeActions[id2];
-                        tmp.Add(id2);
-                        mergeActions.Remove(id2);
-                        if (mergeActions.ContainsKey(id1))
-                            mergeActions[id1].UnionWith(tmp);
-                        else
-                            mergeActions.Add(id1, tmp);
-                    }
-                    else if (mergeActions.ContainsKey(id1))
-                    {
-                        mergeActions[id1].Add(id2);
-                    }
-                    else
-                    {
-                        mergeActions.Add(id1, new HashSet<long>());
-                        mergeActions[id1].Add(id2);
-                    }
-                    long ip = reader.GetInt64("IP");
-                    long userID = reader.GetInt64("UserID");
-
-                    string sql = @"insert into StoryLog (IP, UserID, Timestamp, EventType, StoryAgeInSeconds, StoryID, MergedWithStoryID, TweetCount, RetweetCount, UserCount, TopUserCount, Trend) 
-                        select " + ip + "," + userID + ", utc_timestamp(), 12, unix_timestamp(utc_timestamp())-unix_timestamp(StartTime), StoryID, " + id1 + @", TweetCount, RetweetCount, UserCount, TopUserCount, Trend
-                        from Story where StoryID = " + id2 + ";";
-                    Helpers.RunSqlStatement(Name, sql, false);
-                }
-            );
-
-            //Perform merge actions
-            MergeStories(mergeActions);
-
-            //Mark actions as handled
-            foreach (var item in mergeActions)
-            {
-                foreach (var id2 in item.Value)
-                {
-                    Helpers.RunSqlStatement(Name, "update PendingStoryMerges set MergedAt = utc_timestamp() where StoryID1=" + item.Key + " and StoryID2=" + id2 + ";", false);
-                }
-            }
-
-            //Clean old actions
-            Helpers.RunSqlStatement(Name, "delete from PendingStoryMerges where MergedAt is not null and MergedAt < (utc_timestamp() - interval 30 minute);", false);
-        }
-
-        static void AssignTweetClustersToNearestStory(Dictionary<long, SimpleTweetCluster> clusters, Dictionary<long, SimpleStory> stories, ref long nextStoryID)
-        {
-            //Assign batch clusters to nearest story
-            foreach (SimpleTweetCluster cluster in clusters.Values.OrderBy(n => n.TweetClusterID))
-            {
-                List<long> nearStories = new List<long>();
-                if (stories.Count > 0)
-                {
-                    var distances = stories.Values
-                        .Select(n => new { StoryID = n.StoryID, Distance = n.Vector * cluster.Vector })
-                        .OrderByDescending(n => n.Distance);
-                    double prevDist = double.MaxValue;
-                    List<long> candidates = new List<long>();
-                    foreach (var item in distances)
-                    {
-                        if (prevDist == double.MaxValue)
-                            prevDist = item.Distance;
-
-                        if (item.Distance > Settings.TweetClusterer_SW_MergeUpperThreshold) //Similar enough
-                        {
-                            nearStories.Add(item.StoryID);
-                        }
-                        else if (item.Distance > Settings.TweetClusterer_SW_MergeLowerThreshold
-                            && item.Distance > prevDist * Settings.TweetClusterer_SW_MergeDropScale) //Still looking for a drop
-                        {
-                            candidates.Add(item.StoryID);
-                        }
-                        else if (item.Distance <= prevDist * Settings.TweetClusterer_SW_MergeDropScale) //Found a drop
-                        {
-                            nearStories.AddRange(candidates);
-                            candidates.Clear(); //Don't break, as it is theoretically possible to find multiple drops
-
-                            if (item.Distance > Settings.TweetClusterer_SW_MergeLowerThreshold)
-                                candidates.Add(item.StoryID);
-                            else
-                                break;
-                        }
-                        else //if (item.Distance < _storyMergeLowerThreshold) //Didn't find a drop
-                        {
-                            break;
-                        }
-
-                        prevDist = item.Distance;
-                    }
-                }
-
-                //foreach (SimpleStory story in stories.Values)
-                //{
-                //    double sim = story.Vector * cluster.Vector;
-                //    double ratio = sim > 0.1 ? story.Vector.SharedWordRatio(cluster.Vector) : 0;
-                //    if (sim > GetSimilarityThreshold(story.Vector.ItemCount) || ratio >= 0.6)
-                //        nearStories.Add(story.StoryID);
-                //}
-
-                long storyID = -1;
-                if (nearStories.Count == 0) //Create new story
-                {
-                    storyID = nextStoryID++;
-                    stories.Add(storyID, new SimpleStory() { StoryID = storyID, Vector = cluster.Vector, Changed = true, Created = true });
-                }
-                else if (nearStories.Count == 1) //Add to story
-                {
-                    storyID = nearStories[0];
-                }
-                else //Merge multiple stories
-                {
-                    storyID = nearStories.Min();
-                    stories[storyID].Vector = WordVector.GetNormalizedAverage(nearStories.Select(n => stories[n].Vector), Settings.TweetClusterer_SW_MaxWordsInStoryVector);
-                    
-                    foreach (long deleteStoryID in nearStories.Where(n => n != storyID))
-                    {
-                        stories[deleteStoryID].MergedWith = storyID;
-                        foreach (SimpleTweetCluster clusterToMove in clusters.Values.Where(n => n.StoryID == deleteStoryID))
-                            clusterToMove.StoryID = storyID;
-                    }
-                }
-
-                cluster.StoryID = storyID;
-                stories[storyID].Changed = true;
-            }
-        }
-
-        static float GetSimilarityThreshold(int termCount)
-        {
-            ////Similarity threshold: http://www.wolframalpha.com/input/?i=plot+0.5+%2B+0.3%2F%281%2Bx*0.01%29+from+5+to+200
-            //return (float)(0.45 + 0.25 / (1 + termCount * 0.04));
-            return 0.55f;
-        }
-
-        static void SaveToDB(Dictionary<long, SimpleTweetCluster> clusters, Dictionary<long, SimpleStory> stories)
-        {
-            //Insert new Stories (otherwise the TweetCluster update below will fail from trigger constraints)
-            string tweetClusterInsert = "INSERT IGNORE INTO Story (StoryID, StartTime, EndTime) VALUES (" +
-                string.Join(",'3000-01-01',0),(", clusters.Values.Select(n => n.StoryID).Distinct().Select(n => n.ToString()).ToArray()) + ",'3000-01-01',0);";
-            Helpers.RunSqlStatement(Name, tweetClusterInsert, false);
-
-
-            //Assign StoryID to clusters
-            StringBuilder sbClusters = new StringBuilder();
-            sbClusters.AppendLine("insert into TweetCluster (TweetClusterID, StoryID) values");
-            bool firstCluster = true;
             foreach (SimpleTweetCluster cluster in clusters.Values)
             {
-                if (firstCluster) firstCluster = false;
-                else sbClusters.AppendLine(",");
+                //Get the distribution of similarity scores between this cluster and each of the most active stories
+                var similarities = stories.Values
+                    .Select(n => new { StoryID = n.StoryID, Similarity = n.WordVector * cluster.WordVector })
+                    .OrderByDescending(n => n.Similarity)
+                    .ToList();
 
-                sbClusters.Append("(" + cluster.TweetClusterID + "," + cluster.StoryID + ")");
-            }
-            sbClusters.AppendLine();
-            sbClusters.AppendLine("on duplicate key update StoryID=VALUES(StoryID);");
-
-            int affected = Helpers.RunSqlStatement(Name, sbClusters.ToString(), false);
-            Console.WriteLine("Updated StoryID of " + clusters.Count + " clusters (" + affected + " rows affected)");
-
-
-            //Update tweet clusters to reflect story merges
-            if (stories.Values.Any(n => n.MergedWith.HasValue))
-            {
-                Dictionary<long, HashSet<long>> mergeActions = new Dictionary<long, HashSet<long>>();
-                foreach (var story in stories.Values.Where(n => n.MergedWith.HasValue))
+                //Check if there is a rapid drop somewhere in the similarity distribution
+                bool distrHasRapidDrop = false;
+                if (similarities.Count > 1)
                 {
-                    if (!mergeActions.ContainsKey(story.MergedWith.Value))
-                        mergeActions.Add(story.MergedWith.Value, new HashSet<long>());
-                    mergeActions[story.MergedWith.Value].Add(story.StoryID);
+                    for (int i = 1; i < similarities.Count; i++)
+                    {
+                        if (similarities[i].Similarity > 0.01 && similarities[i].Similarity < Settings.TweetClusterer_SW_MergeDropScale * similarities[i - 1].Similarity)
+                        {
+                            distrHasRapidDrop = true;
+                            break;
+                        }
+                        if (similarities[i].Similarity < Settings.TweetClusterer_SW_MergeThresholdWithDrop)
+                            break;
+                    }
                 }
 
-                //Log merge actions
-                Helpers.RunSqlStatement(Name, 
-                    @"INSERT INTO HourStatistics (DateHour, StoriesAutoMerged) 
-                    VALUES (DATE_FORMAT(utc_timestamp(), ""%Y-%m-%d %H:00:00""), " + mergeActions.Sum(n => n.Value.Count) + @")
-                    ON DUPLICATE KEY UPDATE StoriesAutoMerged = StoriesAutoMerged + values(StoriesAutoMerged);", false);
+                //Assign a story ID to the cluster
+                if (stories.Count > 0
+                    && (similarities[0].Similarity > Settings.TweetClusterer_SW_MergeThreshold
+                        || similarities[0].Similarity > Settings.TweetClusterer_SW_MergeThresholdWithDrop && distrHasRapidDrop))
+                {
+                    cluster.StoryID = similarities[0].StoryID;
+                }
+                else
+                {
+                    cluster.StoryID = nextStoryID;
+                    cluster.isNewStory = true;
+                    nextStoryID++;
+                }
+            }
+        }
 
-                MergeStories(mergeActions);
+        static List<MergeAction> FindDuplicateStories(Dictionary<long, SimpleStory> stories)
+        {
+            List<MergeAction> mergeActions = new List<MergeAction>();
+
+            foreach (SimpleStory story in stories.OrderBy(n => n.Key).Select(n => n.Value))
+            {
+                var newerStories = stories
+                    .Where(n => n.Key > story.StoryID).OrderBy(n => n.Key).Select(n => n.Value);
+
+                if (!newerStories.Any())
+                    break;
+
+                //Get the distribution of similarity scores between this cluster and each of the most active stories
+                var similarities = newerStories
+                    .Select(n => new { StoryID = n.StoryID, Similarity = n.WordVector * story.WordVector })
+                    .OrderByDescending(n => n.Similarity)
+                    .ToList();
+
+                //Check if there is a rapid drop somewhere in the similarity distribution
+                bool distrHasRapidDrop = false;
+                if (similarities.Count > 1)
+                {
+                    for (int i = 1; i < similarities.Count; i++)
+                    {
+                        if (similarities[i].Similarity > 0.01 
+                            && similarities[i].Similarity < Settings.TweetClusterer_SW_MergeDropScale * similarities[i - 1].Similarity)
+                        {
+                            distrHasRapidDrop = true;
+                            break;
+                        }
+                    }
+                }
+
+                //Merge the stories if similar
+                if ((similarities[0].Similarity > Settings.TweetClusterer_SW_MergeThreshold
+                    || similarities[0].Similarity > Settings.TweetClusterer_SW_MergeThresholdWithDrop && distrHasRapidDrop))
+                {
+                    long targetStoryID = story.StoryID;
+                    var thisStoryMerges = mergeActions.Where(n => n.MergedStoryID == story.StoryID);
+                    if (thisStoryMerges.Any())
+                        targetStoryID = thisStoryMerges.Min(n => n.KeptStoryID);
+                    mergeActions.Add(new MergeAction() { KeptStoryID = targetStoryID, MergedStoryID = similarities[0].StoryID });
+                }
             }
 
+            return mergeActions;
+        }
 
-            //Update all Story counts that may have changed, from recent additions or by moving out of the 4h time window
-            string sqlStoryCounts = @"
-                insert into Story (StoryID, TweetCount, TweetCountRecent, RetweetCount, RetweetCountRecent, UserCount, UserCountRecent, TopUserCount, TopUserCountRecent, StartTime, EndTime)
-                select
-                    s.StoryID,
-                    sum(tc.TweetCount),
-                    sum(tc.TweetCountRecent),
-                    sum(tc.RetweetCount),
-                    sum(tc.RetweetCountRecent),
-                    sum(tc.UserCount),
-                    sum(tc.UserCountRecent),
-                    sum(tc.TopUserCount),
-                    sum(tc.TopUserCountRecent),
-                    min(tc.StartTime),
-                    max(tc.EndTime)
+        static List<MergeAction> GetMergeCandidateStoryPairs()
+        {
+            //Get word vector for each cluster
+            string query = 
+                @"select distinct
+	                tc1.StoryID as StoryID1,
+	                tc2.StoryID as StoryID2
+                from TweetClusterCollision tcc
+                join TweetCluster tc1 on tc1.TweetClusterID=tcc.TweetClusterID1
+                join TweetCluster tc2 on tc2.TweetClusterID=tcc.TweetClusterID2
+                where tc1.StoryID!=tc2.StoryID";
+
+            List<MergeAction> collisions = new List<MergeAction>();
+            Helpers.RunSelect(Name, query, collisions, (values, reader) =>
+            {
+                collisions.Add(new MergeAction()
+                {
+                    KeptStoryID = reader.GetInt64("TweetClusterID1"),
+                    MergedStoryID = reader.GetInt64("TweetClusterID1")
+                });
+            });
+
+            return collisions;
+        }
+
+        //TODO: Also get non-keyword tags for stories
+        static Dictionary<long, SimpleStory> GetStoriesByID(IEnumerable<long> storyIDs)
+        {
+            if (!storyIDs.Any())
+                return new Dictionary<long, SimpleStory>();
+
+            //Get word vectors from top N stories
+            string query = @"
+                select 
+	                StoryID, StartTime, EndTime, WordID, Weight
                 from
-                    Story s
-                    join TweetCluster tc on tc.StoryID=s.StoryID
-                where s.UserCountRecent > 0 or s.StartTime > utc_timestamp()
-                group by s.StoryID
+	                StoryID
+	                natural join StoryInfoKeywordTag
+	                natural join InfoKeyword
+                where StoryID in (" + String.Join(",", storyIDs) + @")
+                ";
+
+            //Parse returned word weights and build story vectors
+            Dictionary<long, SimpleStory> stories = new Dictionary<long, SimpleStory>();
+            Helpers.RunSelect(Name, query, stories, (values, reader) =>
+            {
+                long storyID = reader.GetInt64("StoryID");
+                if (!stories.ContainsKey(storyID))
+                {
+                    stories.Add(storyID, new SimpleStory()
+                    {
+                        StoryID = storyID,
+                        StartTime = reader.GetDateTime("StartTime"),
+                        EndTime = reader.GetDateTime("EndTime")
+                    });
+                }
+
+                stories[storyID].WordVector.AddItem(
+                    reader.GetInt64("WordID"),
+                    reader.GetDouble("Weight"));
+            });
+
+            //Normalize vectors
+            foreach (SimpleStory story in stories.Values)
+                story.WordVector.Normalize();
+
+            return stories;
+        }
+
+        static List<MergeAction> EvaluateMergeCandidates(List<MergeAction> candidates, Dictionary<long, SimpleStory> stories)
+        {
+            List<MergeAction> mergeActions = new List<MergeAction>();
+
+            foreach (var storyPair in candidates)
+            {
+                SimpleStory s1 = stories[storyPair.KeptStoryID];
+                SimpleStory s2 = stories[storyPair.MergedStoryID];
+
+                if (s1.IsSimilarTo(s2))
+                    mergeActions.Add(storyPair);
+            }
+
+            return mergeActions;
+        }
+
+        static void AssignStoryIDsToClustersInDB(ICollection<SimpleTweetCluster> clusters)
+        {
+            if (!clusters.Any())
+                return;
+
+            //Insert new Stories (otherwise the TweetCluster update below will fail from trigger constraints)
+            string sql = 
+                "insert ignore into Story (StoryID, StartTime, EndTime, PendingUpdate) values "
+                + String.Join(",", clusters.Select(n => 
+                    "(" 
+                    + n.StoryID + ",'" 
+                    + n.StartTime.ToString("yyyy-MM-dd HH:mm:ss") + "','"
+                    + n.EndTime.ToString("yyyy-MM-dd HH:mm:ss") + "',"
+                    + "1)"))
+                + " on duplicate key update PendingUpdate=1";
+            Helpers.RunSqlStatement(Name, sql, false);
+
+            //Assign StoryID to clusters
+            sql = "insert into TweetCluster (TweetClusterID, StoryID, PendingStoryUpdate) values "
+                + String.Join(",", clusters.Select(n => "(" + n.TweetClusterID + "," + n.StoryID + ", 1)"))
+                + " on duplicate key update StoryID=values(StoryID), PendingStoryUpdate=1";
+            Helpers.RunSqlStatement(Name, sql, false);
+        }
+
+        static void MergeStories(IEnumerable<MergeAction> storyMerges, bool isAutomerge)
+        {
+            //Update StoryID of clusters in stories that were merged
+            foreach (MergeAction merge in storyMerges)
+            {
+                //Move content and meta-data from merged story to target story, then delete the merged story
+                string sql =
+                    @"update TweetCluster set PendingStoryUpdate=1, StoryID=" + merge.KeptStoryID + " where StoryID=" + merge.MergedStoryID + @"; 
+                    insert into StoryInfoKeywordTag (StoryID, InfoKeywordID, CreatedAt, UserID, Weight) 
+                        select " + merge.KeptStoryID + ", t2.InfoKeywordID, t2.CreatedAt, t2.UserID, t2.Weight from StoryInfoKeywordTag t2 where t2.StoryID=" + merge.MergedStoryID + @"
+                        on duplicate key update StoryInfoKeywordTag.Weight=StoryInfoKeywordTag.Weight+values(Weight);
+                    delete from StoryInfoKeywordTag where StoryID=" + merge.MergedStoryID + @";
+                    insert into StoryAidrAttributeTag (StoryID, AttributeID, LabelID, TagCount) 
+                        select " + merge.KeptStoryID + ", t.AttributeID, t.LabelID, t.TagCount from StoryAidrAttributeTag t where StoryID=" + merge.MergedStoryID + @"
+                        on duplicate key update StoryAidrAttributeTag.TagCount=StoryAidrAttributeTag.TagCount+values(TagCount);
+                    delete from StoryAidrAttributeTag where StoryID=" + merge.MergedStoryID + @";
+                    update ignore StoryInfoCategoryTag set StoryID=" + merge.KeptStoryID + " where StoryID=" + merge.MergedStoryID + @"; 
+                    update ignore StoryInfoEntityTag set StoryID=" + merge.KeptStoryID + " where StoryID=" + merge.MergedStoryID + @"; 
+                    update ignore StoryLocationTag set StoryID=" + merge.KeptStoryID + " where StoryID=" + merge.MergedStoryID + @";
+                    update ignore StoryCustomTitle set StoryID=" + merge.KeptStoryID + " where StoryID=" + merge.MergedStoryID + @";
+                    insert into StoryMerges (StoryID1, StoryID2, MergedAt, IP, UserID) values (" + merge.KeptStoryID + "," + merge.MergedStoryID + @",utc_timestamp(),0,0) 
+                        on duplicate key update MergedAt=values(MergedAt);
+                    delete from Story where StoryID=" + merge.MergedStoryID + ";";
+                Helpers.RunSqlStatement(Name, sql, false);
+
+                if (isAutomerge)
+                {
+                    //Increment story merge counter
+                    string now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:00:00");
+                    sql = 
+                        "insert into HourStatistics (DateHour, StoriesAutoMerged) values ('" + now + @"', 1) 
+                        on duplicate key update StoriesAutoMerged=StoriesAutoMerged+1;";
+                    Helpers.RunSqlStatement(Name, sql, false);
+                }
+            }
+        }
+
+        static void SplitStories(IEnumerable<SplitAction> storySplits)
+        {
+            if (!storySplits.Any())
+                return;
+
+            string sql = "update TweetCluster set StoryID=null where TweetClusterID in (" +
+                string.Join(",", storySplits.Select(n => n.TweetClusterID)) + ")";
+            Helpers.RunSqlStatement(Name, sql, false);
+
+            sql = "update Story set PendingUpdate=1 where StoryID in (" +
+                string.Join(",", storySplits.Select(n => n.StoryID)) + ")";
+            Helpers.RunSqlStatement(Name, sql, false);
+        }
+
+        static void UpateStoriesWithPendingChanges()
+        {
+            //Allow dirty reads
+            Helpers.RunSqlStatement(Name, "SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED", false);
+            
+            //Update all Story counts that may have changed, from recent additions or by moving out of the 4h time window
+            Helpers.RunSqlStatement(Name, 
+                "update Story natural join (select distinct StoryID from TweetCluster where PendingStoryUpdate) T set PendingUpdate=1", false);            
+            
+            string sql = @"
+                insert into Story (StoryID, TweetCount, RetweetCount, UserCount, TopUserCount, TopUserCountRecent, StartTime, EndTime, WeightedSize, WeightedSizeRecent)
+                select StoryID, TweetCount, RetweetCount, UserCount, TopUserCount, TopUserCountRecent, StartTime, EndTime,
+                    least(UserCount, TweetCount + 0.5*log(10+RetweetCount)) as WeightedSize,
+                    least(UserCountRecent, TweetCountRecent + 0.5*log(10+RetweetCountRecent)) as WeightedSizeRecent
+                from (
+	                select
+		                s.StoryID,
+		                sum(RetweetOf is null) as TweetCount,
+		                sum(RetweetOf is null and CreatedAt > T4h) as TweetCountRecent,
+		                sum(RetweetOf is not null) as RetweetCount,
+		                sum(RetweetOf is not null and CreatedAt > T4h) as RetweetCountRecent,
+		                count(distinct t.UserID) as UserCount,
+		                count(distinct if(CreatedAt > T4h, t.UserID, null)) as UserCountRecent,
+		                count(distinct if(IsTopUser, t.UserID, null)) as TopUserCount,
+		                count(distinct if(CreatedAt > T4h and IsTopUser, t.UserID, null)) as TopUserCountRecent,
+                        
+		                min(tc.StartTime) as StartTime,
+		                max(tc.EndTime) as EndTime
+	                from
+		                Story s
+		                join TweetCluster tc on tc.StoryID=s.StoryID
+		                join Tweet t on t.TweetClusterID=tc.TweetClusterID
+		                join TwitterUser tu on tu.UserID=t.UserID,
+		                (select max(CreatedAt) - interval 4 hour as T4h from Tweet where CalculatedRelations) as TTT
+                    where 
+                        s.PendingUpdate
+                        and not tu.IsBlacklisted
+                        or s.StartTime < T4h and WeightedSizeRecent>0
+                    group by s.StoryID
+                    ) TT
                 on duplicate key update
                     TweetCount=VALUES(TweetCount),
-                    TweetCountRecent=VALUES(TweetCountRecent),
                     RetweetCount=VALUES(RetweetCount),
-                    RetweetCountRecent=VALUES(RetweetCountRecent),
                     UserCount=VALUES(UserCount),
-                    UserCountRecent=VALUES(UserCountRecent),
                     TopUserCount=VALUES(TopUserCount),
                     TopUserCountRecent=VALUES(TopUserCountRecent),
+                    WeightedSize=VALUES(WeightedSize),
+                    WeightedSizeRecent=VALUES(WeightedSizeRecent),
                     StartTime=VALUES(StartTime),
                     EndTime=VALUES(EndTime)
-                ;";
-            Helpers.RunSqlStatement(Name, sqlStoryCounts, false);
+                ";
+            Helpers.RunSqlStatement(Name, sql, false);
 
             //Update Story titles
-            Helpers.RunSqlStatement(Name, @"
-                update Story s
-                set s.Title = (select Title from TweetCluster tc where tc.StoryID=s.StoryID order by UserCount desc limit 1)
-                where s.Title = '' or s.EndTime > (select max(EndTime) - interval 10 minute from TweetCluster)
-                ;", false);
+            sql =
+                @"insert into Story (StoryID, Title)
+                select StoryID, tc.Title
+                from TweetCluster tc
+                natural join (
+	                select s2.StoryID, max(tc2.TweetCount) as TweetCount
+	                from TweetCluster tc2 join Story s2 on tc2.StoryID=s2.StoryID
+	                where s2.PendingUpdate and not s2.IsArchived
+	                group by s2.StoryID) T
+                on duplicate key update Title=values(Title)";
+            Helpers.RunSqlStatement(Name, sql, false);
 
-            //Update Story trends
-            int trendUpdateCount = Helpers.RunSqlStatement(Name, @"
-                insert into Story (StoryID, Trend, MaxGrowth)
-                select StoryID, N0-N1 as Trend, N0 as MaxGrowth from (
-                    select 
-                        s.*, 
-                        count(distinct case when CreatedAt between T2 and T0 then UserID else null end) as N0, 
-                        count(distinct case when CreatedAt between T3 and T1 then UserID else null end) as N1
-                    from Story s
-                        join TweetCluster tc on tc.StoryID = s.StoryID
-                        natural join Tweet t,
-                        (select 
-                            max(CreatedAt) as T0, 
-                            max(CreatedAt) - interval 15 minute T1, 
-                            max(CreatedAt) - interval 30 minute T2, 
-                            max(CreatedAt) - interval 45 minute T3 from Tweet) T
-                    where s.EndTime > T3 or s.Trend != 0
-                    group by s.StoryID
-                    having N0 > 0 or s.Trend > 0
-                ) TT
-                on duplicate key update Trend=VALUES(Trend), MaxGrowth=if(VALUES(MaxGrowth)>Story.MaxGrowth,VALUES(MaxGrowth),Story.MaxGrowth);", false);
-            Console.WriteLine("Updated " + trendUpdateCount + " trends");
+            //Update trends
+//            sql =
+//                @"
+//                insert into Story (StoryID, TweetTrend, RetweetTrend)
+//                select zeros.StoryID, group_concat(coalesce(Tweets,0)) TweetTrend, group_concat(coalesce(Retweets,0)) RetweetTrend from (
+//                    select StoryID, step from 
+//                    (select StoryID from Story where PendingUpdate) s
+//                    cross join (
+//                        select 0 step  union select 1 union select 2 union select 3 union select 4 
+//                        union select 5 union select 6 union select 7 union select 8 union select 9 
+//                        union select 10 union select 11 union select 12 union select 13 union select 14 
+//                        union select 15 union select 16 union select 17 union select 18 union select 19
+//                    ) st
+//                ) zeros left join (
+//                    select
+//                        s.StoryID,
+//                        floor(19.99*(unix_timestamp(CreatedAt) - minT)/rangeT) as step,
+//                        sum(RetweetOf is null) as Tweets,
+//                        sum(RetweetOf is not null) as Retweets
+//                    from
+//                    (
+//                        select 
+//                            StoryID, 
+//                            unix_timestamp(StartTime) minT,
+//                            1+unix_timestamp(EndTime)-unix_timestamp(StartTime) rangeT
+//                        from Story where PendingUpdate
+//                    ) topS
+//                    join Story s on s.StoryID=topS.StoryID
+//                    join TweetCluster tc on tc.StoryID=s.StoryID
+//                    join Tweet t on t.TweetClusterID=tc.TweetClusterID
+//                    join TwitterUser u on u.UserID = t.UserID
+//                    where not u.IsBlacklisted
+//                    group by 1,2
+//                ) vals on vals.StoryID=zeros.StoryID and vals.step=zeros.step
+//                group by zeros.StoryID
+//                on duplicate key update TweetTrend=values(TweetTrend), RetweetTrend=values(RetweetTrend)";
+//            Helpers.RunSqlStatement(Name, sql, false);
 
-            //Add tags for newly created stories
-            string newStoryIDsStr = string.Join(",", stories.Where(n => n.Value.Created).Select(n => n.Key.ToString()).ToArray());
-            if (newStoryIDsStr != "")
-            {
-                affected = Helpers.RunSqlStatement(Name, @"
-                    start transaction;
-                    create table __StoryKeywordTagsTmp as
-                    select StoryID, Word
-                    from (
-                        select T.*,
-                            @r := IF(@g=StoryID,@r+1,1) RowNum,
-                            @s := IF(@g=StoryID,@s+Score,Score) AccuScore,
-                            @c := IF(@g=StoryID,@c+Occurences,Occurences) AccuOcc,
-                            @g := StoryID
-                        from
-                            (select @g:=null, @r:=0, @s:=0, @c:=0) initvars
-                            CROSS JOIN (
-                            select
-                                StoryID, 
-                                Word,
-                                count(*) as Occurences,
-                                count(*) * ScoreToIdf(Score4d) as Score,
-                                if(Word like '#%' or (select 1 from TwitterTrackFilter where FilterType = 0 and Word = Word.Word and IsActive limit 1), 1, 0) as TopicWord
-                            from
-                                TweetCluster
-                                natural join Tweet
-                                natural join WordTweet
-                                natural join Word
-                                natural join WordScore
-                            where StoryID in (" + newStoryIDsStr + @")
-                            group by StoryID, WordID
-                        ) T
-                        order by StoryID,Score desc
-                    ) T
-                    where Score/AccuScore>0.05 or (TopicWord and Occurences/AccuOcc > 0.05);
-                    insert ignore into InfoKeyword (Keyword) select Word from __StoryKeywordTagsTmp;
-                    insert ignore into StoryInfoKeywordTag (StoryID, InfoKeywordID, CreatedAt, UserID) 
-                    select StoryID, InfoKeywordID, utc_timestamp(), 0 from __StoryKeywordTagsTmp join InfoKeyword on Keyword=Word;
-                    drop table __StoryKeywordTagsTmp;
-                    commit;");
+            //Add keyword tags to stories based on top words in stories (based on up to N random tweets per story)
+            int N = 200;
+            sql = @"
+                start transaction;
+                select @g:=null, @r:=0, @s:=0, @c:=0;
+                
+                create temporary table __StoryKeywordTagsTmp as
+                select StoryID, Word, Weight
+                from (
+	                select X.*,
+		                @r := IF(@g=StoryID,@r+1,1) RowNum,
+		                @s := IF(@g=StoryID,@s+Weight,Weight) AccuScore,
+		                @c := IF(@g=StoryID,@c+Occurences,Occurences) AccuOcc,
+		                @g := StoryID
+	                from (
+		                select
+			                s.StoryID, 
+			                Word,
+			                count(*) as Occurences,
+			                count(*) * ScoreToIdf(Score4d) as Weight,
+			                if(Word like '#%' or (select 1 from TwitterTrackFilter where FilterType = 0 and Word = Word.Word and IsActive limit 1), 1, 0) as TopicWord
+		                from
+			                Story s
+			                join TweetCluster tc on tc.StoryID=s.StoryID
+			                join Tweet t on t.TweetClusterID=tc.TweetClusterID
+			                natural join WordTweet
+			                natural join Word
+			                natural join WordScore
+		                where not s.IsArchived
+			                and (s.PendingUpdate or tc.PendingStoryUpdate)
+			                and mod(t.TweetID,100) < 100*(" + N + @" / (s.TweetCount+s.RetweetCount))
+		                group by s.StoryID, WordID
+	                ) X
+	                order by StoryID,Weight desc
+                ) X
+                where Weight/AccuScore>0.04 or (TopicWord and Occurences/AccuOcc > 0.04);
 
-                Console.WriteLine("Inserted " + affected + " story tags");
-            }
+                insert ignore into InfoKeyword (Keyword) select Word from __StoryKeywordTagsTmp;
+
+                insert into StoryInfoKeywordTag (StoryID, InfoKeywordID, Weight, CreatedAt, UserID) 
+                select StoryID, InfoKeywordID, Weight, utc_timestamp(), 0 from __StoryKeywordTagsTmp join InfoKeyword on Keyword=Word
+                on duplicate key update Weight=values(Weight);
+                
+                drop table __StoryKeywordTagsTmp;
+                commit;";
+            Helpers.RunSqlStatement(Name, sql, false);
+
+            //Add geotag to stories where the standard deviation of the first two hours' tweets in the story is low
+            sql =
+                @"insert into Story (StoryID, Latitude, Longitude)
+                select 
+	                s.StoryID, avg(t.Latitude) Latitude, avg(t.Longitude) Longitude
+                from Story s
+                join TweetCluster tc on tc.StoryID=s.StoryID
+                join Tweet t on t.TweetClusterID=tc.TweetClusterID
+                where s.PendingUpdate and t.RetweetOf is null and s.StartTime > utc_timestamp() - interval 2 hour
+                group by s.StoryID
+                having count(t.longitude)>2 and stddev(t.longitude) < 3 and stddev(t.latitude) < 3
+                on duplicate key update Latitude=values(Latitude), Longitude=values(Longitude)";
+            Helpers.RunSqlStatement(Name, sql, false);
+
+            //Reset dirty reads
+            Helpers.RunSqlStatement(Name, "SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ", false);
+        }
+
+        static void ProcessTweetMetatags()
+        {
+            string sql =
+                @"insert into StoryAidrAttributeTag (StoryID, AttributeID, LabelID, TagCount)
+                select s.StoryID, AttributeID, LabelID, count(*) as TagCount
+                from TweetAidrAttributeTag tag
+                join Tweet t on t.TweetID=tag.TweetID
+                join TweetCluster tc on tc.TweetClusterID=t.TweetClusterID
+                join Story s on s.StoryID=tc.StoryID
+                where s.PendingUpdate and not ProcessedMetatags
+                group by s.StoryID
+                on duplicate key update TagCount=TagCount+values(TagCount)";
+            Helpers.RunSqlStatement(Name, sql, false);
+
+            Helpers.RunSqlStatement(Name, "update Tweet set ProcessedMetatags=1 where not ProcessedMetatags and TweetClusterID is not null", false);
+
+            //Update IsMajorityLabel
+            sql =
+                @"update StoryAidrAttributeTag tag
+	            join Story on Story.StoryID=tag.StoryID 
+                set IsMajorityTag=0 
+                where Story.PendingUpdate and IsMajorityTag;
+
+                update StoryAidrAttributeTag
+                natural join (
+	                select tag.StoryID, AttributeID, max(tag.TagCount) as TagCount
+	                from StoryAidrAttributeTag tag
+	                join Story on Story.StoryID=tag.StoryID
+                    where PendingUpdate
+	                group by StoryID, AttributeID) T
+                set IsMajorityTag=1;";
+            Helpers.RunSqlStatement(Name, sql, true);
+        }
+
+        static void DoDBMaintenance()
+        {
+            //Truncate story merge candidates
+            Helpers.RunSqlStatement(Name, "truncate TweetClusterCollision", false);
 
             //Archive stories
-            int archivedClustersCount = Helpers.RunSqlStatement(Name,
-                @"set @archivetime = (select max(StartTime) - interval 4 hour from TweetCluster where StartTime < utc_timestamp());
-                update TweetCluster set IsArchived=1 where not IsArchived and StoryID is not null and EndTime < @archivetime;");
             int archivedStoriesCount = Helpers.RunSqlStatement(Name,
-                @"set @archivetime = (select max(StartTime) - interval 4 hour from Story where StartTime < utc_timestamp());
+                @"set @archivetime = (select max(StartTime) - interval 4 hour from TweetCluster where StartTime < utc_timestamp());
                 update Story set IsArchived=1 where not IsArchived and EndTime < @archivetime;");
-            Console.WriteLine("Archived " + archivedClustersCount + " TweetClusters and " + archivedStoriesCount + " Stories");
+            Console.WriteLine("Archived " + archivedStoriesCount + " Stories");
 
             //Delete from WordTweet where story was just archived
             Helpers.RunSqlStatement(Name,
-                @"set @archivetime = (select max(StartTime) - interval 1 day from Story where StartTime < utc_timestamp());
-                delete wt.* from WordTweet wt natural join Tweet natural join TweetCluster join Story on Story.StoryID=TweetCluster.StoryID
-                where Story.IsArchived and Story.EndTime < @archivetime;"); //EndTime < (select max(CreatedAt) from Tweet where CalculatedRelations) - interval 48 hour;");
+                @"delete wt.* from 
+                (select max(StartTime) - interval 1 day archivetime from TweetCluster where StartTime < utc_timestamp()) atime,
+                WordTweet wt natural join Tweet natural join TweetCluster join Story on Story.StoryID=TweetCluster.StoryID
+                where Story.IsArchived and Story.EndTime < @archivetime;", false);
 
-            //Delete TweetClusters that don't have any words associated with them and don't have a StoryID (can't do anything with them)
+            //Delete TweetClusters that have no StoryID and no word vector (can't do anything with them)
             Helpers.RunSqlStatement(Name,
                 @"delete tc.*
                 from TweetCluster tc
@@ -576,158 +774,109 @@ namespace CrisisTracker.TweetClusterer
 
             //Delete small insignificant stuff
             int deletedStoryCount = Helpers.RunSqlStatement(Name,
-                @"set @processtime = (select max(StartTime) from Story where StartTime < utc_timestamp());
-                delete s.* from Story s where 
-                    IsArchived 
-                    and UserCount < pow((unix_timestamp(@processtime)-unix_timestamp(EndTime))/86400, 1.3)
-                    and not exists (select 1 from StoryInfoCategoryTag t where t.StoryID=s.StoryID limit 1)
-                    and not exists (select 1 from StoryInfoEntityTag t where t.StoryID=s.StoryID limit 1)
-                    and not exists (select 1 from StoryLocationTag t where t.StoryID=s.StoryID limit 1);");
+                @"delete s.* 
+                from Story s, (select max(StartTime) processtime from TweetCluster where StartTime < utc_timestamp()) pt where 
+	                IsArchived 
+	                and WeightedSize < pow(greatest(0, least(500000, (unix_timestamp(processtime)-unix_timestamp(EndTime))/86400)), 1.3)
+	                and not exists (select 1 from StoryInfoCategoryTag t where t.StoryID=s.StoryID limit 1)
+	                and not exists (select 1 from StoryInfoEntityTag t where t.StoryID=s.StoryID limit 1)
+	                and not exists (select 1 from StoryLocationTag t where t.StoryID=s.StoryID limit 1);", false);
             Console.WriteLine("Deleted " + deletedStoryCount + " old or small stories.");
+
+            //Delete TweetClusters that don't have any words associated with them and don't have a StoryID (can't do anything with them)
             Helpers.RunSqlStatement(Name,
                 "delete ik.* from InfoKeyword ik left join StoryInfoKeywordTag tag on tag.InfoKeywordID = ik.InfoKeywordID where tag.InfoKeywordID is null;", false);
+
             //TweetUrl is a MyISAM table and nothing is deleted automatically
             Helpers.RunSqlStatement(Name,
                 "delete tu.* from TweetUrl tu left join Tweet t on t.TweetID = tu.TweetID where t.TweetID is null;", false);
         }
 
-        static void SplitStories(Dictionary<long, HashSet<long>> splitActions)
+        public static void ApplyPendingStorySplits()
         {
-            //Apply split actions
-            foreach (var action in splitActions)
-            {
-                //Set story id to null on removed cluster
-                //Delete cluster if archived (no WordTweet data left to work with)
-                //Update story
+            //Get split actions
+            List<SplitAction> splitActions = new List<SplitAction>();
+            Helpers.RunSelect(Name, "select StoryID, TweetClusterID, IP, UserID from StorySplits where SplitAt is null;",
+                splitActions,
+                (values, reader) =>
+                {
+                    long storyID = reader.GetInt64("StoryID");
+                    long clusterID = reader.GetInt64("TweetClusterID");
+                    long ip = reader.GetInt64("IP");
+                    long userID = reader.GetInt64("UserID");
 
-                string clusterIDsStr = string.Join(",", action.Value.Select(n => n.ToString()).ToArray());
+                    splitActions.Add(new SplitAction() { StoryID = storyID, TweetClusterID = clusterID });
 
-                Console.WriteLine("Applying split action: " + action.Key + "->" + clusterIDsStr);
+                    string sql = @"insert into StoryLog (IP, UserID, Timestamp, EventType, StoryAgeInSeconds, StoryID, TweetCount, RetweetCount, UserCount, TopUserCount) 
+                        select " + ip + "," + userID + @", utc_timestamp(), 13, unix_timestamp(utc_timestamp())-unix_timestamp(StartTime), StoryID, TweetCount, RetweetCount, UserCount, TopUserCount
+                        from Story where StoryID = " + storyID + ";";
+                    Helpers.RunSqlStatement(Name, sql);
+                }
+            );
 
-                Helpers.RunSqlStatement(Name,
-                    "update TweetCluster set StoryID=null where TweetClusterID in (" + clusterIDsStr + "); " +
-                    "delete from TweetCluster where IsArchived and TweetClusterID in (" + clusterIDsStr + "); " +
-                    @"update Story st
-                            join (
-                                select
-                                    s.StoryID,
-                                    (select Title from TweetCluster where StoryID=s.StoryID order by UserCount desc, StartTime limit 1) as Title,
-                                    sum(tc.TweetCount) as TweetCount,
-                                    sum(tc.TweetCountRecent) as TweetCountRecent,
-                                    sum(tc.RetweetCount) as RetweetCount,
-                                    sum(tc.RetweetCountRecent) as RetweetCountRecent,
-                                    sum(tc.UserCount) as UserCount,
-                                    sum(tc.UserCountRecent) as UserCountRecent,
-                                    sum(tc.TopUserCount) as TopUserCount,
-                                    sum(tc.TopUserCountRecent) as TopUserCountRecent,
-                                    min(tc.StartTime) as StartTime,
-                                    max(tc.EndTime) as EndTime,
-                                    min(s.IsArchived) as IsArchived
-                                from
-                                    Story s
-                                    join TweetCluster tc on tc.StoryID=s.StoryID,
-                                    (select max(EndTime) as T0 from TweetCluster) as TTT
-                                where s.StoryID = " + action.Key + @"
-                                group by s.StoryID
-                            ) T on T.StoryID = st.StoryID
-                        set
-                            st.Title=T.Title, 
-                            st.TweetCount=T.TweetCount,
-                            st.TweetCountRecent=T.TweetCountRecent, 
-                            st.RetweetCount=T.RetweetCount,
-                            st.RetweetCountRecent=T.RetweetCountRecent, 
-                            st.UserCount=T.UserCount, 
-                            st.UserCountRecent=T.UserCountRecent, 
-                            st.TopUserCount=T.TopUserCount, 
-                            st.TopUserCountRecent=T.TopUserCountRecent,
-                            st.StartTime=T.StartTime, 
-                            st.EndTime=T.EndTime,
-                            st.IsArchived=T.IsArchived
-                        ;");
-            }
+            //Perform split actions
+            SplitStories(splitActions);
 
-            Console.WriteLine("Split " + splitActions.Count + " stories.");
+            //Delete processed actions
+            foreach (var split in splitActions)
+                Helpers.RunSqlStatement(Name, "delete from StorySplits where StoryID=" + split.StoryID + " and TweetClusterID=" + split.TweetClusterID, false);
         }
 
-        static void MergeStories(Dictionary<long, HashSet<long>> mergeActions)
+        public static void ApplyPendingStoryMerges()
         {
-            //Apply merge actions
-            foreach (var action in mergeActions.OrderByDescending(n => n.Key))
-            {
-                string oldStoryIDsStr = string.Join(",", action.Value.Select(n => n.ToString()).ToArray());
+            Helpers.RunSqlStatement(Name, "update ignore StoryMerges s1 join StoryMerges s2 on s2.StoryID1=s1.StoryID2 set s2.StoryID1=s1.StoryID1", false);
 
-                Console.WriteLine("Applying merge action: " + action.Key + "<-" + oldStoryIDsStr);
+            //Get user-initiated merge actions. The actions are grouped as a user may have merged stories recursively.
+            Dictionary<long, HashSet<long>> mergeGroups = new Dictionary<long, HashSet<long>>();
+            Helpers.RunSelect(Name, "select StoryID1, StoryID2, IP, UserID from StoryMerges where MergedAt is null order by StoryID2 desc;",
+                mergeGroups,
+                (values, reader) =>
+                {
+                    long keepID = reader.GetInt64("StoryID1");
+                    long mergeID = reader.GetInt64("StoryID2");
+                    if (mergeGroups.ContainsKey(mergeID))
+                    {
+                        HashSet<long> tmp = mergeGroups[mergeID];
+                        tmp.Add(mergeID);
+                        mergeGroups.Remove(mergeID);
+                        if (mergeGroups.ContainsKey(keepID))
+                            mergeGroups[keepID].UnionWith(tmp);
+                        else
+                            mergeGroups.Add(keepID, tmp);
+                    }
+                    else if (mergeGroups.ContainsKey(keepID))
+                    {
+                        mergeGroups[keepID].Add(mergeID);
+                    }
+                    else
+                    {
+                        mergeGroups.Add(keepID, new HashSet<long>());
+                        mergeGroups[keepID].Add(mergeID);
+                    }
+                    long ip = reader.GetInt64("IP");
+                    long userID = reader.GetInt64("UserID");
 
-                Helpers.RunSqlStatement(Name,
-                    "update TweetCluster set StoryID=" + action.Key + " where StoryID in (" + oldStoryIDsStr + "); " +
-                    "update ignore StoryInfoKeywordTag set StoryID=" + action.Key + " where StoryID in (" + oldStoryIDsStr + "); " +
-                    "update ignore StoryInfoCategoryTag set StoryID=" + action.Key + " where StoryID in (" + oldStoryIDsStr + "); " +
-                    "update ignore StoryInfoEntityTag set StoryID=" + action.Key + " where StoryID in (" + oldStoryIDsStr + "); " +
-                    "update ignore StoryLocationTag set StoryID=" + action.Key + " where StoryID in (" + oldStoryIDsStr + "); " +
-                    "update ignore StoryCustomTitle set StoryID=" + action.Key + " where StoryID in (" + oldStoryIDsStr + "); " +
-                    @"update Story st
-                            join (
-                                select
-                                    s.StoryID,
-                                    (select Title from TweetCluster where StoryID=s.StoryID order by UserCount desc, StartTime limit 1) as Title,
-                                    sum(tc.TweetCount) as TweetCount,
-                                    sum(tc.TweetCountRecent) as TweetCountRecent,
-                                    sum(tc.RetweetCount) as RetweetCount,
-                                    sum(tc.RetweetCountRecent) as RetweetCountRecent,
-                                    sum(tc.UserCount) as UserCount,
-                                    sum(tc.UserCountRecent) as UserCountRecent,
-                                    sum(tc.TopUserCount) as TopUserCount,
-                                    sum(tc.TopUserCountRecent) as TopUserCountRecent,
-                                    min(tc.StartTime) as StartTime,
-                                    max(tc.EndTime) as EndTime,
-                                    min(s.IsArchived) as IsArchived
-                                from
-                                    Story s
-                                    join TweetCluster tc on tc.StoryID=s.StoryID,
-                                    (select max(EndTime) as T0 from TweetCluster) as TTT
-                                where s.StoryID = " + action.Key + @"
-                                group by s.StoryID
-                            ) T on T.StoryID = st.StoryID
-                        set
-                            st.Title=T.Title, 
-                            st.TweetCount=T.TweetCount,
-                            st.TweetCountRecent=T.TweetCountRecent, 
-                            st.RetweetCount=T.RetweetCount,
-                            st.RetweetCountRecent=T.RetweetCountRecent, 
-                            st.UserCount=T.UserCount, 
-                            st.UserCountRecent=T.UserCountRecent, 
-                            st.TopUserCount=T.TopUserCount, 
-                            st.TopUserCountRecent=T.TopUserCountRecent,
-                            st.StartTime=T.StartTime, 
-                            st.EndTime=T.EndTime,
-                            st.IsArchived=T.IsArchived
-                        ;
-                    insert into Story (StoryID, MaxGrowth)
-                    select StoryID, max(UserCount) as MaxGrowth from (
-                        select
-                            s.StoryID,
-                            date(t.CreatedAt) as d,
-                            hour(t.CreatedAt) as h,
-                            count(distinct t.UserID) as UserCount
-                        from Story s
-                            join TweetCluster tc on tc.StoryID = s.StoryID
-                            natural join Tweet t
-                            left join TwitterUser u on u.UserID=t.UserID
-                        where s.StoryID=" + action.Key + @" and not coalesce(IsBlacklisted,0)
-                        group by d,h
-                    ) T
-                    on duplicate key update MaxGrowth=if(VALUES(MaxGrowth)>Story.MaxGrowth,VALUES(MaxGrowth),Story.MaxGrowth);
-                    ");
-            }
+                    string sql = @"insert into StoryLog (IP, UserID, Timestamp, EventType, StoryAgeInSeconds, StoryID, MergedWithStoryID, TweetCount, RetweetCount, UserCount, TopUserCount) 
+                        select " + ip + "," + userID + ", utc_timestamp(), 12, unix_timestamp(utc_timestamp())-unix_timestamp(StartTime), StoryID, " + keepID + @", TweetCount, RetweetCount, UserCount, TopUserCount
+                        from Story where StoryID = " + mergeID + ";";
+                    Helpers.RunSqlStatement(Name, sql, false);
+                }
+            );
 
-            if (mergeActions.Count > 0)
-            {
-                string storyIDStr = string.Join(",", mergeActions.Values.Select(n => 
-                    string.Join(",", n.Select(m => m.ToString()).ToArray())).ToArray());
-                Helpers.RunSqlStatement(Name, "delete from Story where StoryID in (" + storyIDStr + ");", false); //Trigger on story deletes from tag tables
-            }
+            var mergeActions = mergeGroups.SelectMany(n =>
+                n.Value.Select(m => new MergeAction() { KeptStoryID = n.Key, MergedStoryID = m }));
+            
+            //Perform merge actions
+            MergeStories(mergeActions, isAutomerge: false);
 
-            Console.WriteLine("Merged " + mergeActions.Count + " story pairs.");
+            //Clean old actions
+            Helpers.RunSqlStatement(Name, "delete from StoryMerges where MergedAt is not null and MergedAt < (utc_timestamp() - interval 1 hour);", false);
+        }
+
+        public static void MarkStoriesAsProcessed()
+        {
+            Helpers.RunSqlStatement(Name, "update Story set PendingUpdate=0 where PendingUpdate=1", false);
+            Helpers.RunSqlStatement(Name, "update TweetCluster set PendingStoryUpdate=0 where PendingStoryUpdate=1", false);
         }
     }
 }

@@ -10,7 +10,7 @@
 include('header_start.php');
 include('header_end.php');
 
-if(isLoggedIn()) {
+if(is_logged_in()) {
   $story = -1;
   if (isset($_POST['storyid'])) {
     $storyID = intval($_POST['storyid']);
@@ -19,16 +19,16 @@ if(isLoggedIn()) {
   if (isset($_POST['tweetclusterid'])) {
     $tweetClusterID = intval($_POST['tweetclusterid']);
   }
-  
+
   if ($storyID < 0 || $tweetClusterID < 0) {
     die('parameter error');
   }
-  
+
   $ip = $_SERVER['REMOTE_ADDR'];
-  $userID = getUserID();
-  
+  $userID = get_user_id();
+
   include('api/open_db.php');
-  mysql_query("insert ignore into PendingStorySplits (StoryID, TweetClusterID, IP, UserID) values ($storyID, $tweetClusterID, INET_ATON('$ip'), $userID);", $db_conn);
+  mysql_query("insert ignore into StorySplits (StoryID, TweetClusterID, IP, UserID) values ($storyID, $tweetClusterID, INET_ATON('$ip'), $userID);", $db_conn);
   include('api/close_db.php');
 ?>
 <div class="fullwidth-column">

@@ -25,11 +25,14 @@ namespace CrisisTracker.TweetClusterer
             _hyperPlanes.AddRange(hyperPlanes);
         }
 
-        public CustomBitArray CalculateHashScore(WordVector vector)
+        public CustomBitArray CalculateHashScore(WordVector vector, out bool anyTrue)
         {
+            anyTrue = false;
             CustomBitArray arr = new CustomBitArray(_hyperPlanes.Count);
             for (int i = _hyperPlanes.Count - 1; i != -1; i--)
-                arr[i] = (_hyperPlanes[i] * vector) >= 0;
+            {
+                anyTrue |= (arr[i] = (_hyperPlanes[i] * vector) > 0);
+            }
             return arr;
         }
     }

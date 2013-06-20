@@ -267,6 +267,30 @@ namespace CrisisTracker.Common
             return value;
         }
 
+        public static void AppendTuple(StringBuilder sb, MySqlCommand command, params object[] values)
+        {
+            sb.Append('(');
+            AppendList(sb, command, values);
+            sb.Append(')');
+        }
+
+        static int _paramCounter = 0;
+        public static void AppendList(StringBuilder sb, MySqlCommand command, object[] values)
+        {
+            for (int i = 0; i < values.Length; i++)
+            {
+                string paramName = "@p" + _paramCounter;
+
+                if (i > 0)
+                    sb.Append(",");
+                sb.Append(paramName);
+                command.Parameters.AddWithValue(paramName, values[i]);
+
+                _paramCounter++;
+                _paramCounter = _paramCounter % int.MaxValue;
+            }
+        }
+
         //public static double ScoreToIdf(double wordScore)
         //{
         //    return 8 / Math.Sqrt((wordScore + 20) * (1 + Math.Exp(-0.3 * (wordScore - 35))));
@@ -341,6 +365,5 @@ namespace CrisisTracker.Common
                     //return ((char)int.Parse(m.Groups["Value"].Value, NumberStyles.HexNumber)).ToString(); 
                 });
         }
-
     }
 }

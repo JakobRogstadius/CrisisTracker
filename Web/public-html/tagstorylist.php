@@ -14,7 +14,7 @@ include('header_start.php');
 
 <script type="text/javascript">
   function confirmHideStory(storyid) {
-    <?php if (isLoggedIn()) { ?>
+    <?php if (is_logged_in()) { ?>
       if(confirm('Stories that do not contribute to situation awareness should be hidden. Hide this story?')) {
         window.location = "hidestory.php?hidden=1&storyid=" + storyid;
         return true;
@@ -22,8 +22,8 @@ include('header_start.php');
       return false;
     <?php } else { ?>
       alert('You must log in before you can hide stories.');
-      return false;    
-    <?php } ?>    
+      return false;
+    <?php } ?>
   }
 </script>
 
@@ -47,8 +47,6 @@ if (isset($_GET['sortorder'])) {
       else echo '<a href="?sortorder=weighted">Newest and largest</a>'; ?> |
     <?php if($sortOrder=='active') echo '<strong>Most active</strong>';
       else echo '<a href="?sortorder=active">Most active</a>'; ?> |
-    <?php if($sortOrder=='trending') echo '<strong>Trending</strong>';
-      else echo '<a href="?sortorder=trending">Trending</a>'; ?> |
     <?php if($sortOrder=='hidden') echo '<strong>Hidden</strong>';
       else echo '<a href="?sortorder=hidden">Hidden</a>'; ?>
     <div class="gui-subpanel story-list stories-to-tag-list">
@@ -73,16 +71,14 @@ $orderby = '';
 if ($sortOrder == 'hidden')
   $orderby = 'StartTime';
 elseif ($sortOrder == 'active')
-  $orderby = 'ImportanceRecent / (1 + 10*TagScore)';
-elseif ($sortOrder == 'trending')
-  $orderby = 'Trend / (1 + 10*TagScore)';
+  $orderby = 'WeightedSizeRecent / (1 + 10*TagScore)';
 elseif ($sortOrder == 'recent')
   $orderby = 'StartTime';
 else //weighted
-  $orderby = 'TaggingImportance / log(10 + (unix_timestamp(utc_timestamp()) - unix_timestamp(StartTime)) / 60)';
+  $orderby = 'greatest(0,2-TagScore)*log(WeightedSize) / log(10 + (unix_timestamp(utc_timestamp()) - unix_timestamp(StartTime)) / 60)';
 
 $hideArabic = "";
-if ($_COOKIE["hidearabic"] == "true")
+if (array_key_exists("hidearabic", $_COOKIE) && $_COOKIE["hidearabic"] == "true")
   $hideArabic = "and Title not regexp '[؀-ۿ]'";
 
 // Story info
@@ -95,15 +91,15 @@ $storyInfoResult = mysql_query(
     count(distinct InfoEntityID) as EntityCount,
     count(distinct InfoKeywordID) as KeywordCount
 from (
-        select 
+        select
             Story.StoryID,
             Title,
             CustomTitle,
-            ceil(exp(Importance)) as Popularity,
+            round(WeightedSize) as Popularity,
             ShortDate(StartTime) as StartTime,
             $orderby as score
         from Story
-            left join PendingStoryMerges psm on psm.StoryID2 = Story.StoryID
+            left join StoryMerges psm on psm.StoryID2 = Story.StoryID
             left join StoryCustomTitle sct on sct.StoryID=Story.StoryID
         where psm.StoryID2 is null and IsHidden=$isHidden $hideArabic
         order by score desc

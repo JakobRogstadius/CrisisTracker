@@ -6,14 +6,14 @@
  * which accompanies this distribution, and is available at
  * http://opensource.org/licenses/eclipse-1.0.php
  *******************************************************************************/
- 
+
 $menuHighlight = '';
 if (strpos($_SERVER['REQUEST_URI'], 'explorestories') > 0)
   $menuHighlight = 'read';
 elseif (strpos($_SERVER['REQUEST_URI'], 'tagstorylist') > 0)
-  $menuHighlight = 'tag';  
+  $menuHighlight = 'tag';
 elseif (strpos($_SERVER['REQUEST_URI'], 'performance') > 0)
-  $menuHighlight = 'performance';  
+  $menuHighlight = 'performance';
 elseif (strpos($_SERVER['REQUEST_URI'], 'about') > 0)
   $menuHighlight = 'about';
 elseif (strpos($_SERVER['REQUEST_URI'], 'evaluation') > 0)
@@ -34,7 +34,7 @@ elseif (strpos($_SERVER['REQUEST_URI'], 'evaluation') > 0)
         <header>
           <div style="position: relative">
             <div id="top-title"><h1>CRISIS TRACKER</h1></div>
-            <div id="login-box" style="z-index: 100; position: absolute; right:4px; bottom: 8px;"><input type="checkbox" id="chk-hide-arabic" <?php if(isset($_COOKIE["hidearabic"]) && $_COOKIE["hidearabic"] == "true") echo 'checked="checked"'; ?> onchange="toggleArabic()" /><label for="chk-hide-arabic">Hide content in Arabic</label> | <?php printLogin(); ?></div>
+            <div id="login-box" style="z-index: 100; position: absolute; right:4px; bottom: 8px;"><?php print_login_button(); ?></div>
           </div>
           <div id="menu"><nav>
             <ul>

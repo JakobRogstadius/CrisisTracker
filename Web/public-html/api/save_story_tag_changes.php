@@ -1,12 +1,4 @@
 <?php
-/*******************************************************************************
- * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://opensource.org/licenses/eclipse-1.0.php
- *******************************************************************************/
-
 /*
 INPUT:
   storyID: long
@@ -60,18 +52,19 @@ function naiveStemming($words) {
   return $words;
 }
 
-ini_set('display_errors', 1); 
-ini_set('log_errors', 1); 
-ini_set('error_log', dirname(__FILE__) . '/php_error_log.txt'); 
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+ini_set('error_log', dirname(__FILE__) . '/php_error_log.txt');
 error_reporting(E_ALL);
 
+session_start();
 header( 'Content-Type: text/xml; charset=UTF-8' );
 mb_internal_encoding( 'UTF-8' );
 
 include('common_functions.php');
-include('../twitterLogin/login.php');
+include('../twitteroauth/login.php');
 
-if (!isLoggedIn() && !isset($_GET['userid'])) {
+if (!is_logged_in() && !isset($_GET['userid'])) {
   exit("missing user id");
 }
 
@@ -84,7 +77,7 @@ $ip = $_SERVER['REMOTE_ADDR'];
 if (isset($_GET['userip'])) {
   $ip = stripMaliciousSql($_GET['userip']);
 }
-$userID = getUserID();
+$userID = get_user_id();
 if (isset($_GET['userid'])) {
   $userID = intval($_GET['userid']);
 }
@@ -146,7 +139,7 @@ if (isset($_GET['addedentities']))
     mysql_query(
       "insert ignore into InfoEntity (Entity) values ('" . implode("'),('", $addedEntityNames) . "')",
       $db_conn);
-    
+
     //Get IDs for inserted values
     $addedEntitiesResult = mysql_query(
       "select InfoEntityID, Entity from InfoEntity where Entity in ('" . implode("','", $addedEntityNames) . "')",
@@ -159,7 +152,7 @@ if (isset($_GET['addedentities']))
         'id' => $row['InfoEntityID'],
         'name' => $row['Entity']);
     }
-    
+
     foreach (array_keys($entityTags) as $tagID) {
       mysql_query("call AddRemoveStoryTag(1, 'entity', $userID, INET_ATON('$ip'), $storyID, $tagID, null, null);", $db_conn);
     }
@@ -171,13 +164,13 @@ if (isset($_GET['addedkeywords']))
 {
   $addedKeywordNames = naiveStemming(getSafeValues($_GET['addedkeywords']));
   $addedKeywordNames = array_diff($addedKeywordNames, array(''));
-  
+
   if (count($addedKeywordNames) > 0) {
     //Insert new values
     mysql_query(
       "insert ignore into InfoKeyword (Keyword) values ('" . implode("'),('", $addedKeywordNames) . "')",
       $db_conn);
-    
+
     //Get IDs for inserted values
     $addedKeywordResult = mysql_query(
       "select InfoKeywordID, Keyword from InfoKeyword where Keyword in ('" . implode("','", $addedKeywordNames) . "')",
@@ -190,7 +183,7 @@ if (isset($_GET['addedkeywords']))
         'id' => $row['InfoKeywordID'],
         'name' => $row['Keyword']);
     }
-    
+
     foreach (array_keys($keywordTags) as $tagID) {
       mysql_query("call AddRemoveStoryTag(1, 'keyword', $userID, INET_ATON('$ip'), $storyID, $tagID, null, null);", $db_conn);
     }
@@ -211,10 +204,10 @@ if (isset($_GET['addedlocationslatitude']) && isset($_GET['addedlocationslongitu
     {
       $addedLatitudes[$i] = round($addedLatitudes[$i], 6);
       $addedLongitudes[$i] = round($addedLongitudes[$i], 6);
-      
+
       mysql_query("call AddRemoveStoryTag(1, 'location', $userID, INET_ATON('$ip'), $storyID, null, " . doubleval($addedLongitudes[$i]) . ',' . doubleval($addedLatitudes[$i]) . ');', $db_conn);
     }
-    
+
     //Get IDs
     $locationIDsResult = mysql_query(
       "select TagID, Longitude, Latitude from StoryLocationTag where StoryID=$storyID and Longitude in ("
@@ -223,7 +216,7 @@ if (isset($_GET['addedlocationslatitude']) && isset($_GET['addedlocationslongitu
       . implode(',', $addedLatitudes)
       . ")"
     );
-    
+
     $outputData['locations'] = array();
     while($row = mysql_fetch_array($locationIDsResult)) {
       $outputData['locations'][] = array('id' => $row['TagID'], 'longitude' => $row['Longitude'], 'latitude' => $row['Latitude']);

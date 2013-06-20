@@ -1,12 +1,4 @@
 <?php
-/*******************************************************************************
- * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://opensource.org/licenses/eclipse-1.0.php
- *******************************************************************************/
-
 /*
 INPUT:
   storyid: long
@@ -32,18 +24,18 @@ function getSafeValues($input, $readNumbers = FALSE) {
   return $output;
 }
 
-ini_set('display_errors', 1); 
-ini_set('log_errors', 1); 
-ini_set('error_log', dirname(__FILE__) . '/php_error_log.txt'); 
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+ini_set('error_log', dirname(__FILE__) . '/php_error_log.txt');
 error_reporting(E_ALL);
 
 header('Content-Type: text/html; charset=UTF-8' );
 mb_internal_encoding('UTF-8' );
 
 include('common_functions.php');
-include('../twitterLogin/login.php');
+include('../twitteroauth/login.php');
 
-if (!isLoggedIn()) {
+if (!is_logged_in()) {
   exit("used not logged in");
 }
 
@@ -53,7 +45,7 @@ if (!isset($_POST['storyid']))
 
 $storyID = intval($_POST['storyid']);
 $ip = $_SERVER['REMOTE_ADDR'];
-$userID = getUserID();
+$userID = get_user_id();
 
 //Update custom title
 if (!isset($_POST['customtitle'])) {
@@ -64,24 +56,24 @@ if (!isset($_POST['customtitle'])) {
 include('open_db.php');
 $customTitle = urlencode($_POST['customtitle']);
 if ($customTitle == '') {
-  mysql_query("call AddRemoveStoryCustomTitle($userID, INET_ATON('$ip'), $storyID, null);", $db_conn);  
+  mysql_query("call AddRemoveStoryCustomTitle($userID, INET_ATON('$ip'), $storyID, null);", $db_conn);
 }
 else {
-  mysql_query("call AddRemoveStoryCustomTitle($userID, INET_ATON('$ip'), $storyID, '$customTitle');", $db_conn);  
+  mysql_query("call AddRemoveStoryCustomTitle($userID, INET_ATON('$ip'), $storyID, '$customTitle');", $db_conn);
 }
 include('close_db.php');
 
 /*
 if($mysqli = new mysqli('127.0.0.1', 'jakob', 'the_jak0b$', 'jakob'))
 {
-  if($stmt = $mysqli->prepare("call AddRemoveStoryCustomTitle($userID, INET_ATON('$ip'), $storyID, ?);")) 
+  if($stmt = $mysqli->prepare("call AddRemoveStoryCustomTitle($userID, INET_ATON('$ip'), $storyID, ?);"))
   {
     $mysqli->set_charset("utf8");
     $heart = '♥';
     if($stmt->bind_param('s', $heart))// $_POST['customtitle']))
     {
       $ret = $stmt->execute();
-    } 
+    }
     $stmt->close();
   }
 }

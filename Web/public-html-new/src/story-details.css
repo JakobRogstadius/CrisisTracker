@@ -1,0 +1,36 @@
+#stories-focus li.tweet {
+  padding: 4px 4px 4px 34px;
+  border-bottom: 1px solid #ddd;
+  position: relative;
+}
+#stories-focus li.tweet div {
+  padding: 0 !important;
+}
+#stories-focus li.tweet img {
+  position: absolute;
+  left: 4px;
+  top: 6px;
+  width: 24px;
+  height: 24px;
+}
+#stories-focus li.tweet .text {
+  font-size: 1.1em;
+}
+#stories-focus li.tweet .source {
+  font-size: 0.9em;
+  padding-top: 4px !important;
+  color: #999;
+}
+#stories-focus li.merged, #stories-focus li.merged a {
+  color: #ccc !important;
+}
+#stories-focus .timefilter {
+  margin-top: 10px;
+}
+#stories-focus-title {
+  font-size: 1.5em;
+  padding: 3px 6px 3px 6px !important;
+}
+#stories-focus div.merge {
+  text-align: right;
+}

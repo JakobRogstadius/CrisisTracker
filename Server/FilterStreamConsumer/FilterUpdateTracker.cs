@@ -17,7 +17,9 @@ namespace CrisisTracker.FilterStreamConsumer
 {
     class FilterUpdateTracker
     {
-        List<TrackFilter> _filters = new List<TrackFilter>();
+        List<TrackFilter> _keywordFilters = new List<TrackFilter>();
+        List<TrackFilter> _userFilters = new List<TrackFilter>();
+        List<TrackFilter> _geoFilters = new List<TrackFilter>();
         object _accessLock = new object();
         System.Timers.Timer _reloadTimer;
         readonly string _name = "FilterUpdateTracker";
@@ -40,7 +42,7 @@ namespace CrisisTracker.FilterStreamConsumer
 
         void Reload(object sender, System.Timers.ElapsedEventArgs args)
         {
-            string sql = "select FilterType, Word, UserID, Region from TwitterTrackFilter where IsActive;";
+            string sql = "select ID, FilterType, Word, UserID, Region from TwitterTrackFilter where IsActive;";
 
             List<TrackFilter> newFilters = new List<TrackFilter>();
             Helpers.RunSelect(_name, sql, newFilters, (values, reader) =>
@@ -48,6 +50,7 @@ namespace CrisisTracker.FilterStreamConsumer
                     TrackFilter filter = new TrackFilter();
                     try
                     {
+                        filter.ID = reader.GetInt32("ID");
                         filter.Type = (TrackFilter.FilterType)reader.GetByte("FilterType");
                         if (filter.Type == TrackFilter.FilterType.User)
                         {
@@ -71,18 +74,41 @@ namespace CrisisTracker.FilterStreamConsumer
                 }
             );
 
-            if (newFilters.Count() != _filters.Count || newFilters.Where(n => _filters.Any(m => m.ID == n.ID)).Count() < newFilters.Count)
+            if (newFilters.Count() != GetFilterCount() || newFilters.Where(n => !IsFilterIDActive(n.ID.Value)).Any())
             {
                 ResetFilters(newFilters);
             }
+        }
+
+        int GetFilterCount()
+        {
+            return _keywordFilters.Count + _userFilters.Count + _geoFilters.Count;
+        }
+
+        bool IsFilterIDActive(int id)
+        {
+            return _keywordFilters.Any(n => n.ID == id)
+                || _userFilters.Any(n => n.ID == id)
+                || _geoFilters.Any(n => n.ID == id);
         }
 
         void ResetFilters(IEnumerable<TrackFilter> filters)
         {
             lock (_accessLock)
             {
-                _filters.Clear();
-                _filters.AddRange(filters);
+                _keywordFilters.Clear();
+                _userFilters.Clear();
+                _geoFilters.Clear();
+
+                foreach (var filter in filters)
+                {
+                    if (filter.Type == TrackFilter.FilterType.Word)
+                        _keywordFilters.Add(filter);
+                    else if (filter.Type == TrackFilter.FilterType.User)
+                        _userFilters.Add(filter);
+                    else if (filter.Type == TrackFilter.FilterType.Region)
+                        _geoFilters.Add(filter);
+                }
             }
 
             if (FiltersChanged != null)
@@ -100,43 +126,70 @@ namespace CrisisTracker.FilterStreamConsumer
             {
                 lock (_accessLock)
                 {
-                    return _filters.ToArray();
+                    return _keywordFilters
+                        .Union(_userFilters)
+                        .Union(_geoFilters)
+                        .ToArray();
                 }
             }
         }
 
-        public bool HasFilters { get { return _filters.Count > 0; } }
-
-        public string GetTrackString()
+        public bool HasFilters { get { return GetFilterCount() > 0; } }
+        public bool HasKeywordFilters { get { return _keywordFilters.Count > 0; } }
+        public bool HasUserFilters { get { return _userFilters.Count > 0; } }
+        public bool HasGeoFilters { get { return _geoFilters.Count > 0; } }
+        
+        public string GetKeywordFilterString()
         {
-            if (_filters.Count == 0)
-                return "";
-
-            StringBuilder sb = new StringBuilder();
-            int prevType = (int)TrackFilter.FilterType.Undefined;
-            foreach (var filterGroup in _filters
-                .GroupBy(n => (int)n.Type, (a,b) => new { Type = a, Filters = b }))
-            {
-                if (filterGroup.Type != prevType)
-                {
-                    prevType = filterGroup.Type;
-                    if (sb.Length > 0)
-                        sb.Append("&");
-                    if (filterGroup.Type == (int)TrackFilter.FilterType.Word)
-                        sb.Append("track=");
-                    else if (filterGroup.Type == (int)TrackFilter.FilterType.User)
-                        sb.Append("follow=");
-                    else if (filterGroup.Type == (int)TrackFilter.FilterType.Region)
-                        sb.Append("locations=");
-                }
-
-                if (filterGroup.Type == (int)TrackFilter.FilterType.Word)
-                    sb.Append(string.Join(",", filterGroup.Filters.Select(n => System.Web.HttpUtility.UrlEncode(n.ToString())).ToArray()));
-                else
-                    sb.Append(string.Join(",", filterGroup.Filters.Select(n => n.ToString()).ToArray()));
-            }
-
-            return sb.ToString();
+            if (!_keywordFilters.Any())
+                return null;
+            return String.Join(",", _keywordFilters.Select(n => n.ToString()));
         }
+
+        public string GetUserFilterString()
+        {
+            if (!_userFilters.Any())
+                return null;
+            return String.Join(",", _userFilters.Select(n => n.ToString()));
+        }
+        
+        public string GetGeoFilterString()
+        {
+            if (!_geoFilters.Any())
+                return null;
+            return String.Join(",", _geoFilters.Select(n => n.ToString()));
+        }
+
+        //public string GetTrackString()
+        //{
+        //    if (GetFilterCount() == 0)
+        //        return "";
+
+        //    StringBuilder sb = new StringBuilder();
+        //    int prevType = (int)TrackFilter.FilterType.Undefined;
+        //    foreach (var filterGroup in _filters
+        //        .GroupBy(n => (int)n.Type, (a,b) => new { Type = a, Filters = b }))
+        //    {
+        //        if (filterGroup.Type != prevType)
+        //        {
+        //            prevType = filterGroup.Type;
+        //            if (sb.Length > 0)
+        //                sb.Append("&");
+        //            if (filterGroup.Type == (int)TrackFilter.FilterType.Word)
+        //                sb.Append("track=");
+        //            else if (filterGroup.Type == (int)TrackFilter.FilterType.User)
+        //                sb.Append("follow=");
+        //            else if (filterGroup.Type == (int)TrackFilter.FilterType.Region)
+        //                sb.Append("locations=");
+        //        }
+
+        //        if (filterGroup.Type == (int)TrackFilter.FilterType.Word)
+        //            sb.Append(string.Join(",", filterGroup.Filters.Select(n => System.Web.HttpUtility.UrlEncode(n.ToString())).ToArray()));
+        //        else
+        //            sb.Append(string.Join(",", filterGroup.Filters.Select(n => n.ToString()).ToArray()));
+        //    }
+
+        //    return sb.ToString();
+        //}
     }
 }

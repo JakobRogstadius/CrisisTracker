@@ -1,0 +1,163 @@
+-- ---------------------------------------------
+-- UPDATES ON 18 June 2013
+-- ---------------------------------------------
+
+CREATE TABLE `AidrAttribute` (
+  `AttributeID` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `AttributeCode` varchar(45) NOT NULL,
+  `AttributeName` varchar(200) NOT NULL,
+  `AttributeDescription` text,
+  PRIMARY KEY (`AttributeID`),
+  UNIQUE KEY `AttributeCode_UNIQUE` (`AttributeCode`)
+) ENGINE=InnoDB AUTO_INCREMENT=52296 DEFAULT CHARSET=utf8;
+
+CREATE TABLE `AidrLabel` (
+  `LabelID` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `AttributeID` int(10) unsigned NOT NULL,
+  `LabelCode` varchar(45) NOT NULL,
+  `LabelName` varchar(200) NOT NULL,
+  `LabelDescription` text,
+  PRIMARY KEY (`LabelID`),
+  UNIQUE KEY `ix_AidrLabel_unique` (`AttributeID`,`LabelCode`),
+  KEY `fk_AidrLabel_AidrAttribute_idx` (`AttributeID`),
+  CONSTRAINT `fk_AidrLabel_AidrAttribute` FOREIGN KEY (`AttributeID`) REFERENCES `AidrAttribute` (`AttributeID`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=53377 DEFAULT CHARSET=utf8 COMMENT='	';
+
+DROP TRIGGER IF EXISTS `Story_Update`;
+ALTER TABLE `Story`
+  DROP COLUMN `MaxGrowth`
+, DROP COLUMN `Trend`
+, DROP COLUMN `ImportanceRecent`
+, DROP COLUMN `Importance`
+, DROP COLUMN `TaggingImportance`
+, DROP COLUMN `UserCountRecent`
+, DROP COLUMN `RetweetCountRecent`
+, DROP COLUMN `TweetCountRecent`
+, DROP INDEX `Importance`
+, DROP INDEX `ImportanceRecent`
+, DROP INDEX `Trend`
+, DROP INDEX `TaggingImportance`;
+ALTER TABLE `Story`
+  CHANGE COLUMN `RetweetCount` `RetweetCount` INT(10) UNSIGNED NOT NULL DEFAULT '0'
+, ADD COLUMN `WeightedSize` DOUBLE UNSIGNED NOT NULL DEFAULT 0  AFTER `TopUserCountRecent`
+, ADD COLUMN `WeightedSizeRecent` DOUBLE UNSIGNED NOT NULL DEFAULT 0  AFTER `WeightedSize`
+, ADD COLUMN `PendingUpdate` BIT NOT NULL DEFAULT 0  AFTER `TagScore`
+, ADD COLUMN `Latitude` DOUBLE NULL  AFTER `IsHidden`
+, ADD COLUMN `Longitude` DOUBLE NULL  AFTER `Latitude`
+, ADD INDEX `Importance` (`WeightedSize` ASC)
+, ADD INDEX `ImportanceRecent` (`WeightedSizeRecent` ASC)
+, ADD INDEX `PendingUpdate` (`PendingUpdate` ASC)
+, ADD INDEX `TopUserCount` (`TopUserCount` ASC) ;
+
+CREATE TABLE `StoryAidrAttributeTag` (
+  `StoryID` bigint(20) unsigned NOT NULL,
+  `AttributeID` int(10) unsigned NOT NULL,
+  `LabelID` int(10) unsigned NOT NULL,
+  `TagCount` int(10) unsigned NOT NULL,
+  `IsMajorityTag` bit(1) NOT NULL DEFAULT b'0',
+  PRIMARY KEY (`StoryID`,`AttributeID`,`LabelID`),
+  KEY `fk_StoryAidrTopicTag_StoryID_idx` (`StoryID`),
+  KEY `IsMajorityTag` (`IsMajorityTag`),
+  KEY `TweetCount` (`TagCount`),
+  KEY `fk_StoryAidrAttributeTag_AidrAttribute_idx` (`AttributeID`),
+  KEY `fk_StoryAidrAttributeTag_AidrLabel_idx` (`LabelID`),
+  CONSTRAINT `fk_StoryAidrAttributeTag_AidrAttribute` FOREIGN KEY (`AttributeID`) REFERENCES `AidrAttribute` (`AttributeID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_StoryAidrAttributeTag_AidrLabel` FOREIGN KEY (`LabelID`) REFERENCES `AidrLabel` (`LabelID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_StoryAidrAttributeTag_StoryID` FOREIGN KEY (`StoryID`) REFERENCES `Story` (`StoryID`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `StoryInfoKeywordTag`
+ADD COLUMN `Weight` DOUBLE UNSIGNED NOT NULL  AFTER `IP` ;
+
+ALTER TABLE `PendingStoryMerges` RENAME TO  `StoryMerges` ;
+
+ALTER TABLE `PendingStorySplits` RENAME TO  `StorySplits` ;
+
+ALTER TABLE `Tweet` DROP FOREIGN KEY `Tweet_TweetClusterID` ;
+ALTER TABLE `Tweet`
+  DROP COLUMN `HasUrl`
+, DROP COLUMN `WordScore`
+, CHANGE COLUMN `Text` `Text` VARCHAR(140) NULL  AFTER `TextHash`
+, CHANGE COLUMN `TweetClusterID` `TweetClusterID` BIGINT(20) UNSIGNED NULL
+, ADD COLUMN `ProcessedMetatags` BIT NOT NULL DEFAULT 0  AFTER `CalculatedRelations`
+, ADD COLUMN `Novelty` DOUBLE NOT NULL DEFAULT 1  AFTER `ProcessedMetatags`
+, ADD COLUMN `RetweetOfUserID` BIGINT(20) UNSIGNED NULL  AFTER `RetweetOf`
+, ADD COLUMN `TextHash` INT(11) NOT NULL  AFTER `Latitude` ,
+  ADD CONSTRAINT `Tweet_TweetClusterID`
+  FOREIGN KEY (`TweetClusterID` )
+  REFERENCES `TweetCluster` (`TweetClusterID` )
+  ON DELETE CASCADE
+  ON UPDATE NO ACTION
+, ADD INDEX `TextHash` (`TextHash` ASC) ;
+
+ALTER TABLE `Tweet`
+	DROP FOREIGN KEY `Tweet_TweetClusterID` ;
+ALTER TABLE `Tweet`
+  DROP COLUMN `HasUrl`
+, DROP COLUMN `WordScore`
+, ADD COLUMN `ProcessedMetatags` BIT NOT NULL DEFAULT 0  AFTER `CalculatedRelations`
+, ADD COLUMN `Novelty` DOUBLE NOT NULL DEFAULT 1  AFTER `ProcessedMetatags`
+, ADD COLUMN `RetweetOfUserID` BIGINT(20) UNSIGNED NULL  AFTER `RetweetOf`
+, ADD COLUMN `TextHash` INT(11) NOT NULL  AFTER `Latitude`
+, ADD CONSTRAINT `Tweet_TweetClusterID`
+  FOREIGN KEY (`TweetClusterID` )
+  REFERENCES `TweetCluster` (`TweetClusterID` )
+  ON DELETE CASCADE
+  ON UPDATE NO ACTION
+, ADD INDEX `TextHash` (`TextHash` ASC) ;
+ALTER TABLE `Tweet`
+  CHANGE COLUMN `Text` `Text` VARCHAR(140) NULL  AFTER `TextHash`
+, CHANGE COLUMN `TweetClusterID` `TweetClusterID` BIGINT(20) UNSIGNED NULL  ;
+
+CREATE TABLE `TweetAidrAttributeTag` (
+  `TweetID` bigint(20) unsigned NOT NULL,
+  `AttributeID` int(10) unsigned NOT NULL,
+  `LabelID` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`TweetID`,`AttributeID`,`LabelID`),
+  KEY `fk_TweetAidrAttributeTag_Tweet_idx` (`TweetID`),
+  KEY `fk_TweetAidrAttributeTag_AidrAttribute_idx` (`AttributeID`),
+  KEY `fk_TweetAidrAttributeTag_AidrLabel_idx` (`LabelID`),
+  CONSTRAINT `fk_TweetAidrAttributeTag_Tweet` FOREIGN KEY (`TweetID`) REFERENCES `Tweet` (`TweetID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_TweetAidrAttributeTag_AidrAttribute` FOREIGN KEY (`AttributeID`) REFERENCES `AidrAttribute` (`AttributeID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_TweetAidrAttributeTag_AidrLabel` FOREIGN KEY (`LabelID`) REFERENCES `AidrLabel` (`LabelID`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `TweetCluster`
+  DROP COLUMN `TopUserCountRecent`
+, DROP COLUMN `TopUserCount`
+, DROP COLUMN `UserCountRecent`
+, DROP COLUMN `UserCount`
+, DROP COLUMN `RetweetCountRecent`
+, DROP COLUMN `RetweetCount`
+, DROP COLUMN `TweetCountRecent`
+, CHANGE COLUMN `TweetCount` `TweetCount` INT(10) UNSIGNED NOT NULL DEFAULT '0'  AFTER `IsArchived`
+, ADD COLUMN `PendingClusterUpdate` BIT NOT NULL DEFAULT 0  AFTER `EndTime`
+, ADD COLUMN `PendingStoryUpdate` BIT NOT NULL DEFAULT 0  AFTER `PendingClusterUpdate`
+, DROP INDEX `UserCountRecent`
+, ADD INDEX `PendingClusterUpdate` (`PendingClusterUpdate` ASC)
+, ADD INDEX `PendingStoryUpdate` (`PendingStoryUpdate` ASC)
+, ADD INDEX `TweetCount` (`TweetCount` ASC) ;
+ALTER TABLE `jakob`.`TweetCluster`
+
+CREATE TABLE `TweetClusterCollision` (
+  `CollisionID` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `TweetClusterID1` bigint(20) unsigned NOT NULL,
+  `TweetClusterID2` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`CollisionID`),
+  UNIQUE KEY `TweetClusterCollision_Unique` (`TweetClusterID1`,`TweetClusterID2`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `jakob`.`TweetUrl` CHARACTER SET = utf8
+, CHANGE COLUMN `Url` `Url` VARCHAR(255) CHARACTER SET 'latin1' NOT NULL
+, ADD COLUMN `UrlHash` INT(11) NOT NULL  AFTER `TweetID`
+, ADD CONSTRAINT `fk_TweetUrl_TweetID`
+  FOREIGN KEY (`TweetID` )
+  REFERENCES `jakob`.`Tweet` (`TweetID` )
+  ON DELETE CASCADE
+  ON UPDATE CASCADE
+, DROP PRIMARY KEY
+, ADD PRIMARY KEY (`UrlHash`, `TweetID`)
+, ADD INDEX `TweetID_idx_idx` (`TweetID` ASC) ;
+
+ALTER TABLE `jakob`.`StoryInfoKeywordTag`
+ADD INDEX `Weight` (`Weight` ASC) ;

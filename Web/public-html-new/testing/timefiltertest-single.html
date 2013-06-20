@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>CrisisTracker</title>
+
+<!-- LIBRARIES -->
+<script src="lib/d3/d3.v3.min.js"></script>
+
+<style>
+  svg {
+    font: 10px sans-serif;
+  }
+
+  path.tweets {
+    stroke: #08d;
+    fill: #08d;
+    fill-opacity: 0.2;
+  }
+  path.retweets {
+    stroke: #c77;
+    fill: #c77;
+    fill-opacity: 0.2;
+  }
+
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+  }
+
+  .brush .extent {
+    stroke: #fff;
+    fill-opacity: .125;
+    shape-rendering: crispEdges;
+  }
+</style>
+</head>
+<body>
+  <div id="container" style="width: 500px; height: 100px; border: 1px solid green;"></div>
+</body>
+
+<script>
+  renderTimeFilter(document.getElementById("container"), 18519)
+
+  function renderTimeFilter(container, storyID) {
+    var margin = {top: 0, right: 2, bottom: 20, left: 2},
+        width = container.clientWidth - margin.left - margin.right,
+        height = container.clientHeight - margin.top - margin.bottom;
+
+    var parseTime = d3.time.format.utc("%Y-%m-%d %H:%M:%S").parse;
+
+    var x = d3.time.scale().range([0, width]),
+        y_t = d3.scale.linear().range([height, 0]),
+        y_rt = d3.scale.linear().range([height, 0]);
+
+    var xAxis = d3.svg.axis().scale(x).orient("bottom");
+
+    var brush = d3.svg.brush()
+        .x(x)
+        .on("brushend", brushed);
+
+    var area = d3.svg.area()
+        .interpolate("linear")
+        .x(function(d) { return x(d.time); })
+        .y0(height)
+        .y1(function(d) { return y_t(d.tweets); });
+
+    var area2 = d3.svg.area()
+        .interpolate("linear")
+        .x(function(d) { return x(d.time); })
+        .y0(height)
+        .y1(function(d) { return y_rt(d.retweets); });
+
+    var svg = d3.select("#"+container.id).append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom);
+
+    svg.append("defs").append("clipPath")
+        .attr("id", "clip")
+      .append("rect")
+        .attr("width", width)
+        .attr("height", height);
+
+    var context = svg.append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var globaldata;
+    d3.json("http://ufn.virtues.fi/~jakob/newct/api/get_event_volume_by_time.php?id="+storyID, function(error, data) {
+      globaldata = data;
+      data.forEach(function(d) {
+        d.time = parseTime(d.created_at);
+      });
+
+      x.domain(d3.extent(data.map(function(d) { return d.time; })));
+      y_t.domain([0, d3.max(data.map(function(d) { return d.tweets; }))]);
+      y_rt.domain([0, d3.max(data.map(function(d) { return d.retweets; }))]);
+
+      context.append("path")
+          .datum(data)
+          .attr("class", "retweets")
+          .attr("d", area2);
+      context.append("path")
+          .datum(data)
+          .attr("class", "tweets")
+          .attr("d", area);
+
+      context.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis);
+
+      context.append("g")
+          .attr("class", "x brush")
+          .call(brush)
+        .selectAll("rect")
+          .attr("y", -6)
+          .attr("height", height + 7);
+    });
+
+    function brushed() {
+      console.log(brush.empty() ? x.domain() : brush.extent()[0]);
+    }
+  }
+
+</script>
+</html>

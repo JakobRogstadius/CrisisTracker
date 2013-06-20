@@ -1,0 +1,164 @@
+This document explains how to get the CrisisTracker system running on your own server. If you run into any problems, please contact jakob.rogstadius@gmail.com.
+
+
+===========================
+=== SYSTEM REQUIREMENTS ===
+===========================
+
+- CrisisTracker has successfully been set up on Linux, Windows and Mac servers, but has mainly been tested on Ubuntu.
+- Mono/.NET Framework (tested with Mono 2.10.9 on Ubuntu 12.04.2).
+- MySQL (tested with 5.5.31).
+- A PHP server (tested with Apache 2/PHP 5.3.10)
+- Around 1 Mbps dedicated server bandwidth for the Twitter streams, plus web traffic.
+- CPU and memory requirements vary significantly with the scale of the tracked event. A deployment for the Syrian civil war used approximately two CPU cores, a few GB of RAM and a few hundred GB of storage, almost all of which is used by the database engine. Servers that serve many other functions in parallel will need more than this.
+
+
+================================================
+=== REGISTER AND CONFIGURE A TWITTER ACCOUNT ===
+================================================
+
+1. Register one new Twitter account for the system to use. Future versions of the system may use the account to post information, but currently it only reads data.
+
+2. Go to https://dev.twitter.com/apps and create three new applications for your new twitter account. Suggested application names are "CrisisTracker-NAME", "SampleStreamConsumer-NAME" and "FilterStreamConsumer-NAME" where NAME is the name of your deployment. Generate access tokens for all three applications and leave their access level at read-only.
+
+3. In the CrisisTracker application you just registered, go to settings and set the callback URL to http://YOUR_URL/twitteroauth/callback.php where YOUR_URL is the root url to your deployment of CrisisTracker. If your deployment is not publicly accessible over the internet, set it to the internal URL that your users will see. The description for this application will be visible to end-users when they log in to curate content, to take a moment to explain who you are.
+
+4. Open the file /Web/public-html/twitteroauth/config.php. Enter the "consumer key" and "consumer secret" from the CrisisTracker application on Twitter.
+
+5. The information you fill in in the SampleStreamConsumer and FilterStreamConsumer applications will not be presented to end-users, and you can enter any placeholder for the callback field.
+
+6. Open the file /Server/Common/settings.xml. For SampleStreamConsumer and FilterStreamConsumer, enter the values for "consumer key", "consumer secret", "access token" and "access token secret".
+
+
+===========================
+=== CREATE THE DATABASE ===
+===========================
+
+1. Install MySQL on your server. Instructions for several operating systems are available at: http://dev.mysql.com/doc/refman/5.7/en/installing.html
+
+2. Create the database using /Documentation/create_database_script.txt.
+
+3. Create a MySQL account for CrisisTracker to use with read and write access to the database you just created. Example syntax:
+CREATE USER 'enter_username_here'@'localhost' IDENTIFIED BY 'enter_password_here';
+GRANT SELECT, INSERT, UPDATE, DELETE ON CrisisTracker.* TO 'enter_username_here'@'localhost';
+
+4. Enter the correct connection string to the database in the following files:
+/Server/Common/settings.xml
+/Web/public-html/api/open_db.php
+
+
+================================
+=== SPECIFY TRACKING FILTERS ===
+================================
+
+Add tracking keywords to the TwitterTrackFilter table:
+
+*ID         auto incremented ID
+IsActive    1 for active, 0 for disabled
+IsStrong    1 for strong, 0 for weak] (see **)
+*Hits1d     Approx. number of tweets that matched the filter in the past one day.
+*Discards1d Approx. number of tweets that matched the filter but were discarded. Only applies to weak filters.
+FilterType  0 for keyword, 1 for user, 2 for geographic region (see ***).
+Word        keyword to track, or null (see ****)
+UserID      user ID to track, or null
+UserName    User name (not used, but helps to tell user IDs apart), or null
+Region      Geographic region (box) for which to track geotagged tweets, or null. Enter coordinates as minlon,minlat,maxlon,maxlat. (see *****)
+
+* = Leave emtpy, the value is calculated automatically
+
+** = All filters are tracked globally on Twitter, and any new Tweet matching any of your filters will be sent to your CrisisTracker instance. If all your filters together match more than 1% of all tweets globally, your stream will be rate limited and no tweets will be sent for a while. CrisisTracker performs a second filtering pass of all incoming tweets, where a tweet must match at least one strong filter or at least two weak filters. In most cases you should only use strong filters, but occasionally it's difficult to find specific enough filters that you may need to rely on combinations of several weak ones.
+
+*** = Each filter can only be of one type. Twitter's API does not support tracking for instance the word "fire" only within a geographic bounding box. If you need this, consider using weak filters.
+
+**** = Keywords should be entered lower-case. Avoid keywords with low specificity such as "need", "water" or "fire", as these will match many unrelated tweets and quickly make you hit the rate limit. Good keywords are event-specific hashtags, location names, people names or other words that are likely to occur mainly for your event of interest. "mykeyword" will match both "mykeyword" and "#mykeyword". You can create logical and-filters by entering multiple space-separated words in one filter, such as "fire australia" which will match any tweet containing both words.
+
+***** = On average, only around 1% of all tweets are geotagged by the author. This effectively means that if you only track content by location, you will miss 99% of all tweets.
+
+Example filters:
+IsActive=1, IsStrong=1, FilterType=0, Word=earthquake (this will collect all tweets that contain the word earthquake)
+IsActive=1, IsStrong=1, FilterType=0, Region=35.5,32.0,42.4,37.3 (this will collect all tweets geotagged inside Syria)
+
+
+======================================
+=== SPECIFY INFORMATION CATEGORIES ===
+======================================
+
+1. Add information categories to the InfoCategory table. An information category is a label that a user of the system can apply to a story. Categories can for instance be "Demonstration", "Violence", "Fire" or "Affected infrastructure". The IDs are assgined automatically, so leave them empty.
+
+2. Modify /Web/public-html/resources/javascript/categorybuttons.js to contain the same information categories in the same order, as you defined in the InfoCategory table in the database.
+
+3. Check that the colors in /Web/resources/css/main.css (classes .cc1-cc14) are suitable for your information categories. Add more numbered classes if needed.
+
+
+=============================================================================
+=== INSTALL MONO AND ADD TWITTER'S ROOT CERTIFICATE TO MONO'S TRUST STORE ===
+=============================================================================
+
+This only applies if you are using Mono. There may be an equivalent step if you are using the .NET framework on Windows.
+
+1. Install the Mono Framework. See instructions at http://www.mono-project.com/Mono_Installation
+
+2. Twitter's root certificate needs to be installed before any Mono program can open a secure connection to Twitter's servers: https://dev.twitter.com/discussions/533. The third option (mozroots.exe) on this site has been used successfully to install the certificate: http://www.mono-project.com/FAQ:_Security
+
+
+==========================================
+=== COMPILE THE CRISISTRACKER BACK-END ===
+==========================================
+
+1. Compile the CrisisTracker back-end using the following commands (from the /Server directory):
+mcs -r:*.dll -pkg:dotnet -target:library -out:CrisisTracker.Common.dll Common/*.cs
+mcs -r:*.dll -pkg:dotnet -out:SampleStreamConsumer.exe SampleStreamConsumer/*.cs
+mcs -r:*.dll -pkg:dotnet -out:FilterStreamConsumer.exe FilterStreamConsumer/*.cs
+mcs -r:*.dll -pkg:dotnet -out:TweetParser.exe TweetParser/*.cs
+mcs -r:*.dll -pkg:dotnet -out:TweetClusterer.exe TweetClusterer/*.cs
+
+2. You should now have the following files in the /Server directory.
+- CrisisTracker.Common.dll
+- LinqToTwitterCP.dll
+- MySql.Data.dll
+- FilterStreamConsumer.exe
+- SampleStreamConsumer.exe
+- TweetParser.exe
+- TweetClusterer.exe
+- settings.xml
+
+
+======================================
+=== RUN THE CRISISTRACKER BACK-END ===
+======================================
+
+1. Start SampleStreamConsumer.exe and TweetParser.exe on the server and let them run for 10 minutes. The system needs to build up decently accurate word statistics before processing event-specific content. To run the applications on Linux:
+ screen -S StreamConsumer mono SampleStreamConsumer.exe
+ screen -S Parser mono TweetParser.exe
+
+You can leave a screen with ctrl-a ctrl-d, and list your running screens with "screen -ls".
+
+2. Check if any any application has created debug.txt. If so, check the file for errors and debug. If you see errors like the one below, you have not successfully installed Twitter's root certificate (see above):
+
+System.Net.WebException: Error getting response stream (Write: The authentication or decryption has failed.): SendFailure ---> System.IO.IOException: The authentication or decryption has failed. ---> Mono.Security.Protocol.Tls.TlsException: Invalid certificate received from server. Error code: 0xffffffff800b010a
+  at Mono.Security.Protocol.Tls.Handshake.Client.TlsServerCertificate.validateCertificates (Mono.Security.X509.X509CertificateCollection certificates) [0x00000] in <filename unknown>:0
+
+3. Check in the database that the TweetJson, Word and WordScore tables are being populated.
+
+4. Start FilterStreamConsumer.exe and TweetClusterer.exe. On Linux:
+ screen -S FilterConsumer mono FilterStreamConsumer.exe
+ screen -S Clusterer mono TweetClusterer.exe
+
+5. Check that the Tweet, TweetCluster and Story tables are being populated. If not, check debug.txt for hints.
+
+
+================================
+=== SET UP THE WEB FRONT-END ===
+================================
+
+1. In some way make the /Web/public-html directory publicly accessible from your web server. On Linux/Apache an easy way is to create a symbolic link from the /Web/public-html folder to the web root:
+ln -s /path/to/web/root/crisistracker /path/to/CrisisTracker/Web/public-html
+
+2. Load up the site in a web browser. If it doesn't work, and debugging with debug.txt doesn't solve the problem, contact Jakob Rogstadius and we'll try to figure out what went wrong.
+
+
+============
+=== DONE ===
+============
+
+Thank you for taking time to set up a CrisisTracker instance! If you are interested in helping out to automate installation of this open-source project or in other ways contribute to the development, please contact Jakob Rogstadius (jakob.rogstadius@gmail.com).

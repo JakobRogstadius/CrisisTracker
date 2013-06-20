@@ -6,27 +6,28 @@
  * which accompanies this distribution, and is available at
  * http://opensource.org/licenses/eclipse-1.0.php
  *******************************************************************************/
- 
- include('twitterLogin/login.php');
-if (isLoggedIn()) {
+
+session_start();
+include('twitteroauth/login.php');
+if (is_logged_in()) {
   $storyID = 0;
   if (isset($_GET['storyid']))
     $storyID = intval($_GET['storyid']);
-  else 
+  else
     die('parameter error');
-  
+
   $hidden = 1;
   if (isset($_GET['hidden'])) {
     $hidden = intval($_GET['hidden']);
     if ($hidden > 1 || $hidden < 0)
       die('parameter error');
   }
-  else 
+  else
     die('parameter error');
-  
+
   $ip = $_SERVER['REMOTE_ADDR'];
-  $userID = getUserID();
-  
+  $userID = get_user_id();
+
   include('api/open_db.php');
   mysql_query("call HideShowStory($storyID, $hidden, INET_ATON('$ip'), $userID);", $db_conn);
   include('api/close_db.php');

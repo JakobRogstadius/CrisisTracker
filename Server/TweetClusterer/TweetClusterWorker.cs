@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using CrisisTracker.Common;
+using System.Globalization;
 
 namespace CrisisTracker.TweetClusterer
 {
@@ -31,7 +32,7 @@ namespace CrisisTracker.TweetClusterer
         }
 
         const string Name = "TweetClusterWorker";
-        int _wordsPerHyperPlane = 1 + (int)(Math.Log(Math.Pow(Settings.TweetClusterer_TCW_DictionaryWordCount, 2)));
+        //int _wordsPerHyperPlane = 1 + (int)(Math.Log(Math.Pow(Settings.TweetClusterer_TCW_DictionaryWordCount, 2)));
 
         List<LSHashTable> _tables = new List<LSHashTable>();
         LSHashTweetHistory _history = new LSHashTweetHistory(Settings.TweetClusterer_TCW_HistorySize);
@@ -43,14 +44,17 @@ namespace CrisisTracker.TweetClusterer
         {
             try
             {
+                Console.Write("Fetching tweets...");
                 List<LSHashTweet> tweets = GetTweetBatch(Settings.TweetClusterer_TCW_BatchSize, getProcessed: false);
-                Console.WriteLine("Fetched " + tweets.Count + " tweets");
+                Console.WriteLine(" (" + tweets.Count + ")");
                 if (tweets.Count == 0)
                     return 0;
 
+                Dictionary<long, double> maxSimilarities = new Dictionary<long, double>();
                 List<TweetRelationSimple> relations = new List<TweetRelationSimple>();
 
                 //Process each tweet
+                Console.WriteLine("Processing tweets...");
                 foreach (LSHashTweet t in tweets)
                 {
                     //Skip content-less tweets
@@ -61,81 +65,52 @@ namespace CrisisTracker.TweetClusterer
                     }
 
                     //Add the tweet to each hash table and keep track of collisions with previously added tweets
-                    Dictionary<LSHashTweet, int> neighborCandidates = new Dictionary<LSHashTweet, int>();
-                    foreach (LSHashTable table in _tables)
-                    {
-                        List<LSHashTweet> hits = table.Add(t);
-                        foreach (LSHashTweet hit in hits)
-                        {
-                            if (neighborCandidates.ContainsKey(hit))
-                                neighborCandidates[hit]++;
-                            else
-                                neighborCandidates.Add(hit, 1);
-                        }
-                    }
+                    Dictionary<LSHashTweet, int> neighborCandidates = GetNeighborCandidates(t);
 
                     //Look for relations in hash bin collisions
                     double maxSimilarity = 0;
-                    int foundRelations = 0;
-                    if (neighborCandidates.Count > 0)
-                    {
-                        IEnumerable<LSHashTweet> nearestCandidates = neighborCandidates
-                            .OrderByDescending(n => n.Value) //sort by number of times the candidate was in the same bin as this tweet
-                            .Select(n => n.Key) //select the candidates
-                            .Take(3 * Settings.TweetClusterer_TCW_HashTableCount) //take the 3L best candidates
-                            .OrderByDescending(n => n.Vector * t.Vector) //sort by actual similarity
-                            .Take(Settings.TweetClusterer_TCW_MaxLinksPerTweet); //take best
-                        foreach (LSHashTweet candidate in nearestCandidates)
-                        {
-                            double similarity = candidate.Vector * t.Vector;
-                            if (similarity > Settings.TweetClusterer_TCW_MinTweetSimilarityForLink && t.ID != candidate.ID)
-                            {
-                                relations.Add(new TweetRelationSimple() { TweetID = t.ID, TweetID2 = candidate.ID, Similarity = similarity });
-                                foundRelations++;
-
-                                if (similarity > maxSimilarity)
-                                    maxSimilarity = similarity;
-                            }
-                        }
-                    }
+                    maxSimilarity = GetNeighbors(relations, t, neighborCandidates, maxSimilarity);
 
                     //If retweet, add relation to parent
                     if (t.RetweetOf.HasValue && !relations.Any(n => n.TweetID2 == t.RetweetOf.Value))
-                        relations.Add(new TweetRelationSimple() { TweetID = t.ID, TweetID2 = t.RetweetOf.Value, Similarity = 0.99 });
+                    {
+                        relations.Add(new TweetRelationSimple() {
+                            TweetID = t.ID, 
+                            TweetID2 = t.RetweetOf.Value, 
+                            Similarity = Settings.TweetClusterer_TCW_IdentityThreshold 
+                        });
+                        maxSimilarity = Math.Max(maxSimilarity, Settings.TweetClusterer_TCW_IdentityThreshold);
+                    }
 
                     //If no neighbor from bins, search in history
-                    if (foundRelations < 2)
+                    if (relations.Count < 2)
                     {
-                        List<LSHashTweet> nearestCandidates = _history.GetNearestNeighbors(t, Settings.TweetClusterer_TCW_MaxLinksPerTweet - foundRelations);
-                        foreach (LSHashTweet candidate in nearestCandidates)
-                        {
-                            double similarity = candidate.Vector * t.Vector;
-                            if (similarity > Settings.TweetClusterer_TCW_MinTweetSimilarityForLink)
-                            {
-                                relations.Add(new TweetRelationSimple() { TweetID = t.ID, TweetID2 = candidate.ID, Similarity = similarity });
-                                foundRelations++;
-
-                                if (similarity > maxSimilarity)
-                                    maxSimilarity = similarity;
-                            }
-                        }
+                        maxSimilarity = GetNeighborsFromRecentHistory(relations, t, maxSimilarity);
                     }
 
                     if (maxSimilarity < Settings.TweetClusterer_TCW_IdentityThreshold)
+                    {
                         _history.Add(t); //Only add tweets that were "unique" or "novel" according to the hash tables
+                    }
+
+                    maxSimilarities.Add(t.ID, maxSimilarity);
                 }
 
-                Console.WriteLine("Total items in all hash tables: " + _tables.Sum(n => n.GetItemCount()));
+                IEnumerable<long> allTweetIDs = _tables.SelectMany(n => n.GetTweetIDs()).Distinct();
+                Console.WriteLine("Unique items in all hash tables: " + allTweetIDs.Count());
 
+                Console.WriteLine("Storing relations... ");
                 StoreRelations(relations);
-                Console.WriteLine("Stored relations... ");
 
-                AssignTweetClusterIDsToBatchTweets(tweets, relations);
+                Console.Write("Assigning cluster IDs... ");
+                AssignTweetClusterIDsToBatchTweets(tweets, relations, maxSimilarities);
                 Console.WriteLine();
-                Console.Write("assigned cluster IDs... ");
-                
+
+                Console.WriteLine("Correcting novelty scores...");
+                CorrectNoveltyScores(tweets);
+
+                Console.WriteLine("Marking tweets as processed...");
                 MarkTweetsAsProcessed(tweets);
-                Console.WriteLine("and marked as processed.");
 
                 return tweets.Count;
             }
@@ -185,6 +160,65 @@ namespace CrisisTracker.TweetClusterer
                 tweets[tweetID].Vector.AddItem(wordID.Value, wordWeight.Value);
         }
 
+        private Dictionary<LSHashTweet, int> GetNeighborCandidates(LSHashTweet t)
+        {
+            Dictionary<LSHashTweet, int> neighborCandidates = new Dictionary<LSHashTweet, int>();
+            foreach (LSHashTable table in _tables)
+            {
+                bool dummy;
+                List<LSHashTweet> hits = table.Add(t, out dummy);
+                foreach (LSHashTweet hit in hits)
+                {
+                    if (neighborCandidates.ContainsKey(hit))
+                        neighborCandidates[hit]++;
+                    else
+                        neighborCandidates.Add(hit, 1);
+                }
+            }
+            return neighborCandidates;
+        }
+
+        private static double GetNeighbors(List<TweetRelationSimple> relations, LSHashTweet t, Dictionary<LSHashTweet, int> neighborCandidates, Double maxSimilarity)
+        {
+            if (neighborCandidates.Count > 0)
+            {
+                IEnumerable<LSHashTweet> nearestCandidates = neighborCandidates
+                    .OrderByDescending(n => n.Value) //sort by number of times the candidate was in the same bin as this tweet
+                    .Select(n => n.Key) //select the candidates
+                    .Take(3 * Settings.TweetClusterer_TCW_HashTableCount) //take the 3L best candidates
+                    .OrderByDescending(n => n.Vector * t.Vector) //sort by actual similarity
+                    .Take(Settings.TweetClusterer_TCW_MaxLinksPerTweet); //take best
+                foreach (LSHashTweet candidate in nearestCandidates)
+                {
+                    double similarity = candidate.Vector * t.Vector;
+                    if (similarity > maxSimilarity)
+                        maxSimilarity = similarity;
+                    if (similarity > Settings.TweetClusterer_TCW_MinTweetSimilarityForLink && t.ID != candidate.ID)
+                    {
+                        relations.Add(new TweetRelationSimple() { TweetID = t.ID, TweetID2 = candidate.ID, Similarity = similarity });
+                    }
+                }
+            }
+            return maxSimilarity;
+        }
+
+        private Double GetNeighborsFromRecentHistory(List<TweetRelationSimple> relations, LSHashTweet t, Double maxSimilarity)
+        {
+            List<LSHashTweet> nearestCandidates = _history.GetNearestNeighbors(t, Settings.TweetClusterer_TCW_MaxLinksPerTweet - relations.Count);
+            foreach (LSHashTweet candidate in nearestCandidates)
+            {
+                double similarity = candidate.Vector * t.Vector;
+                if (similarity > Settings.TweetClusterer_TCW_MinTweetSimilarityForLink)
+                {
+                    relations.Add(new TweetRelationSimple() { TweetID = t.ID, TweetID2 = candidate.ID, Similarity = similarity });
+
+                    if (similarity > maxSimilarity)
+                        maxSimilarity = similarity;
+                }
+            }
+            return maxSimilarity;
+        }
+
         void StoreRelations(List<TweetRelationSimple> relations)
         {
             if (relations.Count == 0)
@@ -205,7 +239,7 @@ namespace CrisisTracker.TweetClusterer
                 sqlSB.Append(',');
                 sqlSB.Append(relation.TweetID2);
                 sqlSB.Append(',');
-                sqlSB.Append(relation.Similarity);
+                sqlSB.Append(relation.Similarity.ToString(CultureInfo.InvariantCulture));
                 sqlSB.Append(')');
             }
             sqlSB.Append(';');
@@ -214,17 +248,18 @@ namespace CrisisTracker.TweetClusterer
             Helpers.RunSqlStatement(Name, "delete from TweetRelationInsertBuffer;", false);
         }
 
-        private void AssignTweetClusterIDsToBatchTweets(List<LSHashTweet> tweets, List<TweetRelationSimple> relations)
+        private void AssignTweetClusterIDsToBatchTweets(List<LSHashTweet> tweets, List<TweetRelationSimple> relations, Dictionary<long, double> maxSimilarities)
         {
             if (tweets.Count == 0)
                 return;
 
-            //Update cluster IDs for tweets in batch
+            //Allow dirty reads
+            Helpers.RunSqlStatement(Name, "SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED", false);
 
             //Get the next unused cluster ID from the database
             long? nextClusterID = 0;
             Helpers.RunSelect(Name,
-                "select coalesce(max(TweetClusterID)+1,0) as ID from TweetCluster;",
+                "select coalesce(max(TweetClusterID)+1,0) as ID from TweetCluster",
                 nextClusterID,
                 (dummy, reader) => nextClusterID = Convert.ToInt64(reader["ID"]));
 
@@ -240,7 +275,7 @@ namespace CrisisTracker.TweetClusterer
                     where TweetID1 in (" + batchIDsStr + @")
                 ) T
                 join TweetRelation tr on tr.TweetID1 = T.TweetID or tr.TweetID2 = T.TweetID
-                group by T.TweetID;",
+                group by T.TweetID",
                 neighborInfo,
                 (values, reader) =>
                     values.Add(
@@ -253,20 +288,33 @@ namespace CrisisTracker.TweetClusterer
                         }));
             Console.WriteLine("neighborInfo length: " + neighborInfo.Count);
 
-            HashSet<long> affectedTweetClusterIDs = new HashSet<long>(neighborInfo.Where(n => n.Value.TweetClusterID.HasValue).Select(n => n.Value.TweetClusterID.Value));
+            List<long> createdClusterIDs = new List<long>();
+            Dictionary<long, long> assignedTweetClusterIDs = new Dictionary<long, long>(); //tweetID, clusterID
 
             //Group the edges by TweetID1 (tweet in batch)
             var tweetsWithRelations =
                 from edge in relations
                 group edge by edge.TweetID into tweetEdges
                 select new { TweetID = tweetEdges.Key, Edges = tweetEdges };
-            
 
+            //Assign cluster IDs to those tweets for which no relations were found, or for which none of the target tweets exists
+            foreach (LSHashTweet tweet in tweets.Where(n => 
+                !tweetsWithRelations.Any(m => m.TweetID == n.ID)
+                || !relations.Any(m => m.TweetID == n.ID && neighborInfo.ContainsKey(m.TweetID2))
+                ))
+            {
+                assignedTweetClusterIDs.Add(tweet.ID, nextClusterID.Value);
+                createdClusterIDs.Add(nextClusterID.Value);
+                UpdateNeighbor(neighborInfo, tweet.ID, nextClusterID.Value);
+                nextClusterID++;
+            }
+            Console.Write(".");
+            
             //Assign cluster ID to each tweet in the batch: the majority ID in the local neighborhood if available, else the next unused ID
-            List<long> createdClusterIDs = new List<long>();
-            Dictionary<long, long> assignedTweetClusterIDs = new Dictionary<long, long>(); //tweetID, clusterID
+            HashSet<ValuePair<long, long>> clusterCollisions = new HashSet<ValuePair<long,long>>();
             foreach (var tweet in tweetsWithRelations)
             {
+                //Get the tweets that this tweet is similar to
                 var neighbors = tweet.Edges
                     .Where(e => neighborInfo.ContainsKey(e.TweetID2))
                     .Select(e => neighborInfo[e.TweetID2])
@@ -274,134 +322,129 @@ namespace CrisisTracker.TweetClusterer
                 if (!neighbors.Any()) //I think this happens when edges were added for retweets, but the source tweet was never seen
                     continue;
 
+                //Rank the clusterIDs of the neighbors and pick the most frequent
                 var idGroups =
-                    from n in neighbors
-                    group n by n.TweetClusterID into g
-                    select new { ID = g.Key, Members = g, Score = g.Sum(m => 1 + 0.3*Math.Log(m.Degree)) };
-                long? topGroup = idGroups.OrderByDescending(n => n.Score).First().ID;
+                    (from n in neighbors
+                     group n by n.TweetClusterID into g
+                     where g.Key.HasValue
+                     select new { ID = g.Key, Members = g, Score = g.Sum(m => 1 + 0.3 * Math.Log(m.Degree)) })
+                    .OrderByDescending(n => n.Score);
+                long topGroup = idGroups.First().ID.Value;
 
-                if (topGroup.HasValue)
-                    assignedTweetClusterIDs.Add(tweet.TweetID, topGroup.Value);
-                else
+                //Assign the majority cluster ID to this tweet
+                assignedTweetClusterIDs.Add(tweet.TweetID, topGroup);
+                    
+                //If the tweet bridges multiple clusters, make a record of this to later test merging of the clusters
+                if (idGroups.Count() > 0)
                 {
-                    assignedTweetClusterIDs.Add(tweet.TweetID, nextClusterID.Value);
-                    createdClusterIDs.Add(nextClusterID.Value);
-                    nextClusterID++;
+                    long minID = idGroups.Min(n => n.ID).Value;
+                    var collisions = idGroups.Where(n => n.ID != minID).Select(n => new ValuePair<long, long>(minID, n.ID.Value));
+                    clusterCollisions.UnionWith(collisions);
                 }
 
-                //Update neighbor info index with new assignment
-                if (neighborInfo.ContainsKey(tweet.TweetID))
-                    neighborInfo[tweet.TweetID].TweetClusterID = assignedTweetClusterIDs[tweet.TweetID];
-            }
-            
-            //Assign cluster IDs to those tweets for which no relations were found
-            foreach (LSHashTweet tweet in tweets)
-            {
-                if (assignedTweetClusterIDs.ContainsKey(tweet.ID))
-                    continue;
-
-                assignedTweetClusterIDs.Add(tweet.ID, nextClusterID.Value);
-                createdClusterIDs.Add(nextClusterID.Value);
-                nextClusterID++;
+                //Update this tweet's cluster index in the list of neighbors, as other tweets in the batch may link to this tweet
+                UpdateNeighbor(neighborInfo, tweet.TweetID, assignedTweetClusterIDs[tweet.TweetID]);
             }
 
-
-            Console.Write(".");
             //Insert new TweetClusters (otherwise the tweet update below will fail from trigger constraints)
-            string tweetClusterInsert = "INSERT IGNORE INTO TweetCluster (TweetClusterID, StartTime, EndTime) VALUES (" +
-                string.Join(",'3000-01-01',0),(", assignedTweetClusterIDs.Values.Distinct().Select(n => n.ToString()).ToArray()) + ",'3000-01-01',0);";
+            string tweetClusterInsert = "INSERT INTO TweetCluster (TweetClusterID, StartTime, EndTime, PendingClusterUpdate, PendingStoryUpdate) VALUES "
+                + string.Join(",", assignedTweetClusterIDs.Values.Distinct().Select(n => "(" + n + ",'3000-01-01',0,1,1)"))
+                + " ON DUPLICATE KEY UPDATE PendingClusterUpdate=1, PendingStoryUpdate=1";
             Helpers.RunSqlStatement(Name, tweetClusterInsert, false);
             Console.Write(".");
 
-
-            //Save assignments in DB
+            //Save cluster assignments in DB (and save novelty score)
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("INSERT INTO Tweet (TweetID, TweetClusterID) VALUES ");
+            sb.AppendLine("INSERT INTO Tweet (TweetID, TweetClusterID, Novelty) VALUES ");
             bool first = true;
             foreach (var item in assignedTweetClusterIDs)
             {
                 if (first) first = false;
                 else sb.AppendLine(",");
-                sb.Append("(" + item.Key + "," + item.Value + ")");
+                double novelty = 1;
+                if (maxSimilarities.ContainsKey(item.Key)) //items are absent from the list if no neighbors were found
+                    novelty = 1 - maxSimilarities[item.Key];
+                sb.Append("(" + item.Key + "," + item.Value + "," + novelty + ")");
             }
             sb.AppendLine();
-            sb.AppendLine("ON DUPLICATE KEY UPDATE TweetClusterID=VALUES(TweetClusterID);");
-            Console.Write(".");
-
+            sb.AppendLine("ON DUPLICATE KEY UPDATE TweetClusterID=VALUES(TweetClusterID), Novelty=VALUES(Novelty)");
             Helpers.RunSqlStatement(Name, sb.ToString(), false);
-
-            //Update EndTime of affected TweetClusters, to catch those cases where a tweet is assigned by the hash tables to an archived TweetCluster
-            string sqlTweetCluster = @"
-                insert into TweetCluster (TweetClusterID, EndTime)
-                select
-                    T.TweetClusterID,
-                    t2.CreatedAt as EndTime
-                from (
-                    select 
-                        TweetClusterID, 
-                        max(TweetID) as MaxTweetID
-                    from Tweet
-                    where TweetID in (" + batchIDsStr + @") 
-                    group by TweetClusterID
-                ) T
-                join Tweet t2 on t2.TweetID = T.MaxTweetID
-                on duplicate key update
-                    EndTime=greatest(EndTime,VALUES(EndTime))
-                ;";
-            Helpers.RunSqlStatement(Name, sqlTweetCluster, false);
             Console.Write(".");
 
-
-            //Update all TweetCluster counts that may have changed, from recent additions or by moving out of the 4h time window
-            //Note: The where clause looks silly, but it makes better use of indexes than if the first () is removed
+            //Update stats for all TweetClusters that recieved new tweets or which are sliding out of the 4h time window
             string sqlTweetClusterCounts = @"
-                insert into TweetCluster (TweetClusterID, TweetCount, TweetCountRecent, RetweetCount, RetweetCountRecent, UserCount, UserCountRecent, TopUserCount, TopUserCountRecent, StartTime, EndTime)
+                insert into TweetCluster (TweetClusterID, StartTime, EndTime, TweetCount)
                 select TweetClusterID,
-                    sum(RetweetOf is null) as TweetCount,
-                    sum(RetweetOf is null and CreatedAt > T4h) as TweetCountRecent,
-                    sum(RetweetOf is not null) as RetweetCount,
-                    sum(RetweetOf is not null and CreatedAt > T4h) as RetweetCountRecent,
-                    count(distinct if(IsBlacklisted, null, UserID)) as UserCount,
-                    count(distinct if(CreatedAt > T4h, UserID, null)) as UserCountRecent,
-                    count(distinct if(IsTopUser and not IsBlacklisted, UserID, null)) as TopUserCount,
-                    count(distinct if(IsTopUser and not IsBlacklisted and CreatedAt > T4h, UserID, null)) as TopUserCountRecent,
                     min(CreatedAt) as StartTime,
-                    max(CreatedAt) as EndTime
+                    max(CreatedAt) as EndTime,
+                    count(*) as TweetCount
                 from
                     TweetCluster
                     natural join Tweet
-                    natural join TwitterUser,
-                    (select max(CreatedAt) - interval 4 hour as T4h, max(CreatedAt) - interval 10 minute as T10m from Tweet where CalculatedRelations) as TTT
+                    join TwitterUser on TwitterUser.UserID=Tweet.UserID and not IsBlacklisted,
+                    (select max(CreatedAt) - interval 4 hour as T4h from Tweet where CalculatedRelations) as TTT
                 where 
-                    (UserCountRecent > 0 or EndTime > T10m or StartTime > T10m) 
-                    and ((UserCountRecent > 0 and StartTime < T4h) or EndTime > T10m or StartTime > T10m)
+		            PendingClusterUpdate
+		            or T4h between StartTime and EndTime
                 group by TweetClusterID
                 on duplicate key update
-                    TweetCount=VALUES(TweetCount),
-                    TweetCountRecent=VALUES(TweetCountRecent),
-                    RetweetCount=VALUES(RetweetCount),
-                    RetweetCountRecent=VALUES(RetweetCountRecent),
-                    UserCount=VALUES(UserCount),
-                    UserCountRecent=VALUES(UserCountRecent),
-                    TopUserCount=VALUES(TopUserCount),
-                    TopUserCountRecent=VALUES(TopUserCountRecent),
                     StartTime=VALUES(StartTime),
-                    EndTime=VALUES(EndTime)
-                ;";
+                    EndTime=VALUES(EndTime),
+                    TweetCount=VALUES(TweetCount)
+                ";
             Helpers.RunSqlStatement(Name, sqlTweetClusterCounts, false);
             Console.Write(".");
 
             //Update TweetCluster titles
             string sqlTweetClusterTitles = @"
                 update TweetCluster tc
-                set Title = 
-                    (select IF(Text REGEXP '^RT @[a-zA-Z0-9_]+: ', SUBSTR(Text, LOCATE(':', Text) + 2), Text)
-                    from Tweet where Tweet.TweetClusterID = tc.TweetClusterID order by length(Text) desc limit 1)
-                where (Title = '' or Title is null)
-                    and EndTime > (select max(CreatedAt) - interval 10 minute from Tweet where CalculatedRelations)
-                ;";
+                set Title = (
+	                select IF(Text REGEXP '^RT @[a-zA-Z0-9_]+: ', SUBSTR(Text, LOCATE(':', Text) + 2), Text) Title
+	                from Tweet t
+	                join TwitterUser tu on tu.UserID=t.UserID
+	                where t.TweetClusterID=tc.TweetClusterID and not IsBlacklisted
+	                group by TextHash
+	                order by count(*) desc
+                    limit 1
+                )
+                where PendingClusterUpdate and not IsArchived
+                ";
             Helpers.RunSqlStatement(Name, sqlTweetClusterTitles, false);
             Console.Write(".");
+
+            //Reset PendingClusterUpdate
+            Helpers.RunSqlStatement(Name, "update TweetCluster set PendingClusterUpdate=0 where PendingClusterUpdate", false);
+
+            //Insert cluster collisions
+            string sqlTweetClusterCollisions = "insert ignore into TweetClusterCollision (TweetClusterID1, TweetClusterID2) values "
+                + String.Join(",", clusterCollisions.Select(n => "(" + n.Value1 + "," + n.Value1 + ")"));
+
+            //Reset dirty reads
+            Helpers.RunSqlStatement(Name, "SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ", false);
+        }
+
+        private void CorrectNoveltyScores(List<LSHashTweet> tweets)
+        {
+            if (tweets.Count == 0)
+                return;
+
+            string tweetIDsStr = String.Join(",", tweets.Select(n => n.ID));
+            string sql = 
+                @"update Tweet t1 
+                join Tweet t2 
+                    on t1.TextHash = t2.TextHash 
+                    and t1.TweetID < t2.TweetID 
+                    and t1.CreatedAt > t2.CreatedAt - interval 1 day
+                set t2.Novelty=0 where t2.TweetID in (" + tweetIDsStr + ") and t2.Novelty > 0.6";
+            Helpers.RunSqlStatement(Name, sql, false);
+        }
+
+        private static void UpdateNeighbor(Dictionary<long, TweetNeighbor> neighborInfo, long tweetID, long assignedClusterID)
+        {
+            if (!neighborInfo.ContainsKey(tweetID))
+                neighborInfo.Add(tweetID, new TweetNeighbor() { TweetID = tweetID, TweetClusterID = assignedClusterID, Degree = 0 });
+            else
+                neighborInfo[tweetID].TweetClusterID = assignedClusterID;
         }
 
         void MarkTweetsAsProcessed(IEnumerable<LSHashTweet> tweets)
@@ -421,7 +464,7 @@ namespace CrisisTracker.TweetClusterer
             for (int j = 0; j < Settings.TweetClusterer_TCW_HyperPlaneCount; j++)
             {
                 WordVector plane = new WordVector();
-                List<long> wordIDs = GetRandomWordIDs(_wordsPerHyperPlane);
+                List<long> wordIDs = GetRandomWordIDs(Settings.TweetClusterer_TCW_WordsPerHyperPlane);
                 foreach (long id in wordIDs)
                     plane.AddItem(id, Helpers.NextGaussian());
                 planes.Add(plane);
@@ -439,7 +482,7 @@ namespace CrisisTracker.TweetClusterer
             _nextTableRehashIndex = (_nextTableRehashIndex + 1) % Settings.TweetClusterer_TCW_HashTableCount;
         }
 
-        public void CleanDeletedTweets()
+        public void CleanDeletedOrArchivedTweets()
         {
             //Get all tweet IDs stored in the hash tables
             HashSet<long> tweetIDs = new HashSet<long>();
@@ -458,7 +501,7 @@ namespace CrisisTracker.TweetClusterer
                 List<long> batch = allTweetIDs.GetRange(i * batchSize, Math.Min(batchSize, allTweetIDs.Count - i * batchSize));
                 string idStr = string.Join(",", batch.Select(n => n.ToString()).ToArray());
 
-                string sql = "select TweetID from Tweet where TweetID in (" + idStr + ");";
+                string sql = "select TweetID from Tweet natural join TweetCluster where TweetID in (" + idStr + ") and not IsArchived";
                 Helpers.RunSelect(Name, sql, remainingTweetIDs, (nothing, reader) =>
                     remainingTweetIDs.Add(reader.GetInt64("TweetID"))
                 );
@@ -469,7 +512,8 @@ namespace CrisisTracker.TweetClusterer
             foreach (var table in _tables)
                 table.RemoveTweetsByID(deletedTweetIDs);
 
-            Console.WriteLine("Removed " + deletedTweetIDs.Count + " tweets from the database, which no longer exist in the database");
+            if (deletedTweetIDs.Count > 0)
+                Console.WriteLine("Removed " + deletedTweetIDs.Count + " archived or deleted tweets from the hashtables");
         }
 
         public void CreateHashTables()
@@ -505,7 +549,7 @@ namespace CrisisTracker.TweetClusterer
 
         public void InitializeWithOldTweets()
         {
-            //Load 5000 old tweets and add process them without storing any relationships
+            //Load lots of old tweets and process them without storing any relationships
             List<LSHashTweet> tweets = GetTweetBatch(Settings.TweetClusterer_TCW_InitializeSize, true);
 
             foreach (LSHashTweet tweet in tweets)
@@ -513,7 +557,8 @@ namespace CrisisTracker.TweetClusterer
                 //Rough approximation of novely calculations in real processing loop
                 foreach (LSHashTable table in _tables)
                 {
-                    var neighbors = table.Add(tweet);
+                    bool dummy;
+                    var neighbors = table.Add(tweet, out dummy);
                 }
 
                 _history.Add(tweet);

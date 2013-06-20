@@ -8,26 +8,38 @@
 
 using System.Net;
 using CrisisTracker.Common;
+using LinqToTwitter;
+using System.Linq;
 
 namespace CrisisTracker.SampleStreamConsumer
 {
     class SampleStreamConsumer : TwitterStreamConsumer
     {
         public SampleStreamConsumer()
-            : base(Settings.ConnectionString, true)
+            : base(CrisisTracker.Common.Settings.ConnectionString, useForWordStatsOnly: true)
         {
             Name = "SampleStreamConsumer";
+
+            RateLimitPerMinute = 150;
         }
 
-
-        protected override HttpWebRequest GetRequest()
+        protected override InMemoryCredentials GetCredentials()
         {
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create("https://stream.twitter.com/1/statuses/sample.json");
-            webRequest.Method = "POST";
-            webRequest.Credentials = new NetworkCredential(Settings.SampleStreamConsumer_Username, Settings.SampleStreamConsumer_Password);
-            webRequest.ContentType = "application/x-www-form-urlencoded";
+            return new InMemoryCredentials()
+            {
+                ConsumerKey = Common.Settings.SampleStreamConsumer_ConsumerKey,
+                ConsumerSecret = Common.Settings.SampleStreamConsumer_ConsumerSecret,
+                OAuthToken = Common.Settings.SampleStreamConsumer_AccessToken, //LinkToTwitter uses strange parameter naming here
+                AccessToken = Common.Settings.SampleStreamConsumer_AccessTokenSecret
+            };
+        }
 
-            return webRequest;
+        protected override IQueryable<Streaming> GetStreamQuery(TwitterContext context)
+        {
+            var selection = from stream in context.Streaming
+                            where stream.Type == StreamingType.Sample
+                            select stream;
+            return selection;
         }
     }
 }

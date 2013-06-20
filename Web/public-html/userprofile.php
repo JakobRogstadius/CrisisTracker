@@ -26,8 +26,8 @@ function printJSDataTable($varName, $sqlResult, $colNames) {
   echo "]);";
 }
 
-include('twitterLogin/login.php');
-$loggedInUserID = getUserID(TRUE);
+include('twitteroauth/login.php');
+$loggedInUserID = get_user_id();
 
 $pageUserID = null;
 if (isset($_GET['userid'])) {
@@ -83,12 +83,12 @@ include('header_start.php');
 <script>
   google.load("visualization", "1", {packages:["corechart"]});
   google.setOnLoadCallback(drawCharts);
-  
+
   function drawCharts() {
     drawUserStoriesPerDayChart();
     drawUserActivityByEventTypeChart();
   }
-  
+
   function drawUserStoriesPerDayChart() {
     <?php printJSDataTable('data', $userActivityByDay, array('Date', 'Number of stories')); ?>
 
@@ -111,7 +111,7 @@ include('header_start.php');
       legend: { position: 'none' },
       chartArea:{left:40,width:"95%"},
       colors: ['#C74451']*/
-       
+
     var options = {
       title: 'Breakdown of curation, by number of stories'
     };
