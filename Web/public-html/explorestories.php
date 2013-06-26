@@ -92,7 +92,6 @@ include('storymanagementincludes.php');
     activateMapBorderSelection();
     populateFilterSettings();
 
-      });
 </script>
 
 <?php

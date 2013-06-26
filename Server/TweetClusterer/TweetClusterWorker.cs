@@ -535,12 +535,6 @@ namespace CrisisTracker.TweetClusterer
                 and Score1h / Score4d > 0.005
                 order by rand()
                 limit " + n + ';';
-            //BASELINE EDIT
-//            string sql = @"select WordID from WordScore
-//                where Score4d < (select Value from Constants where Name='WordScore4dHigh')
-//                and Score4d > 3
-//                order by rand()
-//                limit " + n + ';';
 
             List<long> wordIDs = new List<long>();
             Helpers.RunSelect(Name, sql, wordIDs, (values, reader) => values.Add(Convert.ToInt64(reader[0])));

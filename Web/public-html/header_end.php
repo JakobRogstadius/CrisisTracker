@@ -16,8 +16,8 @@ elseif (strpos($_SERVER['REQUEST_URI'], 'performance') > 0)
   $menuHighlight = 'performance';
 elseif (strpos($_SERVER['REQUEST_URI'], 'about') > 0)
   $menuHighlight = 'about';
-elseif (strpos($_SERVER['REQUEST_URI'], 'evaluation') > 0)
-  $menuHighlight = 'evaluation';
+//elseif (strpos($_SERVER['REQUEST_URI'], 'evaluation') > 0)
+//  $menuHighlight = 'evaluation';
 ?>
 
   <script>
@@ -42,7 +42,7 @@ elseif (strpos($_SERVER['REQUEST_URI'], 'evaluation') > 0)
               <li <?php if ($menuHighlight=='tag')    echo 'class="active"'; ?>><a href="tagstorylist.php">Tag stories</a></li>
               <li <?php if ($menuHighlight=='performance')    echo 'class="active"'; ?>><a href="performance.php">Performance</a></li>
               <li <?php if ($menuHighlight=='about')  echo 'class="active"'; ?>><a href="about.php">About</a></li>
-              <li <?php if ($menuHighlight=='evaluation')  echo 'class="active"'; ?>><a href="evaluation.php">Evaluation</a></li>
+              <!--<li <?php if ($menuHighlight=='evaluation')  echo 'class="active"'; ?>><a href="evaluation.php">Evaluation</a></li>-->
             </ul>
           </nav></div>
         </header>

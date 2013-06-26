@@ -332,16 +332,15 @@ namespace CrisisTracker.TweetParser
                 {
                     continue;
                 }
-                else if (!status.ContainsKey("text")) //ignore non-status messages
+                else if (!(status.ContainsKey("text") && status.ContainsKey("created_at") && status.ContainsKey("user"))) //ignore non-status messages
                 {
                     Output.Print(Name, "Odd message: " + jsonTweet.Value);
                     continue;
                 }
 
-                //status.Add("sourceid", jsonTweet.Value.Value2);
                 status.Add("created_at_datetime", ParseTwitterTime(status["created_at"].ToString()));
                 status.Add("json_id", jsonTweet.Key);
-
+                
                 parsedTweets.Add(status);
             }
 

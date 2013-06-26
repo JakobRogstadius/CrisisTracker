@@ -135,7 +135,7 @@ while($row = mysql_fetch_array($tweetCountResult)) {
     </div>
     
   <h1>Top curators</h1>
-  <p><i><b>Names are by default hidden. If you want others to see your name in the list, go to <a href="userprofile.php?userid=<?php echo getUserID(); ?>">your profile page</a> and disable anonymity.</b></i></p>
+  <p><i><b>Names are by default hidden. If you want others to see your name in the list, go to <a href="userprofile.php?userid=<?php echo get_user_id(); ?>">your profile page</a> and disable anonymity.</b></i></p>
   <div class="gui-subpanel">
     <table style="border-spacing: 4px; border-collapse: separate; text-align: right;">
       <tr>
@@ -159,7 +159,7 @@ while($row = mysql_fetch_array($tweetCountResult)) {
 <?php
 include('api/open_db.php');
 
-$uid = getUserID(TRUE);
+$uid = get_user_id(TRUE);
 if (is_null($uid))
   $uid = 0;
 $result = mysql_query(
