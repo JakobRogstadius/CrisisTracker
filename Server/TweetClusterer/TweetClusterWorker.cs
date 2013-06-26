@@ -415,9 +415,12 @@ namespace CrisisTracker.TweetClusterer
             Helpers.RunSqlStatement(Name, "update TweetCluster set PendingClusterUpdate=0 where PendingClusterUpdate", false);
 
             //Insert cluster collisions
-            string sqlTweetClusterCollisions = "insert ignore into TweetClusterCollision (TweetClusterID1, TweetClusterID2) values "
-                + String.Join(",", clusterCollisions.Select(n => "(" + n.Value1 + "," + n.Value1 + ")").ToArray());
-            Helpers.RunSqlStatement(Name, sqlTweetClusterCollisions, false);
+            if (clusterCollisions.Any())
+            {
+                string sqlTweetClusterCollisions = "insert ignore into TweetClusterCollision (TweetClusterID1, TweetClusterID2) values "
+                    + String.Join(",", clusterCollisions.Select(n => "(" + n.Value1 + "," + n.Value1 + ")").ToArray());
+                Helpers.RunSqlStatement(Name, sqlTweetClusterCollisions, false);
+            }
 
             //Reset dirty reads
             Helpers.RunSqlStatement(Name, "SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ", false);

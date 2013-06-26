@@ -111,36 +111,46 @@ namespace CrisisTracker.Common
             var selection = GetStreamQuery(_twitterContext);
             selection.StreamingCallback(stream =>
             {
-                //Did any connection error occur?
-                if (ResetPending
-                    || stream.Status == TwitterErrorStatus.RequestProcessingException
-                    || stream.Content == null
-                    || nonMessageCount > 10)
+                try
                 {
+                    //Did any connection error occur?
+                    if (ResetPending
+                        || stream.Status == TwitterErrorStatus.RequestProcessingException
+                        || stream.Content == null
+                        || nonMessageCount > 10)
+                    {
+                        stream.CloseStream();
+                        _isConsuming = false;
+                        return;
+                    }
+
+                    //Unhandled data
+                    if (stream.Status != TwitterErrorStatus.Success)
+                    {
+                        Console.WriteLine(stream.Content);
+                        nonMessageCount++;
+                        return;
+                    }
+
+                    //Normal message
+                    if (nonMessageCount > 0)
+                        nonMessageCount--;
+
+                    //if (stream.Content.StartsWith("{") && stream.Content.EndsWith("}"))
+                    //    Console.Write(".");
+                    //else
+                    //    Console.Write(stream.Content.Substring(stream.Content.Length - Math.Min(stream.Content.Length, 3)));
+
+                    _tweetQueue.Enqueue(stream.Content);
+                    AllowAsyncDBWrite();
+                }
+                catch (Exception e)
+                {
+                    Output.Print(Name, e);
                     stream.CloseStream();
                     _isConsuming = false;
                     return;
                 }
-
-                //Unhandled data
-                if (stream.Status != TwitterErrorStatus.Success)
-                {
-                    Console.WriteLine(stream.Content);
-                    nonMessageCount++;
-                    return;
-                }
-
-                //Normal message
-                if (nonMessageCount > 0)
-                    nonMessageCount--;
-
-                //if (stream.Content.StartsWith("{") && stream.Content.EndsWith("}"))
-                //    Console.Write(".");
-                //else
-                //    Console.Write(stream.Content.Substring(stream.Content.Length - Math.Min(stream.Content.Length, 3)));
-
-                _tweetQueue.Enqueue(stream.Content);
-                AllowAsyncDBWrite();
             })
             .SingleOrDefault();
         }

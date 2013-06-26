@@ -19,7 +19,7 @@ namespace CrisisTracker.SampleStreamConsumer
             : base(CrisisTracker.Common.Settings.ConnectionString, useForWordStatsOnly: true)
         {
             Name = "SampleStreamConsumer";
-
+            
             RateLimitPerMinute = 150;
         }
 

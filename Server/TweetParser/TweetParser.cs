@@ -257,7 +257,8 @@ namespace CrisisTracker.TweetParser
 
         void GetTweets(Dictionary<Int64, string> parseTweets, Dictionary<Int64, string> wordStatTweets)
         {
-            string query = "select ID, WordStatsOnly, Json from TweetJson order by ID limit " + Settings.TweetParser_BatchSize + ";";
+            int batchSize = Settings.TweetParser_BatchSize;
+            string query = "select ID, WordStatsOnly, Json from TweetJson order by ID limit " + batchSize + ";";
 
             Helpers.RunSelect<Dictionary<Int64, string>>(Name, query, null,
                 (dummy, reader) =>
