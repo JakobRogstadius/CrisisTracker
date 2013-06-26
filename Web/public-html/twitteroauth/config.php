@@ -4,7 +4,7 @@
  * @file
  * A single location to store configuration.
  */
-include_once('../api/common_functions.php');
+include_once(dirname(__FILE__) . '/../api/common_functions.php');
 
 define('CONSUMER_KEY', '*');
 define('CONSUMER_SECRET', '*');

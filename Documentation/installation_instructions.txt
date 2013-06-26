@@ -106,11 +106,11 @@ This only applies if you are using Mono. There may be an equivalent step if you 
 ==========================================
 
 1. Compile the CrisisTracker back-end using the following commands (from the /Server directory):
-mcs -r:*.dll -pkg:dotnet -target:library -out:CrisisTracker.Common.dll Common/*.cs
-mcs -r:*.dll -pkg:dotnet -out:SampleStreamConsumer.exe SampleStreamConsumer/*.cs
-mcs -r:*.dll -pkg:dotnet -out:FilterStreamConsumer.exe FilterStreamConsumer/*.cs
-mcs -r:*.dll -pkg:dotnet -out:TweetParser.exe TweetParser/*.cs
-mcs -r:*.dll -pkg:dotnet -out:TweetClusterer.exe TweetClusterer/*.cs
+mcs -r:MySql.Data.dll,LinqToTwitterCP.dll -pkg:dotnet -target:library -out:CrisisTracker.Common.dll Common/*.cs
+mcs -r:MySql.Data.dll,LinqToTwitterCP.dll,CrisisTracker.Common.dll -pkg:dotnet -out:SampleStreamConsumer.exe SampleStreamConsumer/*.cs
+mcs -r:MySql.Data.dll,LinqToTwitterCP.dll,CrisisTracker.Common.dll -pkg:dotnet -out:FilterStreamConsumer.exe FilterStreamConsumer/*.cs
+mcs -r:MySql.Data.dll,LinqToTwitterCP.dll,CrisisTracker.Common.dll -pkg:dotnet -out:TweetParser.exe TweetParser/*.cs
+mcs -r:MySql.Data.dll,LinqToTwitterCP.dll,CrisisTracker.Common.dll -pkg:dotnet -out:TweetClusterer.exe TweetClusterer/*.cs
 
 2. You should now have the following files in the /Server directory.
 - CrisisTracker.Common.dll
