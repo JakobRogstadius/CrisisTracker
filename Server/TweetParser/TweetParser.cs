@@ -120,7 +120,7 @@ namespace CrisisTracker.TweetParser
                         MySqlCommand bigInsertCommand = BuildInsertSql(filteredTweets, wordIDs, stopwords);
                         Console.Write(".");
 
-                        int rowCount = Helpers.RunSqlStatement(Name, bigInsertCommand);
+                        Helpers.RunSqlStatement(Name, bigInsertCommand);
                         Console.Write(".");
 
                         ParseAidrMetatags(filteredTweets);
@@ -128,7 +128,7 @@ namespace CrisisTracker.TweetParser
 
                     if (filteredTweets.Count + randomTweetsJson.Count > 0)
                     {
-                        int rowsDeleted = DeleteParsedJsonTweets(randomTweetsJson.Keys.Union(filteredTweetsJson.Keys));
+                        DeleteParsedJsonTweets(randomTweetsJson.Keys.Union(filteredTweetsJson.Keys));
                     }
                     Console.WriteLine(".");
                     
@@ -805,7 +805,7 @@ namespace CrisisTracker.TweetParser
             Helpers.RunSqlStatement(Name, sbAttr.ToString(), false);
 
             //Get attribute IDs
-            string attributeCodesStr = string.Join("','", attributeDefinitions.Select(n => n.AttributeCode));
+            //string attributeCodesStr = string.Join("','", attributeDefinitions.Select(n => n.AttributeCode).ToArray());
             Dictionary<string, uint> attributeIDs = new Dictionary<string,uint>();
             Helpers.RunSelect(Name, 
                 "select AttributeID, AttributeCode from AidrAttribute", 
@@ -845,7 +845,7 @@ namespace CrisisTracker.TweetParser
             Helpers.RunSqlStatement(Name, sbLabel.ToString(), false);
 
             //Get IDs for labels
-            string labelCodesStr = string.Join("','", labelDefinitions.Select(n => n.LabelCode));
+            //string labelCodesStr = string.Join("','", labelDefinitions.Select(n => n.LabelCode).ToArray());
             Dictionary<uint, Dictionary<string, uint>> labelIDs = new Dictionary<uint, Dictionary<string, uint>>();
             Helpers.RunSelect(Name, 
                 "select AttributeID, LabelCode, LabelID from AidrLabel", 
@@ -884,7 +884,8 @@ namespace CrisisTracker.TweetParser
             }
             Helpers.RunSqlStatement(Name, sbTweetTag.ToString(), false);
 
-            Helpers.RunSqlStatement(Name, "update Tweet set ProcessedMetatags=0 where TweetID in (" + String.Join(",", tweetLabels.Keys) + ")", false);
+            Helpers.RunSqlStatement(Name, "update Tweet set ProcessedMetatags=0 where TweetID in (" 
+                + String.Join(",", tweetLabels.Keys.Select(n => n.ToString()).ToArray()) + ")", false);
         }
 
         int DeleteParsedJsonTweets(IEnumerable<Int64> IDs)

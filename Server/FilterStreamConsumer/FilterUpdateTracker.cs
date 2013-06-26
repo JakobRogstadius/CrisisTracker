@@ -23,7 +23,6 @@ namespace CrisisTracker.FilterStreamConsumer
         object _accessLock = new object();
         System.Timers.Timer _reloadTimer;
         readonly string _name = "FilterUpdateTracker";
-        readonly string _connectionString = Common.Settings.ConnectionString;
 
         public event EventHandler FiltersChanged;
 
@@ -143,53 +142,21 @@ namespace CrisisTracker.FilterStreamConsumer
         {
             if (!_keywordFilters.Any())
                 return null;
-            return String.Join(",", _keywordFilters.Select(n => n.ToString()));
+            return String.Join(",", _keywordFilters.Select(n => n.ToString()).ToArray());
         }
 
         public string GetUserFilterString()
         {
             if (!_userFilters.Any())
                 return null;
-            return String.Join(",", _userFilters.Select(n => n.ToString()));
+            return String.Join(",", _userFilters.Select(n => n.ToString()).ToArray());
         }
         
         public string GetGeoFilterString()
         {
             if (!_geoFilters.Any())
                 return null;
-            return String.Join(",", _geoFilters.Select(n => n.ToString()));
+            return String.Join(",", _geoFilters.Select(n => n.ToString()).ToArray());
         }
-
-        //public string GetTrackString()
-        //{
-        //    if (GetFilterCount() == 0)
-        //        return "";
-
-        //    StringBuilder sb = new StringBuilder();
-        //    int prevType = (int)TrackFilter.FilterType.Undefined;
-        //    foreach (var filterGroup in _filters
-        //        .GroupBy(n => (int)n.Type, (a,b) => new { Type = a, Filters = b }))
-        //    {
-        //        if (filterGroup.Type != prevType)
-        //        {
-        //            prevType = filterGroup.Type;
-        //            if (sb.Length > 0)
-        //                sb.Append("&");
-        //            if (filterGroup.Type == (int)TrackFilter.FilterType.Word)
-        //                sb.Append("track=");
-        //            else if (filterGroup.Type == (int)TrackFilter.FilterType.User)
-        //                sb.Append("follow=");
-        //            else if (filterGroup.Type == (int)TrackFilter.FilterType.Region)
-        //                sb.Append("locations=");
-        //        }
-
-        //        if (filterGroup.Type == (int)TrackFilter.FilterType.Word)
-        //            sb.Append(string.Join(",", filterGroup.Filters.Select(n => System.Web.HttpUtility.UrlEncode(n.ToString())).ToArray()));
-        //        else
-        //            sb.Append(string.Join(",", filterGroup.Filters.Select(n => n.ToString()).ToArray()));
-        //    }
-
-        //    return sb.ToString();
-        //}
     }
 }

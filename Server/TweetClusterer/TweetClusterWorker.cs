@@ -36,8 +36,7 @@ namespace CrisisTracker.TweetClusterer
 
         List<LSHashTable> _tables = new List<LSHashTable>();
         LSHashTweetHistory _history = new LSHashTweetHistory(Settings.TweetClusterer_TCW_HistorySize);
-        Random _random = new Random();
-
+        
         int _nextTableRehashIndex = 0;
 
         public int ProcessTweetBatch()
@@ -348,7 +347,7 @@ namespace CrisisTracker.TweetClusterer
 
             //Insert new TweetClusters (otherwise the tweet update below will fail from trigger constraints)
             string tweetClusterInsert = "INSERT INTO TweetCluster (TweetClusterID, StartTime, EndTime, PendingClusterUpdate, PendingStoryUpdate) VALUES "
-                + string.Join(",", assignedTweetClusterIDs.Values.Distinct().Select(n => "(" + n + ",'3000-01-01',0,1,1)"))
+                + string.Join(",", assignedTweetClusterIDs.Values.Distinct().Select(n => "(" + n + ",'3000-01-01',0,1,1)").ToArray())
                 + " ON DUPLICATE KEY UPDATE PendingClusterUpdate=1, PendingStoryUpdate=1";
             Helpers.RunSqlStatement(Name, tweetClusterInsert, false);
             Console.Write(".");
@@ -417,7 +416,8 @@ namespace CrisisTracker.TweetClusterer
 
             //Insert cluster collisions
             string sqlTweetClusterCollisions = "insert ignore into TweetClusterCollision (TweetClusterID1, TweetClusterID2) values "
-                + String.Join(",", clusterCollisions.Select(n => "(" + n.Value1 + "," + n.Value1 + ")"));
+                + String.Join(",", clusterCollisions.Select(n => "(" + n.Value1 + "," + n.Value1 + ")").ToArray());
+            Helpers.RunSqlStatement(Name, sqlTweetClusterCollisions, false);
 
             //Reset dirty reads
             Helpers.RunSqlStatement(Name, "SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ", false);
@@ -428,7 +428,7 @@ namespace CrisisTracker.TweetClusterer
             if (tweets.Count == 0)
                 return;
 
-            string tweetIDsStr = String.Join(",", tweets.Select(n => n.ID));
+            string tweetIDsStr = String.Join(",", tweets.Select(n => n.ID.ToString()).ToArray());
             string sql = 
                 @"update Tweet t1 
                 join Tweet t2 
@@ -558,7 +558,7 @@ namespace CrisisTracker.TweetClusterer
                 foreach (LSHashTable table in _tables)
                 {
                     bool dummy;
-                    var neighbors = table.Add(tweet, out dummy);
+                    table.Add(tweet, out dummy);
                 }
 
                 _history.Add(tweet);

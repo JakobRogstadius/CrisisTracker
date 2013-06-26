@@ -1,0 +1,97 @@
+<html>
+<head>
+    <title>d3 testing</title>
+
+    <link   href="../../lib/reset/reset.css" rel="stylesheet" type="text/css">
+    <script src="../../lib/jquery/jquery-1.9.1.js"></script>
+    <script src="../../lib/d3/d3.v3.min.js"></script>
+
+    <link   href="dotPlot.css" rel="stylesheet" type="text/css">
+    <script src="dotPlot.js"></script>
+
+    <link   href="itemList.css" rel="stylesheet" type="text/css">
+    <script src="itemList.js"></script>
+
+    <style>
+        .box {
+            height: 400px; width: 300px; border: 1px solid #ccc; float: left;
+        }
+    </style>
+</head>
+<body>
+    <div id="first" class="box"></div>
+    <div id="second" class="box"></div>
+    <div id="third" class="box"></div>
+</body>
+<script>
+    var mydata = [
+                { id: 1, group: 'alpha', time: 5.1, size: 10, title: 'Hello world 1' },
+                { id: 2, group: 'alpha', time: 5.3, size: 9, title: 'Hello world 2' },
+                { id: 3, group: 'alpha', time: 5.5, size: 11, title: 'Hello world 3' },
+                { id: 4, group: 'alpha', time: 5.7, size: 12, title: 'Hello world 4' },
+                { id: 5, group: 'alpha', time: 5.9, size: 13, title: 'Hello world 5' },
+                { id: 6, group: 'bravo', time: 1, size: 5, title: 'Hello world 6' },
+                { id: 7, group: 'charlie', time: 2, size: 1, title: 'Hello world 7' },
+                { id: 8, group: 'alpha', time: 3, size: 6, title: 'Hello world 8' },
+                { id: 9, group: 'alpha', time: 4, size: 2, title: 'Hello world 9' },
+                { id: 10, group: 'charlie', time: 5, size: 9, title: 'Hello world 10' },
+                { id: 11, group: 'alpha', time: 6, size: 3, title: 'Hello world 11' },
+                { id: 12, group: 'bravo', time: 7, size: 2.2, title: 'Hello world 12' },
+                { id: 13, group: 'charlie', time: 8, size: 0.5, title: 'Hello world 13' },
+                { id: 14, group: 'alpha', time: 9, size: 4, title: 'Hello world 14' },
+                { id: 15, group: 'bravo', time: 10, size: 4.5, title: 'Hello world 15' }
+            ].sort(function(a,b) { return b.size-a.size });
+
+    var mydata2 = [
+                { id: 16, group: 'bravo', time: 5.1, size: 1, title: 'Hello world' },
+                { id: 17, group: 'charlie', time: 5.3, size: 7, title: 'Hello world' },
+                { id: 18, group: 'delta', time: 5.5, size: 5, title: 'Hello world' },
+                { id: 19, group: 'alpha', time: 5.7, size: 3, title: 'Hello world' },
+                { id: 10, group: 'echo', time: 5.9, size: 8, title: 'Hello world' },
+                { id: 21, group: 'charlie', time: 1, size: 10, title: 'Hello world' },
+                { id: 22, group: 'delta', time: 2, size: 11, title: 'Hello world' },
+                { id: 23, group: 'alpha', time: 3, size: 9, title: 'Hello world' },
+                { id: 24, group: 'echo', time: 4, size: 16, title: 'Hello world' },
+                { id: 25, group: 'charlie', time: 5, size: 2, title: 'Hello world' }
+            ].sort(function(a,b) { return b.size-a.size });
+
+    var myDotPlot = dotPlot()
+        .rMultiplier(0.5)
+        .getID(function(d) { return d.id; })
+        .getX(function(d) { return d.time; })
+        .getY(function(d) { return d.group; })
+        .getR(function(d) { return d.size; })
+        .getTooltip(function(d) { return d.id + ": " + d.title; })
+        .onItemSelected(selectedItemChanged)
+        .data(mydata);
+
+    myDotPlot(d3.select("#first"));
+
+    var myList1 = itemList()
+        .getID(function(d) { return d.id; })
+        .itemRenderer(function(d, i) { d3.select(this).html(
+            function(d) { return d.group + " - " + d.title; }
+            ); })
+        .onItemSelected(selectedItemChanged)
+        .data(mydata);
+
+    myList1(d3.select("#second"));
+
+    var myList2 = itemList()
+        .getID(function(d) { return d.id; })
+        .onItemSelected(selectedItemChanged)
+        .data(mydata.sort(function(a,b) { return a.size-b.size }));
+
+    myList2(d3.select("#third"));
+
+    $(window).resize(function() { myDotPlot.onSizeChanged(); });
+
+    function selectedItemChanged(d, i) {
+        console.log(d);
+        myDotPlot.setSelectedItem(d);
+        myList1.setSelectedItem(d);
+        myList2.setSelectedItem(d);
+    }
+
+</script>
+</html>

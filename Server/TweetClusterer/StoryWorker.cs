@@ -421,7 +421,7 @@ namespace CrisisTracker.TweetClusterer
 	                StoryID
 	                natural join StoryInfoKeywordTag
 	                natural join InfoKeyword
-                where StoryID in (" + String.Join(",", storyIDs) + @")
+                where StoryID in (" + String.Join(",", storyIDs.Select(n => n.ToString()).ToArray()) + @")
                 ";
 
             //Parse returned word weights and build story vectors
@@ -480,13 +480,13 @@ namespace CrisisTracker.TweetClusterer
                     + n.StoryID + ",'" 
                     + n.StartTime.ToString("yyyy-MM-dd HH:mm:ss") + "','"
                     + n.EndTime.ToString("yyyy-MM-dd HH:mm:ss") + "',"
-                    + "1)"))
+                    + "1)").ToArray())
                 + " on duplicate key update PendingUpdate=1";
             Helpers.RunSqlStatement(Name, sql, false);
 
             //Assign StoryID to clusters
             sql = "insert into TweetCluster (TweetClusterID, StoryID, PendingStoryUpdate) values "
-                + String.Join(",", clusters.Select(n => "(" + n.TweetClusterID + "," + n.StoryID + ", 1)"))
+                + String.Join(",", clusters.Select(n => "(" + n.TweetClusterID + "," + n.StoryID + ", 1)").ToArray())
                 + " on duplicate key update StoryID=values(StoryID), PendingStoryUpdate=1";
             Helpers.RunSqlStatement(Name, sql, false);
         }
@@ -534,11 +534,11 @@ namespace CrisisTracker.TweetClusterer
                 return;
 
             string sql = "update TweetCluster set StoryID=null where TweetClusterID in (" +
-                string.Join(",", storySplits.Select(n => n.TweetClusterID)) + ")";
+                string.Join(",", storySplits.Select(n => n.TweetClusterID.ToString()).ToArray()) + ")";
             Helpers.RunSqlStatement(Name, sql, false);
 
             sql = "update Story set PendingUpdate=1 where StoryID in (" +
-                string.Join(",", storySplits.Select(n => n.StoryID)) + ")";
+                string.Join(",", storySplits.Select(n => n.StoryID.ToString()).ToArray()) + ")";
             Helpers.RunSqlStatement(Name, sql, false);
         }
 

@@ -73,23 +73,6 @@ ALTER TABLE `PendingStoryMerges` RENAME TO  `StoryMerges` ;
 
 ALTER TABLE `PendingStorySplits` RENAME TO  `StorySplits` ;
 
-ALTER TABLE `Tweet` DROP FOREIGN KEY `Tweet_TweetClusterID` ;
-ALTER TABLE `Tweet`
-  DROP COLUMN `HasUrl`
-, DROP COLUMN `WordScore`
-, CHANGE COLUMN `Text` `Text` VARCHAR(140) NULL  AFTER `TextHash`
-, CHANGE COLUMN `TweetClusterID` `TweetClusterID` BIGINT(20) UNSIGNED NULL
-, ADD COLUMN `ProcessedMetatags` BIT NOT NULL DEFAULT 0  AFTER `CalculatedRelations`
-, ADD COLUMN `Novelty` DOUBLE NOT NULL DEFAULT 1  AFTER `ProcessedMetatags`
-, ADD COLUMN `RetweetOfUserID` BIGINT(20) UNSIGNED NULL  AFTER `RetweetOf`
-, ADD COLUMN `TextHash` INT(11) NOT NULL  AFTER `Latitude` ,
-  ADD CONSTRAINT `Tweet_TweetClusterID`
-  FOREIGN KEY (`TweetClusterID` )
-  REFERENCES `TweetCluster` (`TweetClusterID` )
-  ON DELETE CASCADE
-  ON UPDATE NO ACTION
-, ADD INDEX `TextHash` (`TextHash` ASC) ;
-
 ALTER TABLE `Tweet`
 	DROP FOREIGN KEY `Tweet_TweetClusterID` ;
 ALTER TABLE `Tweet`
@@ -147,7 +130,7 @@ CREATE TABLE `TweetClusterCollision` (
   UNIQUE KEY `TweetClusterCollision_Unique` (`TweetClusterID1`,`TweetClusterID2`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE `jakob`.`TweetUrl` CHARACTER SET = utf8
+ALTER TABLE `TweetUrl` CHARACTER SET = utf8
 , CHANGE COLUMN `Url` `Url` VARCHAR(255) CHARACTER SET 'latin1' NOT NULL
 , ADD COLUMN `UrlHash` INT(11) NOT NULL  AFTER `TweetID`
 , ADD CONSTRAINT `fk_TweetUrl_TweetID`
@@ -159,5 +142,5 @@ ALTER TABLE `jakob`.`TweetUrl` CHARACTER SET = utf8
 , ADD PRIMARY KEY (`UrlHash`, `TweetID`)
 , ADD INDEX `TweetID_idx_idx` (`TweetID` ASC) ;
 
-ALTER TABLE `jakob`.`StoryInfoKeywordTag`
+ALTER TABLE `StoryInfoKeywordTag`
 ADD INDEX `Weight` (`Weight` ASC) ;
