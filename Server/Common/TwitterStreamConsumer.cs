@@ -104,8 +104,7 @@ namespace CrisisTracker.Common
             _isConsuming = true;
             int nonMessageCount = 0;
 
-            if (_twitterContext == null)
-                CreateContext();
+            CreateContext();
 
             Console.WriteLine("Consuming stream");
             var selection = GetStreamQuery(_twitterContext);

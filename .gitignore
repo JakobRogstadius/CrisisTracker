@@ -2,38 +2,7 @@ Personal/
 Server/EvaluationCoordinator/
 Web/sketches/
 Web/twitter-login
-
-#################
-## Eclipse
-#################
-
-*.pydevproject
-.project
-.metadata
-bin/
-tmp/
-bak/
-*.tmp
-*.bak
-*.swp
-*~.nib
-local.properties
-.classpath
-.settings/
-.loadpath
-
-# External tool builders
-.externalToolBuilders/
-
-# Locally stored "Eclipse launch configurations"
-*.launch
-
-# CDT-specific
-.cproject
-
-# PDT-specific
-.buildpath
-
+copy_to_bin.bat
 
 #################
 ## Visual Studio

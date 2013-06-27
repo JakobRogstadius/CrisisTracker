@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<settings>
+  
+  <!-- Connection string to the MySQL database used for storing all the data -->
+  <connectionString>Server=?;Database=?;User ID=?;Password=?;charset=utf8;Allow User Variables=True;</connectionString>
+
+  <!-- Oauth Keys that are obtained from registering the application at https://dev.twitter.com/apps/new -->
+  <sampleStreamConsumer>
+    <consumerKey>*</consumerKey>
+    <consumerSecret>*</consumerSecret>
+    <accessToken>*</accessToken>
+    <accessTokenSecret>*</accessTokenSecret>
+  </sampleStreamConsumer>
+  <filterStreamConsumer>
+    <consumerKey>*</consumerKey>
+    <consumerSecret>*</consumerSecret>
+    <accessToken>*</accessToken>
+    <accessTokenSecret>*</accessTokenSecret>
+  </filterStreamConsumer>
+
+  <tweetParser>
+    <wordScore4dMaxToStopwordRatio>0.1</wordScore4dMaxToStopwordRatio>
+    <maxWordTweetTableLength>10000000</maxWordTweetTableLength>
+    <batchSize>500</batchSize>
+    <minTweetVectorLength>0.1</minTweetVectorLength>
+    <minTweetWordCount>2</minTweetWordCount>
+  </tweetParser>
+  
+  <tweetClusterer>
+    <tweetClusterWorker>
+      <initializeSize>5000</initializeSize>
+      <batchSize>500</batchSize>
+      <historySize>1000</historySize>
+      <hashTableCount>12</hashTableCount>
+      <hyperPlaneCount>12</hyperPlaneCount>
+      <wordsPerHyperPlane>100</wordsPerHyperPlane> <!-- try increasing this if the number of duplicate clusters is high -->
+      <hashBinSize>30</hashBinSize>
+      <maxLinksPerTweet>5</maxLinksPerTweet>
+      <minTweetVectorLength>7</minTweetVectorLength>
+      <minTweetWordCount>2</minTweetWordCount>
+      <minTweetSimilarityForLink>0.55</minTweetSimilarityForLink>
+      <identityThreshold>0.99</identityThreshold>
+    </tweetClusterWorker>
+  
+    <storyWorker>
+      <mergeThreshold>0.55</mergeThreshold>
+      <mergeThresholdWithDrop>0.27</mergeThresholdWithDrop>
+      <mergeDropScale>0.55</mergeDropScale>
+      <topStoryCount>150</topStoryCount>
+      <tweetClusterBatchSize>1000</tweetClusterBatchSize>
+      <candidateStoryCount>1000</candidateStoryCount>
+      <maxWordsInStoryVector>30</maxWordsInStoryVector>
+    </storyWorker>
+  </tweetClusterer>
+
+</settings>
