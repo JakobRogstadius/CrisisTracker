@@ -11,6 +11,7 @@
     <accessToken>*</accessToken>
     <accessTokenSecret>*</accessTokenSecret>
   </sampleStreamConsumer>
+
   <filterStreamConsumer>
     <consumerKey>*</consumerKey>
     <consumerSecret>*</consumerSecret>
@@ -53,4 +54,9 @@
     </storyWorker>
   </tweetClusterer>
 
+  <aidrRedisConsumer>
+    <redisHost>localhost</redisHost>
+    <redisPort>6379</redisPort>
+    <subscribePattern>aidr_fetch.my_crisis_code</subscribePattern> <!-- separate patterns with space, * can be used as wildcard -->
+  </aidrRedisConsumer>
 </settings>

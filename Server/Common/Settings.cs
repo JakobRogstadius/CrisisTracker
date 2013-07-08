@@ -58,6 +58,10 @@ namespace CrisisTracker.Common
             _tweetClusterer_SW_TweetClusterBatchSize = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/storyWorker/tweetClusterBatchSize").InnerText);
             _tweetClusterer_SW_CandidateStoryCount = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/storyWorker/candidateStoryCount").InnerText);
             _tweetClusterer_SW_MaxWordsInStoryVector = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/storyWorker/maxWordsInStoryVector").InnerText);
+
+            _aidrRedisConsumer_RedisHost = xmlDoc.SelectSingleNode("/settings/aidrRedisConsumer/redisHost").InnerText;
+            _aidrRedisConsumer_RedisPort = int.Parse(xmlDoc.SelectSingleNode("/settings/aidrRedisConsumer/redisPort").InnerText);
+            _aidrRedisConsumer_SubscribePattern = xmlDoc.SelectSingleNode("/settings/aidrRedisConsumer/subscribePattern").InnerText;
         }
 
         private static Settings GetInstance()
@@ -144,5 +148,13 @@ namespace CrisisTracker.Common
         public static int TweetClusterer_SW_TweetClusterBatchSize { get { return GetInstance()._tweetClusterer_SW_TweetClusterBatchSize; } }
         public static int TweetClusterer_SW_CandidateStoryCount { get { return GetInstance()._tweetClusterer_SW_CandidateStoryCount; } }
         public static int TweetClusterer_SW_MaxWordsInStoryVector { get { return GetInstance()._tweetClusterer_SW_MaxWordsInStoryVector; } }
+
+        //AidrRedisConsumer
+        private string _aidrRedisConsumer_RedisHost;  
+        private int _aidrRedisConsumer_RedisPort;
+        private string _aidrRedisConsumer_SubscribePattern;
+        public static string AidrRedisConsumer_RedisHost { get { return GetInstance()._aidrRedisConsumer_RedisHost; } }
+        public static int AidrRedisConsumer_RedisPort { get { return GetInstance()._aidrRedisConsumer_RedisPort; } }
+        public static string AidrRedisConsumer_SubscribePattern { get { return GetInstance()._aidrRedisConsumer_SubscribePattern; } }
     }
 }

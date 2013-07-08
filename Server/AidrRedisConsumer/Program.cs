@@ -20,14 +20,6 @@ namespace AidrRedisConsumer
         static int _rateLimitPerMinute = 10000;
         static object _workerLock = new object();
 
-        //TODO: Move to settings
-        class LocalSettings
-        {
-            public string InputChannel = "aidr-predict:syria-civil-war";
-            public string RedisHost = "localhost";
-            public int RedisPort = 1234;
-        }
-
         static void Main(string[] args)
         {
             _tweetQueue = new Queue<string>();
@@ -65,8 +57,7 @@ namespace AidrRedisConsumer
 
         static void ConsumeStream()
         {
-            
-            using (var redis = new RedisClient())
+            using (var redis = new RedisClient(Settings.AidrRedisConsumer_RedisHost, Settings.AidrRedisConsumer_RedisPort))
             {
                 using (var subscription = redis.CreateSubscription())
                 {
@@ -81,12 +72,15 @@ namespace AidrRedisConsumer
 
                     subscription.OnMessage = (channel, message) =>
                     {
-                        Console.Write(".");
+                        if (message.EndsWith("}"))
+                            Console.Write(".");
+                        else
+                            Console.Write("!");
+
                         _tweetQueue.Enqueue(message);
                         AllowAsyncDBWrite();
                     };
-
-                    subscription.SubscribeToChannels("aidr-predict.syria-civil-war");
+                    subscription.SubscribeToChannelsMatching(Settings.AidrRedisConsumer_SubscribePattern);
                 }
             }
         }
@@ -108,7 +102,7 @@ namespace AidrRedisConsumer
 
             //Check rate limit
             DateTime writeTime = DateTime.Now;
-            int maxWrites = (int)Math.Ceiling(_rateLimitPerMinute * (writeTime - _lastDBWrite).TotalMinutes);
+            int maxWrites = (int)Math.Min(int.MaxValue, Math.Ceiling(_rateLimitPerMinute * (writeTime - _lastDBWrite).TotalMinutes));
             _lastDBWrite = writeTime;
 
             int discardedCount = 0;
