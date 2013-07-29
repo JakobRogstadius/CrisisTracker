@@ -4,6 +4,8 @@ CrisisTracker is a software platform that extracts situational awareness reports
 
 CrisisTracker is free and open source. Instructions how to set up your own instance are available on GitHub.
 
+![Screenshot of CrisisTracker](https://github.com/JakobRogstadius/CrisisTracker/blob/master/Documentation/screenshot1.png)
+
 ## Distributed sensing via social media
 
 During humanitarian crises in recent years, online social media (mainly Twitter, Facebook and YouTube) have emerged as a means for affected local populations to communicate their experiences to the world. With increasing technology adoption and public access to most posted messages, it is now possible to tap into real-time reports from thousands or millions of people on the ground.
