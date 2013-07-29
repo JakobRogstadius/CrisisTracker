@@ -1,0 +1,6 @@
+(cd ct && screen -U -dmS SampleConsumer mono SampleStreamConsumer.exe)
+(cd ct && screen -U -dmS FilterConsumerAidr mono FilterStreamConsumerAidr.exe)
+(cd ct && screen -U -dmS AidrConsumer mono AidrRedisConsumer.exe)
+(cd ct && screen -U -dmS TweetParser mono TweetParser.exe)
+(cd ct && screen -U -dmS TweetClusterer mono TweetClusterer.exe)
+(cd aidr && screen -U -dmS AidrPredict ~/jdk1.7.0_25/jre/bin/java -Xms1024M -Xmx1024M -cp "AIDRPredict-1.0-jar-with-dependencies.jar:lib/*" qa.qcri.aidr.predict.Controller)
