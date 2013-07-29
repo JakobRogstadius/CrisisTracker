@@ -1,0 +1,59 @@
+@import url("reset.css");
+
+body {
+        padding: 20px;
+        position: absolute;
+        font-family: 'Verdana';
+        font-size: 12px;
+}
+div#container {
+        position: relative;
+}
+h1 {
+        font-size: 1.6em;
+        font-weight: bold;
+        margin-bottom: 15px;
+        margin-top: 20px;
+}
+h2 {
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-bottom: 12px;
+        margin-top: 12px;
+}
+p {
+        margin-bottom: 12px;
+        margin-top: 12px;
+}
+.table {
+        display: table;
+}
+.table-header {
+        font-weight: bold;
+}
+.table-header .table-column {
+        font-weight: bold;
+        vertical-align: bottom;
+        border-bottom: 1px solid #ccc;
+}
+.table-row {
+        display: table-row;
+        margin-left: 20px;
+}
+.table-column {
+        display: table-cell;
+        padding: 3px 10px 3px 10px;
+}
+.right {
+        text-align: right;
+}
+.center {
+        text-align: center;
+}
+.left {
+        text-align: left;
+}
+.error {
+        color: red;
+        font-weight: bold;
+}

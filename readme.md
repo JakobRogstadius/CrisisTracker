@@ -1,33 +1,55 @@
 # CrisisTracker
 
-During large-scale complex crises such as the Haiti earthquake, the Indian Ocean tsunami and the Arab Spring, social media has emerged as a source of timely and detailed reports regarding important events. However, individual disaster responders, government officials or citizens who wish to access this vast knowledge base are met with a torrent of information that quickly results in information overload. Without a way to organize and navigate the reports, important details are easily overlooked and it is challenging to use the data to get an overview of the situation as a whole.
+CrisisTracker is a software platform that extracts situational awareness reports from torrents of public tweets during humanitarian disasters. It combines different kinds of automated processing with crowdsourcing to quickly detect new events and bring together related evidence into stories.
 
-CrisisTracker has been developed based on the idea that volunteers around the world would be willing to assist hard-pressed decision makers with information management, if the tools were available.
+CrisisTracker is free and open source. Instructions how to set up your own instance are available on GitHub.
 
-## Automated Story Detection
+## Distributed sensing via social media
 
-CrisisTracker offers an alternative way to browse Twitter activity around large-scale events, in particular disasters. The system tracks an admin-defined set of keywords on Twitter and clusters tweets based on their word similarity. Information propagates on Twitter mostly through duplication, either directly through retweets or by multiple people independently talking about the same event, and information about a single event is often split on thousands of messages. By clustering messages, each piece of information (a "story") is decoupled from its sharing pattern.
+During humanitarian crises in recent years, online social media (mainly Twitter, Facebook and YouTube) have emerged as a means for affected local populations to communicate their experiences to the world. With increasing technology adoption and public access to most posted messages, it is now possible to tap into real-time reports from thousands or millions of people on the ground.
 
-## Crowdsourced Information Management
+The Twitter microblogging service saw 500 million tweets being posted daily in October 2012, by over 200 million active users. Unlike for instance Facebook and SMS, the vast majority of these tweets is shared publicly and can be accessed in real-time though an application programming interface (API). The challenge however is sense-making. With so much content being generated, maintaining overview and history, and detecting patterns and actionable information, requires specialized information management tools. This is what CrisisTracker aims to provide.
 
-The web interface supports exploration of stories as they unfold in real-time; by time, location, topic and named entities. As current state-of-the-art text processing algorithms struggle with reliably extracting such meta-data from the text in tweets, CrisisTracker instead explores the use of crowdsourcing techniques. Any user of the system can directly contribute tags that make it easier for other users to retrieve information and explore stories by similarity. In addition, users of the system can influence how tweets are grouped into stories.
+## Technology
 
-## Upcoming features
+The CrisisTracker platform uses an automated real-time clustering algorithm based on Locality Sensitive Hashing (LSH) to group together tweets that are textually very similar. A cluster of messages (a "story") typically refers to a single well-defined event, such as artillery shelling of a location, a disease outbreak in a refugee camp, a bombing, etc.
 
-During the summer of 2013, a new data exploration interface will be rolled out. This new interface offers three major changes:
-- Improved support for text- and time-based search and filtering.
-- Integration of automated topic-classification based on supervised learning, using the <a href="http://irevolution.net/2013/02/11/update-twitter-dashboard/">AIDR</a> platform
-- Clean and easy-to-extend source code, so that new visualizations can be added with minimal effort.
+Although individual tweets are both extremely brief (maximum 140 characters) and difficult to verify independently, stories in CrisisTracker capture the event from multiple angles and provide a real-time index of published evidence in the form of images, video and news articles.
+
+Events during a time period can be summarized by looking at those stories that were mentioned by the highest number of Twitter users.
+
+## AIDR Integration
+
+AIDR - Artificial Intelligence for Emergency Response - is an open-source platform developed at QCRI that provides automated real-time topic classification of document streams. It is a supervised classifier, meaning that it learns how to classify documents based on examples provided by human curators.
+
+The AIDR platform has been integrated into CrisisTracker to provide the topic filters seen on the explore page. You can help teach the system how to better classify content by visiting the training page.
+
+## Free and open source
+
+CrisisTracker is free and open source, so that you can deploy your own instance or integrate it with your own analysis software. The developers will be happy to hear from you if you set up a deployment!
 
 ## Resources
 
-[Introduction video](https://vimeo.com/45366518)
-
-[Example deployment](http://ufn.virtues.fi/crisistracker)
-
-[Installation instructions](https://github.com/JakobRogstadius/CrisisTracker/Documentation/installation_instructions.txt)
-
-[Evaluation report](http://hci.uma.pt/~jakob/files/Rogstadius_2013_CrisisTracker_Crowdsourced_Social_Media_Curation_for_Disaster_Awareness.pdf)
+* [Example deployment](http://ufn.virtues.fi/crisistracker)
+* [Installation instructions](https://github.com/JakobRogstadius/CrisisTracker/wiki/Installation-instructions)
+* [Evaluation report](http://hci.uma.pt/~jakob/files/Rogstadius_2013_CrisisTracker_Crowdsourced_Social_Media_Curation_for_Disaster_Awareness.pdf)
+* More documentation is available on the [wiki](https://github.com/JakobRogstadius/CrisisTracker/wiki).
 
 ## Contact
-[Jakob Rogstadius](http://hci.uma.pt/~jakob/)
+
+Please contact [Jakob Rogstadius](http://hci.uma.pt/~jakob/) for inquiries.
+
+## Acknowledgements
+
+Development of CrisisTracker has been made possible through funding and other resources by M-ITI, IBM Research, University of Oulu and QCRI.
+
+Contributors:
+
+* [Jakob Rogstadius](http://hci.uma.pt/~jakob) - Lead developer
+* [Claudio Teixeira](http://www.claudioteixeira.com/) - Developer
+* [Vassilis Kostakos](http://www.ee.oulu.fi/~vassilis/) - Advisor
+* [Maja Vukovic](http://researcher.watson.ibm.com/researcher/view.php?person=us-maja) - Advisor
+* [Taha Kass-Hout](http://www.humanitariantracker.org/#!aboutus/csgz) - Advisor
+* [Evangelos Kostakos](http://ekarapanos.com/) - Advisor
+* [Ko-Hsun Huang](http://www.linkedin.com/profile/view?id=156209073&locale=en_US&trk=tyah) - Advisor
+* [Carlos Castillo](http://www.chato.cl/research/) - Advisor

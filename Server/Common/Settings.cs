@@ -1,5 +1,5 @@
 ﻿/*******************************************************************************
- * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+ * Copyright (c) 2013 Jakob Rogstadius.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -32,11 +32,16 @@ namespace CrisisTracker.Common
             _filterStreamConsumer_AccessToken = xmlDoc.SelectSingleNode("/settings/filterStreamConsumer/accessToken").InnerText;
             _filterStreamConsumer_AccessTokenSecret = xmlDoc.SelectSingleNode("/settings/filterStreamConsumer/accessTokenSecret").InnerText;
 
+            _filterStreamConsumerAidr_ChannelName = xmlDoc.SelectSingleNode("/settings/filterStreamConsumerAidr/channelName").InnerText;
+            _filterStreamConsumerAidr_CrisisCode = xmlDoc.SelectSingleNode("/settings/filterStreamConsumerAidr/crisisCode").InnerText;
+
             _tweetParser_WordScore4dMaxToStopwordRatio = double.Parse(xmlDoc.SelectSingleNode("/settings/tweetParser/wordScore4dMaxToStopwordRatio").InnerText, CultureInfo.InvariantCulture);
             _tweetParser_MaxWordTweetTableLength = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetParser/maxWordTweetTableLength").InnerText);
             _tweetParser_BatchSize = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetParser/batchSize").InnerText);
             _tweetParser_MinTweetVectorLength = double.Parse(xmlDoc.SelectSingleNode("/settings/tweetParser/minTweetVectorLength").InnerText, CultureInfo.InvariantCulture);
             _tweetParser_MinTweetWordCount = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetParser/minTweetWordCount").InnerText);
+            _tweetParser_UseSecondPassFiltering = bool.Parse(xmlDoc.SelectSingleNode("/settings/tweetParser/useSecondPassFiltering").InnerText);
+            _tweetParser_MinAidrLabelConficence = double.Parse(xmlDoc.SelectSingleNode("/settings/tweetParser/minAidrLabelConficence").InnerText, CultureInfo.InvariantCulture);
 
             _tweetClusterer_TCW_InitializeSize = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/tweetClusterWorker/initializeSize").InnerText);
             _tweetClusterer_TCW_BatchSize = int.Parse(xmlDoc.SelectSingleNode("/settings/tweetClusterer/tweetClusterWorker/batchSize").InnerText);
@@ -95,17 +100,27 @@ namespace CrisisTracker.Common
         public static string FilterStreamConsumer_AccessToken { get { return GetInstance()._filterStreamConsumer_AccessToken; } }
         public static string FilterStreamConsumer_AccessTokenSecret { get { return GetInstance()._filterStreamConsumer_AccessTokenSecret; } }
 
+        //FilterStreamConsumerAidr
+        private string _filterStreamConsumerAidr_ChannelName;
+        private string _filterStreamConsumerAidr_CrisisCode;
+        public static string FilterStreamConsumerAidr_CrisisCode { get { return GetInstance()._filterStreamConsumerAidr_CrisisCode; } }
+        public static string FilterStreamConsumerAidr_ChannelName { get { return GetInstance()._filterStreamConsumerAidr_ChannelName; } }
+
         //TweetParser
         double _tweetParser_WordScore4dMaxToStopwordRatio;
         int _tweetParser_MaxWordTweetTableLength;
         int _tweetParser_BatchSize;
         double _tweetParser_MinTweetVectorLength;
         int _tweetParser_MinTweetWordCount;
+        bool _tweetParser_UseSecondPassFiltering;
+        double _tweetParser_MinAidrLabelConficence;
         public static double TweetParser_WordScore4dMaxToStopwordRatio { get { return GetInstance()._tweetParser_WordScore4dMaxToStopwordRatio; } }
         public static int TweetParser_MaxWordTweetTableLength { get { return GetInstance()._tweetParser_MaxWordTweetTableLength; } }
         public static int TweetParser_BatchSize { get { return GetInstance()._tweetParser_BatchSize; } }
         public static double TweetParser_MinTweetVectorLength { get { return GetInstance()._tweetParser_MinTweetVectorLength; } }
         public static int TweetParser_MinTweetWordCount { get { return GetInstance()._tweetParser_MinTweetWordCount; } }
+        public static bool TweetParser_UseSecondPassFiltering { get { return GetInstance()._tweetParser_UseSecondPassFiltering; } }
+        public static double TweetParser_MinAidrLabelConficence { get { return GetInstance()._tweetParser_MinAidrLabelConficence; } }
 
         //TweetClusterWorker
         int _tweetClusterer_TCW_InitializeSize;

@@ -32,12 +32,13 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="LinqToTwitterCP">
-      <HintPath>..\LinqToTwitterCP.dll</HintPath>
-    </Reference>
-    <Reference Include="MySql.Data, Version=6.3.6.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
+    <Reference Include="LinqToTwitterCP, Version=2.1.7.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\MySql.Data.dll</HintPath>
+      <HintPath>..\lib\LinqToTwitterCP.dll</HintPath>
+    </Reference>
+    <Reference Include="MySql.Data, Version=6.6.5.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\MySql.Data.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -50,6 +51,7 @@
     <Compile Include="AidrLabel.cs" />
     <Compile Include="BinaryHeap.cs" />
     <Compile Include="English.cs" />
+    <Compile Include="FilterUpdateTracker.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="JSON.cs" />
     <Compile Include="Output.cs" />

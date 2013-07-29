@@ -1,5 +1,5 @@
 ﻿/*******************************************************************************
- * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+ * Copyright (c) 2013 Jakob Rogstadius.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -37,17 +37,13 @@ namespace CrisisTracker.TweetParser
         }
 
         const int TEN_MINUTES_MS = 1000 * 60 * 10;
+        const string IGNORE = "ignore";
+        const string CREATED_AT_DATETIME = "created_at_datetime";
 
         DateTime _lastMaintenanceTime = DateTime.MinValue;
         DateTime _lastTweetTime = DateTime.MinValue;
 
         public string Name { get; set; }
-
-        //TODO: Move to settings
-        class LocalSettings
-        {
-            public static bool ApplyFilters = false;
-        }
 
         public TweetParser()
         {
@@ -76,7 +72,7 @@ namespace CrisisTracker.TweetParser
                     Console.Write(".");
 
                     //Parse the Json
-                    List<Hashtable> filteredTweets = ParseJsonTweets(filteredTweetsJson, onlyExtractWords: false); //Tweets are appended with "created_at_datetime"
+                    List<Hashtable> filteredTweets = ParseJsonTweets(filteredTweetsJson, onlyExtractWords: false); //Tweets are appended with CREATED_AT_DATETIME
                     List<Hashtable> randomTweets = ParseJsonTweets(randomTweetsJson, onlyExtractWords: true); //Tweets only contain a "text" field
                     Console.Write(".");
 
@@ -95,10 +91,10 @@ namespace CrisisTracker.TweetParser
                     if (filteredTweets.Count > 0)
                     {
                         //Make note of the time of the last tweet
-                        _lastTweetTime = (DateTime)filteredTweets.Last()["created_at_datetime"];
+                        _lastTweetTime = (DateTime)filteredTweets.Last()[CREATED_AT_DATETIME];
 
                         List<Hashtable> filteredTweetsBefore = new List<Hashtable>(filteredTweets);
-                        if (LocalSettings.ApplyFilters)
+                        if (Settings.TweetParser_UseSecondPassFiltering)
                         {
                             //Remove the off-topic tweets from further processing
                             var filterPerf = RemoveOffTopicTweets(filteredTweets, filters); //Tweets are appended with longitude and latitude
@@ -155,7 +151,7 @@ namespace CrisisTracker.TweetParser
             Dictionary<DateTime, int> dateHourTweetCountAll = new Dictionary<DateTime, int>();
             foreach (var tweet in filteredTweetsAll)
             {
-                DateTime t = (DateTime)tweet["created_at_datetime"];
+                DateTime t = (DateTime)tweet[CREATED_AT_DATETIME];
                 t = new DateTime(t.Year, t.Month, t.Day, t.Hour, 0, 0);
                 if (dateHourTweetCountAll.ContainsKey(t))
                     dateHourTweetCountAll[t]++;
@@ -166,7 +162,7 @@ namespace CrisisTracker.TweetParser
             Dictionary<DateTime, int> dateHourTweetCountCleaned = new Dictionary<DateTime, int>();
             foreach (var tweet in filteredTweetsCleaned)
             {
-                DateTime t = (DateTime)tweet["created_at_datetime"];
+                DateTime t = (DateTime)tweet[CREATED_AT_DATETIME];
                 t = new DateTime(t.Year, t.Month, t.Day, t.Hour, 0, 0);
                 if (dateHourTweetCountCleaned.ContainsKey(t))
                     dateHourTweetCountCleaned[t]++;
@@ -339,9 +335,23 @@ namespace CrisisTracker.TweetParser
                     continue;
                 }
 
-                status.Add("created_at_datetime", ParseTwitterTime(status["created_at"].ToString()));
+                status.Add(CREATED_AT_DATETIME, ParseTwitterTime(status["created_at"].ToString()));
                 status.Add("json_id", jsonTweet.Key);
-                
+
+                if (status.ContainsKey("coordinates") && status["coordinates"] is Hashtable)
+                {
+                    Hashtable geoH = (Hashtable)status["geo"];
+                    if (geoH.ContainsKey("coordinates"))
+                    {
+                        ArrayList coords = (ArrayList)geoH["coordinates"];
+                        //Coordinates in tweet are [long, lat], as in the GeoJSON format
+                        double longitude = Convert.ToDouble(coords[0], CultureInfo.InvariantCulture);
+                        double latitude = Convert.ToDouble(coords[1], CultureInfo.InvariantCulture);
+                        status.Add("longitude", longitude);
+                        status.Add("latitude", latitude);
+                    }
+                }
+
                 parsedTweets.Add(status);
             }
 
@@ -354,13 +364,19 @@ namespace CrisisTracker.TweetParser
             {
                 string text = tweet["text"] as string;
                 if (text == null || text == "")
+                {
+                    tweet[IGNORE] = true;
                     continue;
+                }
 
                 text = Helpers.DecodeEncodedNonAsciiCharacters(text);
                 string[] wordsInTweet = WordCount.GetWordsInString(text, useStemming: true);
                 //string[] wordsInTweet = WordCount.GetWordsInStringWithBigrams(text, stopwords, useStemming: true);
                 if (wordsInTweet.Length == 0)
+                {
+                    tweet[IGNORE] = true;
                     continue;
+                }
 
                 string[] uniqueWordsArr = wordsInTweet.Distinct().ToArray();
                 tweet.Add("words", uniqueWordsArr);
@@ -513,19 +529,10 @@ namespace CrisisTracker.TweetParser
                 string[] words = (string[])tweet["words"];
                 long userID = Convert.ToInt64(((Hashtable)tweet["user"])["id_str"]);
                 double? longitude = null, latitude = null;
-                if (tweet.ContainsKey("geo") && tweet["geo"] is Hashtable)
-                {
-                    Hashtable geoH = (Hashtable)tweet["geo"];
-                    if (geoH.ContainsKey("coordinates"))
-                    {
-                        ArrayList coords = (ArrayList)geoH["coordinates"];
-                        //Coordinates in tweet are reversed (lat, long)
-                        latitude = Convert.ToDouble(coords[0], CultureInfo.InvariantCulture);
-                        longitude = Convert.ToDouble(coords[1], CultureInfo.InvariantCulture);
-                        tweet.Add("latitude", latitude);
-                        tweet.Add("longitude", longitude);
-                    }
-                }
+                if (tweet.ContainsKey("latitude"))
+                    latitude = (double)tweet["latitude"];
+                if (tweet.ContainsKey("longitude"))
+                    latitude = (double)tweet["longitude"];
 
                 //Check if the tweet matches any filter
                 int score = 0;
@@ -538,9 +545,6 @@ namespace CrisisTracker.TweetParser
                         filterPerf[filter].Matches++;
                         matchedFilters.Add(filter);
                     }
-                    //This speeds up processing, but breaks the filter stats
-                    //if (score >= 2)
-                    //    break;
                 }
 
                 if (score < 2)
@@ -589,7 +593,7 @@ namespace CrisisTracker.TweetParser
             StringBuilder sbTweetUrl = new StringBuilder();
             StringBuilder sbTwitterUser = new StringBuilder();
 
-            sbTweet.Append("INSERT IGNORE INTO Tweet (TweetID, UserID, CreatedAt, RetweetOf, RetweetOfUserID, Text, TextHash, Longitude, Latitude, ProcessedMetatags) VALUES ");
+            sbTweet.Append("INSERT IGNORE INTO Tweet (TweetID, UserID, CreatedAt, RetweetOf, RetweetOfUserID, Text, TextHash, Longitude, Latitude, Language, ProcessedMetatags) VALUES ");
             sbWordTweet.Append("INSERT IGNORE INTO WordTweet (WordID, TweetID) VALUES ");
             sbTweetUrl.Append("INSERT IGNORE INTO TweetUrl (TweetID, UrlHash, Url) VALUES ");
             sbTwitterUser.Append("INSERT INTO TwitterUser (UserID, ScreenName, RealName, ProfileImageUrl) VALUES ");
@@ -608,17 +612,24 @@ namespace CrisisTracker.TweetParser
                 {
                     //Has some random bug occured during parsing?
                     if (!(t.ContainsKey("words") && t["words"] is string[]) || !t.ContainsKey("id_str") || !t.ContainsKey("text") || !t.ContainsKey("user") || (string)t["text"] == "")
+                    {
+                        t[IGNORE] = true;
                         continue;
+                    }
 
                     long tweetID = Convert.ToInt64(t["id_str"]);
                     string[] tWords = t["words"] as string[];
                     if (tWords.Length == 0)
+                    {
+                        t[IGNORE] = true;
                         continue;
+                    }
 
                     //Does the tweet contain enough non-stopwords?
                     int tweetwordCount = tWords.Where(n => words.ContainsKey(n) && !stopwords.Contains(n)).Count();
                     if (tweetwordCount < Settings.TweetParser_MinTweetWordCount)
                     {
+                        t[IGNORE] = true;
                         Console.WriteLine(t["text"]);
                         continue;
                     }
@@ -632,6 +643,7 @@ namespace CrisisTracker.TweetParser
                     string userImageUrl = (string)user["profile_image_url"];
                     double? longitude = t.ContainsKey("longitude") ? (double)t["longitude"] : (double?)null;
                     double? latitude = t.ContainsKey("latitude") ? (double)t["latitude"] : (double?)null;
+                    string language = t.ContainsKey("lang") ? (string)t["lang"] : "und";
                     long? retweetOf = null, retweetOfUserID = null;
                     if (t.ContainsKey("retweeted_status") && ((Hashtable)t["retweeted_status"]).ContainsKey("id_str"))
                     {
@@ -654,13 +666,14 @@ namespace CrisisTracker.TweetParser
                     Helpers.AppendTuple(sbTweet, command,
                         tweetID,
                         userID,
-                        (DateTime)t["created_at_datetime"],
+                        (DateTime)t[CREATED_AT_DATETIME],
                         (retweetOf.HasValue ? retweetOf.Value : (long?)null),
                         (retweetOfUserID.HasValue ? retweetOfUserID.Value : (long?)null),
                         t["text"],
                         normText.Substring(0, Math.Min(normText.Length, 40)).GetHashCode(),
                         (longitude.HasValue ? longitude.Value : (double?)null),
                         (longitude.HasValue ? latitude.Value : (double?)null),
+                        language,
                         1
                     );
                     Helpers.AppendTuple(sbTwitterUser, command,
@@ -733,12 +746,15 @@ namespace CrisisTracker.TweetParser
 
         bool tweetHasAidrTags(Hashtable tweet)
         {
-            return tweet.ContainsKey("aidr") && ((Hashtable)tweet["aidr"]).ContainsKey("nominal_labels");
+            return tweet.ContainsKey("aidr") 
+                && ((Hashtable)tweet["aidr"]).ContainsKey("nominal_labels")
+                && ((Hashtable)tweet["aidr"])["nominal_labels"] is ArrayList
+                && ((ArrayList)((Hashtable)tweet["aidr"])["nominal_labels"]).Count > 0;
         }
 
         void ParseAidrMetatags(List<Hashtable> tweets)
         {
-            var hasNominalLabels = tweets.Where(n => tweetHasAidrTags(n));
+            var hasNominalLabels = tweets.Where(n => !n.ContainsKey(IGNORE) && tweetHasAidrTags(n));
             if (!hasNominalLabels.Any())
                 return;
 
@@ -755,10 +771,10 @@ namespace CrisisTracker.TweetParser
                     label.AttributeName = labelData["attribute_name"].ToString();
                     label.LabelCode = labelData["label_code"].ToString();
                     label.LabelName = labelData["label_name"].ToString();
-                    label.Confidence = Convert.ToDouble(labelData["confidence"]);
+                    label.Confidence = Convert.ToDouble(labelData["confidence"], CultureInfo.InvariantCulture);
 
                     //Don't store null tags or tags with low confidence
-                    if (label.LabelCode == "null" || label.Confidence < 0.7)
+                    if (label.LabelCode == "null" || label.Confidence < Settings.TweetParser_MinAidrLabelConficence)
                         continue;
 
                     if (!tweetLabels.ContainsKey(tweetID))
@@ -771,7 +787,8 @@ namespace CrisisTracker.TweetParser
                 return;
 
             //Group all tweetLabels into an attribute->label structure
-            var attributeDefinitions = from item in tweetLabels.Values.SelectMany(n => n)
+            var attributeDefinitions = 
+                from item in tweetLabels.Values.SelectMany(n => n)
                 group item by item.AttributeCode into attributeGroup
                 select new { 
                     AttributeCode = attributeGroup.Key, 
@@ -845,7 +862,6 @@ namespace CrisisTracker.TweetParser
             Helpers.RunSqlStatement(Name, sbLabel.ToString(), false);
 
             //Get IDs for labels
-            //string labelCodesStr = string.Join("','", labelDefinitions.Select(n => n.LabelCode).ToArray());
             Dictionary<uint, Dictionary<string, uint>> labelIDs = new Dictionary<uint, Dictionary<string, uint>>();
             Helpers.RunSelect(Name, 
                 "select AttributeID, LabelCode, LabelID from AidrLabel", 
@@ -862,7 +878,7 @@ namespace CrisisTracker.TweetParser
 
             //Insert tweet tags
             StringBuilder sbTweetTag = new StringBuilder();
-            sbTweetTag.Append("insert ignore into TweetAidrAttributeTag (TweetID, AttributeID, LabelID) values ");
+            sbTweetTag.Append("insert ignore into TweetAidrAttributeTag (TweetID, LabelID, Confidence) values ");
             firstLine = true;
             foreach (var tweet in tweetLabels)
             {
@@ -876,9 +892,9 @@ namespace CrisisTracker.TweetParser
                     sbTweetTag.Append("(");
                     sbTweetTag.Append(tweet.Key);
                     sbTweetTag.Append(",");
-                    sbTweetTag.Append(attributeIDs[label.AttributeCode]);
-                    sbTweetTag.Append(",");
                     sbTweetTag.Append(labelIDs[attributeIDs[label.AttributeCode]][label.LabelCode]);
+                    sbTweetTag.Append(",");
+                    sbTweetTag.Append(label.Confidence.ToString(CultureInfo.InvariantCulture));
                     sbTweetTag.Append(")");
 	            }
             }

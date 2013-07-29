@@ -19,12 +19,30 @@
     <accessTokenSecret>*</accessTokenSecret>
   </filterStreamConsumer>
 
+  <!-- Only needed if used together with the AIDR Predict module -->
+  <filterStreamConsumerAidr>
+    <!-- channel name should match subscription pattern in AIDR Predict module's config (actual Redis channel will be channelName.crisisCode.lang) -->
+    <channelName>filter_stream</channelName>
+    <!-- crisis code should match the crisis defined in AIDR Predict -->
+    <crisisCode>my_crisis_code</crisisCode>
+  </filterStreamConsumerAidr>
+
+  <!-- Only needed if used together with the AIDR Predict module -->
+  <aidrRedisConsumer>
+    <redisHost>localhost</redisHost>
+    <redisPort>6379</redisPort>
+    <!-- cirsis code should match that set in the AIDR Predict module. Separate patterns with space, * can be used as wildcard -->
+    <subscribePattern>aidr_predict.my_crisis_code.*</subscribePattern>
+  </aidrRedisConsumer>
+
   <tweetParser>
     <wordScore4dMaxToStopwordRatio>0.1</wordScore4dMaxToStopwordRatio>
     <maxWordTweetTableLength>10000000</maxWordTweetTableLength>
     <batchSize>500</batchSize>
     <minTweetVectorLength>0.1</minTweetVectorLength>
     <minTweetWordCount>2</minTweetWordCount>
+    <useSecondPassFiltering>true</useSecondPassFiltering>
+    <minAidrLabelConficence>0.7</minAidrLabelConficence>
   </tweetParser>
   
   <tweetClusterer>
@@ -54,9 +72,4 @@
     </storyWorker>
   </tweetClusterer>
 
-  <aidrRedisConsumer>
-    <redisHost>localhost</redisHost>
-    <redisPort>6379</redisPort>
-    <subscribePattern>aidr_fetch.my_crisis_code</subscribePattern> <!-- separate patterns with space, * can be used as wildcard -->
-  </aidrRedisConsumer>
 </settings>

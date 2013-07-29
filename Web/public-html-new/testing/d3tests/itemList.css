@@ -1,7 +1,0 @@
-ul.item-list li.list-item {
-    border-bottom: 1px solid #ddd;
-    padding: 2px;
-}
-ul.item-list li.list-item.selected {
-    background-color: #eee;
-}

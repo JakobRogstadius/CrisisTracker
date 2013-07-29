@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("FilterStreamConsumer")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Microsoft")]
+[assembly: AssemblyCompany("Jakob Rogstadius")]
 [assembly: AssemblyProduct("FilterStreamConsumer")]
 [assembly: AssemblyCopyright("Copyright © Jakob Rogstadius 2011")]
 [assembly: AssemblyTrademark("")]

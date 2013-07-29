@@ -1,0 +1,139 @@
+<html>
+<head>
+
+  <!-- LIBRARIES -->
+  <link   href="lib/reset/reset.css" rel="stylesheet" type="text/css">
+  <script src="lib/jquery/jquery-1.9.1.js"></script>
+  <script src="lib/jquery-ui/jquery-ui-latest.js"></script>
+  <link   href="lib/jquery-ui/jquery-ui-latest.css" rel="stylesheet" type="text/css">
+  <script src="lib/jquery-layout/jquery-layout-latest.js"></script>
+  <link   href="lib/jquery-layout/jquery-layout-latest.css" rel="stylesheet" type="text/css">
+  <script src="lib/d3/d3.v3.min.js"></script>
+
+  <!-- SOURCE -->
+  <link href="common.css" rel="stylesheet" type="text/css">
+
+  <script src="explore.js"></script>
+
+  <script src="src/Globals.js"></script>
+  <script src="src/StoryFilter.js"></script>
+
+  <script src="src/controls/DotPlot.js"></script>
+  <link href="src/controls/DotPlot.css" rel="stylesheet" type="text/css">
+
+  <script src="src/controls/ItemList.js"></script>
+  <link href="src/controls/ItemList.css" rel="stylesheet" type="text/css">
+
+  <script src="src/controls/ButtonList.js"></script>
+  <link href="src/controls/ButtonList.css" rel="stylesheet" type="text/css">
+
+  <script src="src/controls/TopicFilter.js"></script>
+  <link href="src/controls/TopicFilter.css" rel="stylesheet" type="text/css">
+
+  <script src="src/controls/TimelineFilter.js"></script>
+  <link href="src/controls/TimelineFilter.css" rel="stylesheet" type="text/css">
+
+  <script src="src/controls/TextFilter.js"></script>
+
+  <script src="src/StoriesContextPanel.js"></script>
+  <link href="src/StoriesContextPanel.css" rel="stylesheet" type="text/css">
+
+  <script src="src/StoryFocusPanel.js"></script>
+  <link href="src/StoryFocusPanel.css" rel="stylesheet" type="text/css">
+
+  <style>
+    #context-text-filter {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 40px;
+    }
+    #context-topic-filter {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 40px;
+      bottom: 0;
+    }
+    #stories-filter-panel-content-wrapper {
+      background-color: #eee !important;
+    }
+  </style>
+</head>
+<body>
+
+	<!-- Filters panel -->
+	<div id="stories-filters-panel" class="ui-layout-west nopadding">
+		<div class="panel-header ui-layout-north">Filters</div>
+		<div id="stories-filter-panel-content-wrapper" class="ui-layout-center nopadding">
+			<div id="context-text-filter"></div>
+			<div id="context-topic-filter"></div>
+		</div>
+	</div>
+
+	<div id="stories-content-panel" class="ui-layout-center nopadding">
+
+		<!-- Context panel -->
+		<div id="stories-context-panel" class="ui-layout-center nopadding">
+			<div class="panel-header ui-layout-north">Stories overview</div>
+			<div id="stories-context-panel-content" class="ui-layout-center nopadding">
+				<!-- Timeline -->
+				<div id="stories-context-panel-timeline" class="ui-layout-north nopadding"></div>
+				<div id="stories-context-panel-tabs" class="ui-layout-center nopadding">
+					<!-- Tab names -->
+					<ul>
+						<li><a href="#stories-context-tab-list">List view</a></li>
+						<li><a href="#stories-context-tab-bubbles">Bubbles</a></li>
+					</ul>
+
+					<!-- Tab pages -->
+					<div class="layout-tabs ui-layout-content ui-widget-content">
+						<!-- List -->
+						<div id="stories-context-tab-list" class="ui-layout-center nopadding"></div>
+
+						<!-- Context panel, bubble view tab -->
+						<div id="stories-context-tab-bubbles" class="tab nopadding"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Focus panel -->
+		<div id="stories-focus-panel" class="ui-layout-east nopadding">
+			<div class="panel-header ui-layout-north">Focus story</div>
+			<div id="stories-focus-panel-content-wrapper" class="ui-layout-center nopadding">
+				<div id="stories-focus-panel-title" class="ui-layout-north nopadding">
+					<h1>Loading top story...</h1>
+				</div>
+
+				<div id="stories-focus-panel-content" class="ui-layout-center nopadding">
+					<!-- Tab names -->
+					<ul>
+						<li><a href="#stories-focus-tab-tweets">Tweets</a></li>
+						<li><a href="#stories-focus-tab-similar">Similar stories</a></li>
+					</ul>
+
+					<!-- Tab pages -->
+					<div class="layout-tabs ui-layout-content ui-widget-content">
+
+						<!-- Focus panel, tweets tab -->
+						<div id="stories-focus-tab-tweets" class="tab nopadding">
+							<!-- Filters -->
+							<div id="stories-focus-panel-filters" class="ui-layout-north nopadding"></div>
+							<!-- Tweet list -->
+							<div id="stories-focus-panel-list" class="ui-layout-center nopadding"></div>
+						</div>
+
+						<!-- Focus panel, similar stories tab -->
+						<div id="stories-focus-tab-similar" class="tab nopadding"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="tweetExpansionCallbackDiv" style="visibility: hidden"></div>
+
+</body>
+</html>

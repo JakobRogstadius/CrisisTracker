@@ -1,5 +1,5 @@
 ﻿/*******************************************************************************
- * Copyright (c) 2012 CrisisTracker Contributors (see /doc/authors.txt).
+ * Copyright (c) 2013 Jakob Rogstadius.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -503,8 +503,8 @@ namespace CrisisTracker.TweetClusterer
                         select " + merge.KeptStoryID + ", t2.InfoKeywordID, t2.CreatedAt, t2.UserID, t2.Weight from StoryInfoKeywordTag t2 where t2.StoryID=" + merge.MergedStoryID + @"
                         on duplicate key update StoryInfoKeywordTag.Weight=StoryInfoKeywordTag.Weight+values(Weight);
                     delete from StoryInfoKeywordTag where StoryID=" + merge.MergedStoryID + @";
-                    insert into StoryAidrAttributeTag (StoryID, AttributeID, LabelID, TagCount) 
-                        select " + merge.KeptStoryID + ", t.AttributeID, t.LabelID, t.TagCount from StoryAidrAttributeTag t where StoryID=" + merge.MergedStoryID + @"
+                    insert into StoryAidrAttributeTag (StoryID, LabelID, TagCount) 
+                        select " + merge.KeptStoryID + ", t.LabelID, t.TagCount from StoryAidrAttributeTag t where StoryID=" + merge.MergedStoryID + @"
                         on duplicate key update StoryAidrAttributeTag.TagCount=StoryAidrAttributeTag.TagCount+values(TagCount);
                     delete from StoryAidrAttributeTag where StoryID=" + merge.MergedStoryID + @";
                     update ignore StoryInfoCategoryTag set StoryID=" + merge.KeptStoryID + " where StoryID=" + merge.MergedStoryID + @"; 
@@ -714,14 +714,14 @@ namespace CrisisTracker.TweetClusterer
         static void ProcessTweetMetatags()
         {
             string sql =
-                @"insert into StoryAidrAttributeTag (StoryID, AttributeID, LabelID, TagCount)
-                select s.StoryID, AttributeID, LabelID, count(*) as TagCount
+                @"insert into StoryAidrAttributeTag (StoryID, LabelID, TagCount)
+                select s.StoryID, LabelID, count(*) as TagCount
                 from TweetAidrAttributeTag tag
                 join Tweet t on t.TweetID=tag.TweetID
                 join TweetCluster tc on tc.TweetClusterID=t.TweetClusterID
                 join Story s on s.StoryID=tc.StoryID
-                where s.PendingUpdate and not ProcessedMetatags
-                group by s.StoryID
+                where not ProcessedMetatags
+                group by s.StoryID, LabelID
                 on duplicate key update TagCount=TagCount+values(TagCount)";
             Helpers.RunSqlStatement(Name, sql, false);
 
@@ -736,11 +736,12 @@ namespace CrisisTracker.TweetClusterer
 
                 update StoryAidrAttributeTag
                 natural join (
-	                select tag.StoryID, AttributeID, max(tag.TagCount) as TagCount
+	                select tag.StoryID, max(tag.TagCount) as TagCount
 	                from StoryAidrAttributeTag tag
 	                join Story on Story.StoryID=tag.StoryID
+                    join AidrLabel on AidrLabel.LabelID=tag.LabelID
                     where PendingUpdate
-	                group by StoryID, AttributeID) T
+	                group by StoryID, AidrLabel.AttributeID) T
                 set IsMajorityTag=1;";
             Helpers.RunSqlStatement(Name, sql, true);
         }

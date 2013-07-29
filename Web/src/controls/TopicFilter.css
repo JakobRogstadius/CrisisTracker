@@ -1,0 +1,42 @@
+.topic-filter {
+    font-size: 14px;
+}
+.topic-filter .item-L1 {
+    padding-left: 10px;
+    color: #333;
+    border-bottom: 1px solid #999;
+}
+.topic-filter .item-L1 h1 {
+    background-color: #e0e0e0;
+    padding: 4px;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+.topic-filter li:not(.single-item) .item-L2 {
+    background-color: #ececec;
+    padding: 3px 3px 3px 4px;
+    border-top: 1px solid #e0e0e0;
+    color: #757575;
+}
+.topic-filter .single-item .item-L2 {
+    background-color: #e0e0e0;
+    padding: 4px;
+    font-weight: bold;
+}
+.topic-filter .item-L2:hover {
+    color: #333;
+}
+.topic-filter .item-L2 span {
+    color: #c3c3c3;
+    margin-left: 12px;
+}
+.topic-filter .selected {
+    background-color: rgba(233,233,233,0.65) !important;
+    color: #333;
+}
+.topic-filter .selected span {
+    color: #aaa;
+}
+.single-item h1 {
+    display: none;
+}

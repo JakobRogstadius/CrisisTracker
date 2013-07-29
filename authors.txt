@@ -1,4 +1,0 @@
-CrisisTracker contributors:
-
-Jakob Rogstadius
-Claudio Teixeira

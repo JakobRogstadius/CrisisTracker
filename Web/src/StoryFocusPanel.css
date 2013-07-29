@@ -1,0 +1,75 @@
+#stories-focus-panel li.tweet {
+  padding-left: 34px;
+  position: relative;
+}
+#stories-focus-panel li.tweet div {
+  padding: 0 !important;
+}
+#stories-focus-panel li.tweet img {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  width: 24px;
+  height: 24px;
+}
+#stories-focus-panel li.tweet .text {
+  font-size: 13px;
+}
+#stories-focus-panel li.tweet .source {
+  font-size: 0.9em;
+  padding-top: 4px !important;
+  color: #999;
+}
+#stories-focus-panel li.list-item:hover {
+  cursor: pointer;
+}
+#stories-focus-panel-title {
+  font-size: 20px;
+  background-color: #ececec;
+  color: #444;
+  padding: 3px 6px 3px 6px !important;
+}
+#stories-focus-panel-title a {
+  font-size: 10px;
+  font-style: italic;
+  float: right;
+}
+
+
+#stories-focus-panel li.story {
+  position: relative;
+  font-size: 13px;
+}
+#stories-focus-panel li.story:hover {
+  cursor: pointer;
+}
+#stories-focus-panel li.story a:hover {
+  text-decoration: none;
+}
+#stories-focus-panel li.story div {
+  padding: 0 !important;
+}
+#stories-focus-panel li.story .title {
+  margin-left: 150px;
+  overflow: hidden;
+}
+#stories-focus-panel li.story .time {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 95px;
+  text-align: center;
+}
+#stories-focus-panel li.story .sources {
+  position: absolute;
+  top: 2px;
+  left: 100px;
+  width: 45px;
+  text-align: center;
+}
+#stories-focus-panel li.story.merged, #stories-focus-panel li.story.merged a {
+  color: #ccc !important;
+}
+#stories-focus-panel div.merge {
+  text-align: right;
+}

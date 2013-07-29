@@ -1,0 +1,32 @@
+#stories-context-tab-list li.list-item {
+  position: relative;
+  font-size: 13px;
+}
+#stories-context-tab-list li.list-item:hover {
+  cursor: pointer;
+}
+#stories-context-tab-list li.list-item a:hover {
+  text-decoration: none;
+}
+#stories-context-tab-list li.list-item div {
+  padding: 0 !important;
+}
+#stories-context-tab-list li.list-item .title {
+  margin-left: 150px;
+  overflow: hidden;
+}
+#stories-context-tab-list li.list-item .time {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 95px;
+  text-align: center;
+}
+#stories-context-tab-list li.list-item .sources {
+  position: absolute;
+  top: 2px;
+  left: 100px;
+  width: 45px;
+  text-align: center;
+}
+

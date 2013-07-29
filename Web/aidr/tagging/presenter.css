@@ -1,0 +1,89 @@
+@import url("../reset.css");
+
+body {
+    padding: 20px;
+    font-family: 'Verdana';
+    font-size: 12px;
+    background-color: #eee;
+    line-height: 120%;
+}
+div#container {
+
+}
+h1 {
+    text-transform: uppercase;
+    font-weight: bold;
+    color: #444;
+    font-size: 24px;
+    margin-bottom: 0.6em;
+    line-height: 28px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+h2 {
+    text-transform: uppercase;
+    font-weight: bold;
+    color: #444;
+    font-size: 16px;
+    line-height: 19px;
+    margin-bottom: 0.6em;
+    margin-top: 1.5em;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+h3 {
+    font-weight: bold;
+    font-size: 12px;
+    line-height: 18px;
+    color: #444;
+    text-transform: uppercase;
+    margin-bottom: 0.3em;
+}
+div.panel {
+    max-width: 600px;
+}
+div.subpanel {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    padding: 5px;
+    margin-bottom: 4px;
+    margin-top: 4px;
+}
+div.text {
+
+}
+div#document {
+
+}
+div#document div {
+    font-size: 15px;
+    line-height: 19px;
+}
+div#options {
+
+}
+.attribute-description {
+    margin-top: 0.7em;
+    color: #999;
+}
+.label-list {
+    text-align: left;
+    vertical-align: top;
+}
+.label-list ul {
+    column-width: 160px;
+    -moz-column-width: 160px;
+    -webkit-column-width: 160px;
+
+    column-gap: 5px;
+    -moz-column-gap: 5px;
+    -webkit-column-gap: 5px;
+}
+.label-list li {
+    padding-top: 1px;
+    padding-bottom: 1px;
+}
+.label-list li label {
+
+}
+.label-list li label:hover {
+    background-color: #eee;
+}

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>CrisisTracker</title>
+
+  <!-- LIBRARIES -->
+  <link   href="lib/reset/reset.css" rel="stylesheet" type="text/css">
+  <script src="lib/jquery/jquery-1.9.1.js"></script>
+  <script src="lib/jquery-ui/jquery-ui-latest.js"></script>
+  <link   href="lib/jquery-ui/jquery-ui-latest.css" rel="stylesheet" type="text/css">
+  <script src="lib/jquery-layout/jquery-layout-latest.js"></script>
+  <link   href="lib/jquery-layout/jquery-layout-latest.css" rel="stylesheet" type="text/css">
+  <script src="lib/d3/d3.v3.min.js"></script>
+
+  <!-- SOURCE -->
+  <script src="src/Globals.js"></script>
+  <link href="common.css" rel="stylesheet" type="text/css">
+  <link href="index.css" rel="stylesheet" type="text/css">
+  <script src="index.js"></script>
+
+</head>
+<body class="nopadding">
+  <div id="page-header" class="ui-layout-north">
+    <div class="title">
+      <h1>Syrian Civil War</h1>
+      <h2>Automated mining of Twitter for situational awareness</h2>
+    </div>
+    <div class="menu">
+      <a href="explore.html" onclick="return loadPage('explore.html');" class="selected">Explore</a>
+      <a href="train.html" onclick="return loadPage('train.html');">Train</a>
+      <a href="about.html" onclick="return loadPage('about.html');">About</a>
+      <a href="api.html" onclick="return loadPage('api.html');">API</a>
+    </div>
+  </div>
+
+  <iframe id="page-content" class="ui-layout-center nopadding" src="explore.html"></iframe>
+
+  <div id="page-footer" class="ui-layout-south">
+    Powered by <a href="http://www.github.com/jakobrogstadius/crisistracker" target="_blank">CrisisTracker</a>
+    and <a href="http://aidr.qcri.org/" target="_blank">AIDR
+  </div>
+</body>
+</html>
