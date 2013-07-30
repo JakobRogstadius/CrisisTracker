@@ -18,9 +18,14 @@ Although individual tweets are both extremely brief (maximum 140 characters) and
 
 Events during a time period can be summarized by looking at those stories that were mentioned by the highest number of Twitter users.
 
+**Technologies by module**
+* The clustering back-end is implemented in C# and MySQL
+* The [machine learning](http://aidr.qcri.org/) module uses Java, Weka, MySQL and Redis
+* The web front-end uses [d3](http://d3js.org/) (for content) and jQuery (for [page layout](http://layout.jquery-dev.net/documentation.cfm) and [tabs](http://jqueryui.com/tabs/)), with a PHP/JSON API.
+
 ## AIDR Integration
 
-AIDR - Artificial Intelligence for Emergency Response - is an open-source platform developed at QCRI that provides automated real-time topic classification of document streams. It is a supervised classifier, meaning that it learns how to classify documents based on examples provided by human curators.
+[AIDR](http://aidr.qcri.org/) - Artificial Intelligence for Emergency Response - is an open-source platform developed at QCRI that provides automated real-time topic classification of document streams. It is a supervised classifier, meaning that it learns how to classify documents based on examples provided by human curators.
 
 The AIDR platform has been integrated into CrisisTracker to provide the topic filters seen on the explore page. You can help teach the system how to better classify content by visiting the training page.
 
