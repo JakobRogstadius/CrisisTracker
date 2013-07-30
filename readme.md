@@ -21,7 +21,7 @@ Events during a time period can be summarized by looking at those stories that w
 **Technologies by module**
 * The clustering back-end is implemented in C# and MySQL
 * The [machine learning](http://aidr.qcri.org/) module uses Java, Weka, MySQL and Redis
-* The web front-end uses [d3](http://d3js.org/) (for content) and jQuery (for [page layout](http://layout.jquery-dev.net/documentation.cfm) and [tabs](http://jqueryui.com/tabs/)), with a PHP/JSON API.
+* The web front-end uses [d3](http://d3js.org/) (for content) and jQuery (for [page layout](http://layout.jquery-dev.net/documentation.cfm) and [tabs](http://jqueryui.com/tabs/)), with a PHP/JSON API
 
 ## AIDR Integration
 
@@ -37,8 +37,8 @@ CrisisTracker is free and open source, so that you can deploy your own instance 
 
 * [Example deployment](http://ufn.virtues.fi/~jakob/newct/)
 * [Installation instructions](https://github.com/JakobRogstadius/CrisisTracker/wiki/Installation-instructions)
-* [Evaluation report](http://hci.uma.pt/~jakob/files/Rogstadius_2013_CrisisTracker_Crowdsourced_Social_Media_Curation_for_Disaster_Awareness.pdf)
-* More documentation is available on the [wiki](https://github.com/JakobRogstadius/CrisisTracker/wiki).
+* [Evaluation report](http://hci.uma.pt/~jakob/files/Rogstadius_2013_CrisisTracker_Crowdsourced_Social_Media_Curation_for_Disaster_Awareness.pdf) and [other publications](http://hci.uma.pt/~jakob/?p=publications)
+* More documentation is available on the [wiki](https://github.com/JakobRogstadius/CrisisTracker/wiki)
 
 ## Contact
 
