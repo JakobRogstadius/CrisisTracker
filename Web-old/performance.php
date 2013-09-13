@@ -159,7 +159,7 @@ while($row = mysql_fetch_array($tweetCountResult)) {
 <?php
 include('api/open_db.php');
 
-$uid = get_user_id(TRUE);
+$uid = get_user_id();
 if (is_null($uid))
   $uid = 0;
 $result = mysql_query(

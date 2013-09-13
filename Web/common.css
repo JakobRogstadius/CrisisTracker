@@ -1,7 +1,8 @@
 /*** General page layout ***/
 
-body, div, td {
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+body, div, p, li, td {
+  font-size: 12px;
+  font-family: Verdana, Arial, sans-serif;
   line-height: 120%;
 }
 a {
@@ -10,10 +11,6 @@ a {
 }
 a:hover {
   text-decoration: underline;
-}
-p, li {
-  font-size: 12px;
-  font-family: Verdana, Arial, sans-serif;
 }
 .ui-layout-content {
   overflow: auto;
@@ -38,6 +35,7 @@ p, li {
   right: 0;
 }
 .panel-header {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   position: absolute;
   left: 0;
   right: 0;
@@ -66,6 +64,13 @@ p, li {
 
 /*** Lists ***/
 
+table.table { 
+
+}
+table.table td {
+  padding: 8px;
+  border-top: 1px solid #ccc;
+}
 table.list {
   width: 100%;
 }
@@ -145,10 +150,18 @@ svg.timefilter .brush .extent {
   -moz-column-width: 250px;
   -webkit-column-width: 250px;
 }
+.no-cols {
+  column-width: auto;
+  -moz-column-width: auto;
+  -webkit-column-width: auto;
+}
 .text-page p {
   margin-bottom: 1em;
 }
 .text-page p:hover {
+}
+.no-cols h1 {
+  text-align: left !important;
 }
 .text-page h1 {
   text-align: center;

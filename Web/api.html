@@ -3,8 +3,77 @@
     <link href="lib/reset/reset.css" rel="stylesheet" type="text/css" />
     <link href="common.css" rel="stylesheet" type="text/css" />
   </head>
-  <body class="text-page">
-    <h1>Application Programming Interface</h1>
-    <p>Information coming soon!</p>
+  <body class="text-page no-cols">
+    <h1>API endpoints and accepted parameters</h1>
+    <table class="table">
+
+    <tr class="header"><td colspan="3"><a href="atom/top-20-stories.php">RSS feed</a> (Atom 1.0)</td></tr>
+    <tr><td colspan="3">No parameters.</td></tr>
+
+    <tr class="header"><td colspan="3"><a href="http://ufn.virtues.fi/crisistracker/api/get_stories.php?ongoing=0&mintime=2013-07-02%2009:05:50&maxtime=2013-08-05%2017:02:13&text=damascus,children">get_stories.php</a></td></tr>
+    <tr>
+      <td>ongoing</td>
+      <td>0 or 1</td>
+      <td>Rank stories by how much they have ever been discussed (0), or by how much they have been discussed in the past four hours (1).</td>
+    </tr>
+    <tr>
+      <td>mintime</td>
+      <td>ISO time, e.g. 2013-07-02 17:01:14</td>
+      <td>Earliest timestamp of the first tweet in a story.</td>
+    </tr>
+    <tr>
+      <td>maxtime</td>
+      <td>ISO time, e.g. 2013-07-02 17:01:14</td>
+      <td>Latest timestamp of the first tweet in a story.</td>
+    </tr>
+    <tr>
+      <td>text</td>
+      <td>E.g. damascus,children</td>
+      <td>Comma separated keyword filter for stories. Multiple keywords are combined with AND.</td>
+    </tr>
+    <tr>
+      <td>topics</td>
+      <td>E.g. 1:141,815;256:149</td>
+      <td>Semi-colon separated list of attributeID:labelID,labelID sets, with IDs matching the AIDR instance. Multiple label filters are combined with OR inside the same attribute, and AND between attributes.</td>
+    </tr>
+
+    <tr class="header"><td colspan="3"><a href="api/get_story_info.php?id=20294793">get_story_info.php</a></td></tr>
+    <tr>
+      <td>ID (required)</td>
+      <td>E.g. 20294793</td>
+      <td>A story ID for which to return basic story meta-data.</td>
+    </tr>
+
+    <tr class="header"><td colspan="3"><a href="api/get_story_tweets.php?id=20294793&mintime=2013-08-27%2009%3A58%3A23&maxtime=2013-08-28%2001%3A39%3A00&text=biden">get_story_tweets.php</a></td></tr>
+    <tr>
+      <td>ID (required)</td>
+      <td>E.g. 20294793</td>
+      <td>A story ID for which to return a sample of tweets contained in the story.</td>
+    </tr>
+    <tr>
+      <td>mintime</td>
+      <td>ISO time, e.g. 2013-07-02 17:01:14</td>
+      <td>Earliest timestamp of the first tweet returned.</td>
+    </tr>
+    <tr>
+      <td>maxtime</td>
+      <td>ISO time, e.g. 2013-07-02 17:01:14</td>
+      <td>Latest timestamp of the last tweet returned.</td>
+    </tr>
+    <tr>
+      <td>text</td>
+      <td>E.g. video</td>
+      <td>Comma separated keyword filter for tweets. Multiple keywords are combined with AND.</td>
+    </tr>
+    <tr>
+      <td>label_id</td>
+      <td>E.g. 149</td>
+      <td>A label ID filter for tweets in the story, matching an ID from the AIDR instance.</td>
+    </tr>
+
+    <tr class="header"><td colspan="3"><a href="api/get_aidr_topic_filters.php">get_aidr_topic_filters.php</td></tr>
+    <tr><td colspan="3">Returns available topic filters from the AIDR instance.</td></tr>
+
+    </table>
   </body>
 </html>
