@@ -320,7 +320,7 @@ namespace CrisisTracker.TweetParser
                 {
                     if (!jsonTweet.Value.EndsWith("}"))
                         Console.WriteLine("Incomplete tweet:\n" + jsonTweet.Value);
-                    else
+                    else if (jsonTweet.Value.Length > 5) //There is a strange (and known) problem with the LinqToTwitter library on Linux that adds the last few characters of each read line as a new line. Ignore these.
                         Output.Print(Name, "Unknown parsing error:\n" + jsonTweet.Value);
                     continue;
                 }
@@ -340,7 +340,7 @@ namespace CrisisTracker.TweetParser
 
                 if (status.ContainsKey("coordinates") && status["coordinates"] is Hashtable)
                 {
-                    Hashtable geoH = (Hashtable)status["geo"];
+                    Hashtable geoH = (Hashtable)status["coordinates"];
                     if (geoH.ContainsKey("coordinates"))
                     {
                         ArrayList coords = (ArrayList)geoH["coordinates"];
@@ -532,7 +532,7 @@ namespace CrisisTracker.TweetParser
                 if (tweet.ContainsKey("latitude"))
                     latitude = (double)tweet["latitude"];
                 if (tweet.ContainsKey("longitude"))
-                    latitude = (double)tweet["longitude"];
+                    longitude = (double)tweet["longitude"];
 
                 //Check if the tweet matches any filter
                 int score = 0;

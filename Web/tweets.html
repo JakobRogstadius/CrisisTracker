@@ -1,0 +1,69 @@
+<html>
+  <head>
+    <link href="lib/reset/reset.css" rel="stylesheet" type="text/css" />
+    <link href="common.css" rel="stylesheet" type="text/css" />
+
+<style>
+#tweetlist li {
+ padding: 5px;
+}
+#tweetlist span {
+ width: 120px;
+ display: inline-block;
+}
+#tweetlist a:visited {
+ background-color: #ccc !important;
+}
+.story-link {
+ width: 50px;
+ display: inline-block;
+}
+</style>
+
+    <script src="lib/d3/d3.v3.min.js"></script>
+    <script src="src/Globals.js"></script>
+
+<script>
+
+function reload() {
+  var query = document.getElementById('search').value;
+  console.log("query is: " + query);
+
+  var data;
+  d3.json("api/get_novel_tweets.php?text=" + encodeURIComponent(query), function(error, json) {
+    if (error) return console.warn(error);
+    data = json;
+    
+    var li = d3.select("#tweetlist").selectAll("li").remove();
+    var li = d3.select("#tweetlist").selectAll("li")
+      .data(data)
+      .enter().append("li");
+    li.append("span")
+      .text(function(d) { return Globals.getShortTime2(d.created_at); });
+    li.append("a")
+      .attr('href', function(d) { return 'index.html?story=' + d.story_id; })
+      .attr('target', '_blank')
+      .text(function(d) { return d.retweet_count > 0 ? Math.round(d.retweet_count) : ''; })
+      .classed("story-link", true);
+    li.append("a")
+      .attr('href', function(d) { return 'http://twitter.com/' + d.user_screen_name + '/status/' + d.tweet_id; })
+      .attr('target', '_blank')
+      .text(function(d) { return d.text; });
+  });
+}
+
+    </script>
+  </head>
+  <body class="text-page no-cols">
+
+    <h1>Search</h1>
+    <p>Find tweets using string matching. Recommended search criteria: place names, "need help", specific need and event types, etc.</p>
+    <input id="search" type="text" onchange="reload()"/>
+    <br/>
+    <br/>
+    <h1>Results</h1>
+
+    <ul id="tweetlist"></ul>
+
+  </body>
+</html>
