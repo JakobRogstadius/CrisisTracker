@@ -246,7 +246,7 @@ namespace CrisisTracker.TweetParser
         HashSet<string> GetStopwords()
         {
             HashSet<string> stopwords = new HashSet<string>();
-            string query = "select Word.Word from Word natural join WordScore left join TwitterTrackFilter f on Word.Word=f.Word where Score4d > (select value from Constants where name = 'WordScore4dHigh') and f.Word is null order by Score4d desc";
+            string query = "select Word.Word from Word natural join WordScore left join TwitterTrackFilter f on Word.Word=NaiveStemming(f.Word) where Score4d > (select value from Constants where name = 'WordScore4dHigh') and f.Word is null order by Score4d desc";
             Helpers.RunSelect(Name, query, stopwords, (sw, reader) => { sw.Add(reader.GetString("Word")); });
             return stopwords;
         }

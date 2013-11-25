@@ -985,7 +985,50 @@ return case
     else date_format(t, '%e %b %H:%i') end;
 end$$
 
-
-
 -- Dump completed on 2013-07-29 16:17:26
 
+
+ALTER TABLE `TwitterTrackFilter` 
+CHANGE COLUMN `IsStrong` `IsStrong` BIT(1) NOT NULL DEFAULT 1,
+CHANGE COLUMN `FilterType` `FilterType` TINYINT(3) UNSIGNED NOT NULL DEFAULT 0;
+
+ALTER TABLE `Story` 
+CHANGE COLUMN `IsArchived` `IsArchived` BIT(1) NOT NULL DEFAULT 0;
+DROP TABLE IF EXISTS `PlaceName`;
+CREATE TABLE `PlaceName` (
+  `PlaceNameID` int(11) NOT NULL AUTO_INCREMENT,
+  `PlaceName` varchar(100) NOT NULL,
+  `Latitude` double NOT NULL,
+  `Longitude` double NOT NULL,
+  PRIMARY KEY (`PlaceNameID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DELIMITER $$
+CREATE FUNCTION `NaiveStemming`(term char(100)) RETURNS char(100) CHARSET utf8
+begin
+    declare retval char(100);
+    declare tAfter char(100);
+    declare tBefore char(100);
+
+    if length(term)<4 or left(term,1)='#' 
+        then set retval = term;
+    else
+        set tAfter = term;
+        stemLoop : loop
+            set tBefore = tAfter;
+            set tAfter = case 
+                when tAfter regexp '(ing)$' then left(tAfter,length(tAfter)-3)
+                when tAfter regexp '(es|ed|ly)$' then left(tAfter,length(tAfter)-2)
+                when tAfter regexp '(s|n)$' then left(tAfter,length(tAfter)-1) else tAfter end;
+            if tAfter != tBefore 
+                then iterate stemLoop; 
+            end if;
+            leave stemLoop;
+        end loop stemLoop;
+        set retval = tAfter;
+    end if;
+    return retval;
+end$$
+DELIMITER ;
+
+-- Updates appended on 2013-11-25 13:52
