@@ -1,15 +1,13 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <!-- This file is a big hack. Apologies. - Jakob -->
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
     <meta charset="utf-8">
-    <title>Tweet map search</title>
     <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
 
     <link href="lib/reset/reset.css" rel="stylesheet" type="text/css" />
     <link href="common.css" rel="stylesheet" type="text/css" />
-    
+
     <style>
         html, body, #map-canvas {
          height: 100%;
@@ -54,6 +52,9 @@
           margin-bottom: 0.6em;
           line-height: 28px;
         }
+        b {
+          font-weight: bold;
+        }
     </style>
 
     <script src="lib/d3/d3.v3.min.js"></script>
@@ -61,8 +62,15 @@
 
 <script>
 
+//CONFIGURATION
+var mapCenter = new google.maps.LatLng(0, 0);
+var mapZoomLevel = 1;
+
 var map;
+var geocoder;
 var markers = [];
+var userMarker;
+var queryIsRunning = false;
 
 function reloadOverview() {
   deleteMarkers();
@@ -100,19 +108,26 @@ function reloadTweetList(query) {
       .attr('target', '_blank')
       .text(function(d) { return d.text; })
       .classed("title", true);
+
+    queryIsRunning = false;
   });
 }
 
 function initializeMap() {
-  var mapCenter = new google.maps.LatLng(0,0);
-  var mapOptions = {
-    zoom: 0,
+    var mapOptions = {
+    zoom: mapZoomLevel,
     center: mapCenter,
     mapTypeId: google.maps.MapTypeId.TERRAIN
   };
   map = new google.maps.Map(document.getElementById('map-canvas'),
       mapOptions);
 
+  google.maps.event.addListener(map,'click',function(event) {
+    codeLatLng(event.latLng);
+  });
+
+  geocoder = new google.maps.Geocoder();
+  
   reloadOverview();
 }
 
@@ -156,8 +171,39 @@ function deleteMarkers() {
   markers = [];
 }
 
-google.maps.event.addDomListener(window, 'load', initializeMap);
+//Reverse geocoding
+function codeLatLng(latLng) {
+  if (queryIsRunning) {
+    console.log("Patience...");
+    return;
+  }
 
+  queryIsRunning = true;
+
+  geocoder.geocode({'latLng': latLng}, function(results, status) {
+    if (status == google.maps.GeocoderStatus.OK) {
+      if (results[1]) {
+        var locname = results[1].address_components[0].short_name;
+
+        if (userMarker)
+          userMarker.setMap(null);
+        userMarker = new google.maps.Marker({
+          position: results[1].geometry.location,
+          map: map,
+          title: locname
+        });
+        
+        reloadTweetList(locname);
+      } else {
+        console.log('No results found');
+      }
+    } else {
+      console.log('Geocoder failed due to: ' + status);
+    }
+  });
+}
+
+google.maps.event.addDomListener(window, 'load', initializeMap);
     </script>
   </head>
   <body>
@@ -166,7 +212,11 @@ google.maps.event.addDomListener(window, 'load', initializeMap);
     </div>
     <div id="right-col">
       <h1 id="title">Geosearch</h1>
-      <table id="tweetlist"><tr><td>Each map marker represents a place name mentioned on Twitter. Click a marker on the map to show tweets relevant to that location.</td></tr></ul>
+      <table id="tweetlist"><tr><td>
+        <b>Instructions</b>
+        <br/>- Each map marker represents a suggested place name of importance. Click a marker on the map to show tweets relevant to that location.
+        <br/>- Click the map directly to search for tweets mentioning other place names.
+      </td></tr></table>
     </div>
   </body>
 </html>

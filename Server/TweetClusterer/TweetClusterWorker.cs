@@ -328,6 +328,26 @@ namespace CrisisTracker.TweetClusterer
                      where g.Key.HasValue
                      select new { ID = g.Key, Members = g, Score = g.Sum(m => 1 + 0.3 * Math.Log(m.Degree)) })
                     .OrderByDescending(n => n.Score);
+
+                //var neighborClusterIDs = neighbors.Select(n => n.TweetClusterID).Distinct();
+                //var groupTemplate = new { ID = new long?(), Members = new List<long>(), Score = (double)0 };
+                //var idGroups = new[] { groupTemplate }.ToList();
+                //idGroups.Clear();
+                //foreach (long? id in neighborClusterIDs)
+                //{
+                //    List<long> members = new List<long>();
+                //    double score = 0;
+                //    foreach (var neighbor in neighbors) {
+                //        if (neighbor.TweetClusterID == id) {
+                //            members.Add(neighbor.TweetID);
+                //            score += 1 + 0.3 * Math.Log(neighbor.Degree);
+                //        }
+                //    }
+                    
+                //    idGroups.Add(new { ID = (long?)id, Members = members, Score = score });
+                //}
+                //idGroups = idGroups.OrderByDescending(n => n.Score).ToList();
+
                 long topGroup = idGroups.First().ID.Value;
 
                 //Assign the majority cluster ID to this tweet

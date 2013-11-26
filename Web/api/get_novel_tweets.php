@@ -14,15 +14,13 @@ try {
     }
 
     $sql =
-    "select T2.*, RealName, ScreenName, ProfileImageUrl, Story.StoryID, Story.WeightedSize, count(Tweet.TweetID) as Retweets from (
+    "select T2.*, RealName, ScreenName, ProfileImageUrl, count(Tweet.TweetID) as Retweets from (
      select * from 
      (select TweetID, UserID, CreatedAt, Text, Novelty, TweetClusterID
      from Tweet where RetweetOf is null and Novelty>0.05 $where order by TweetID desc limit 200) T 
      order by Novelty desc limit 100
      ) T2
      join TwitterUser on TwitterUser.UserID=T2.UserID
-     join TweetCluster on TweetCluster.TweetClusterID=T2.TweetClusterID
-     join Story on Story.StoryID=TweetCluster.StoryID
      left join Tweet on Tweet.RetweetOf = T2.TweetID
      group by T2.TweetID
      order by Retweets desc, CreatedAt desc";
@@ -39,8 +37,6 @@ try {
         $tweet["user_screen_name"] = $row->ScreenName;
         $tweet["profile_image_url"] = $row->ProfileImageUrl;
         $tweet["created_at"] = $row->CreatedAt;
-        $tweet["story_id"] = $row->StoryID;
-        $tweet["story_weighted_size"] = $row->WeightedSize;
         $tweet["retweet_count"] = $row->Retweets;
         $tweet["text"] = $row->Text;
         $tweets[] = $tweet;

@@ -4,15 +4,23 @@
     <link href="common.css" rel="stylesheet" type="text/css" />
 
 <style>
-#tweetlist li {
- padding: 5px;
+#tweetlist {
+ padding: 0;
+ margin: 0 10px 10px 0;
 }
-#tweetlist span {
- width: 120px;
- display: inline-block;
+#tweetlist td {
+ padding: 3px;
+ margin: 0;
+ border-bottom: 1px dotted #ccc;
 }
-#tweetlist a:visited {
- background-color: #ccc !important;
+#tweetlist .timestamp {
+ width: 110px;
+}
+#tweetlist .title {
+
+}
+#tweetlist .is-top-tweet .timestamp {
+ font-style: italic;
 }
 .story-link {
  width: 50px;
@@ -34,21 +42,22 @@ function reload() {
     if (error) return console.warn(error);
     data = json;
     
-    var li = d3.select("#tweetlist").selectAll("li").remove();
-    var li = d3.select("#tweetlist").selectAll("li")
+    var li = d3.select("#title").text(query);
+
+    var tr = d3.select("#tweetlist").selectAll("tr").remove();
+    var tr = d3.select("#tweetlist").selectAll("tr")
       .data(data)
-      .enter().append("li");
-    li.append("span")
-      .text(function(d) { return Globals.getShortTime2(d.created_at); });
-    li.append("a")
-      .attr('href', function(d) { return 'index.html?story=' + d.story_id; })
-      .attr('target', '_blank')
-      .text(function(d) { return d.retweet_count > 0 ? Math.round(d.retweet_count) : ''; })
-      .classed("story-link", true);
-    li.append("a")
+      .enter().append("tr");
+    tr.classed("is-top-tweet", function(d) { return d.retweet_count > 0; });
+    tr.append("td")
+      .text(function(d) { return Globals.getShortTime2(d.created_at); })
+      .classed("timestamp", true)
+      .attr('title', function(d) { return d.retweet_count > 0 ? "This post has been retweeted " + d.retweet_count + " times." : ""; });
+    tr.append("td").append("a")
       .attr('href', function(d) { return 'http://twitter.com/' + d.user_screen_name + '/status/' + d.tweet_id; })
       .attr('target', '_blank')
-      .text(function(d) { return d.text; });
+      .text(function(d) { return d.text; })
+      .classed("title", true);
   });
 }
 
@@ -57,13 +66,13 @@ function reload() {
   <body class="text-page no-cols">
 
     <h1>Search</h1>
-    <p>Find tweets using string matching. Recommended search criteria: place names, "need help", specific need and event types, etc.</p>
+    <p>Find tweets using string matching. Recommended search criteria: place names, "need help", specific need and event types.</p>
     <input id="search" type="text" onchange="reload()"/>
     <br/>
     <br/>
     <h1>Results</h1>
 
-    <ul id="tweetlist"></ul>
+    <table id="tweetlist"></table>
 
   </body>
 </html>

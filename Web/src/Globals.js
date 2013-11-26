@@ -15,13 +15,20 @@ var Globals = {
     return date.toISOString().substring(0,19).replace('T', ' ');
   },
 
+  mySqlToIsoTime : function(dateStr) {
+    return new Date(Date.parse(dateStr.substring(0,19).replace(' ', 'T') + "Z"));
+  },
+
   months : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
 
   parseTime: d3.time.format.utc("%Y-%m-%d %H:%M:%S").parse,
 
-  getShortTime : function(date) {
-    if (typeof date == 'string')
-      date = new Date(Date.parse(date + " UTC"));
+  getShortTime : function(indate) {
+    var date = new Date();
+    if (typeof indate == 'string')
+      date = Globals.mySqlToIsoTime(indate);
+    else
+      date = indate;
 
     var secDiff = Math.floor((new Date().getTime() - date.getTime()) / 1000);
     if (secDiff < 60)
@@ -39,6 +46,40 @@ var Globals = {
       var m = date.getMinutes();
       return this.months[date.getMonth()] + " " + date.getDate() + " "
       + (h<10 ? "0"+h : h) + ":" + (m<10 ? "0"+m : m);
+    }
+  },
+
+  getShortTime2 : function(indate) {
+    var date = new Date();
+    if (typeof indate == 'string')
+      date = Globals.mySqlToIsoTime(indate);
+    else
+      date = indate;
+
+    var secDiff = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+    if (secDiff < 60)
+      return secDiff + " seconds ago";
+    else if (secDiff < 120)
+      return "1 minute ago";
+    else if (secDiff < 3600)
+      return Math.floor(secDiff / 60) + " minutes ago";
+    else if (secDiff < 3600*24 && date.getDate()==new Date().getDate()) {
+      var h = date.getHours();
+      var m = date.getMinutes();
+      return (h<10 ? "0"+h : h) + ":" + (m<10 ? "0"+m : m)
+        + ' today';
+    }
+    else if (secDiff < 3600*48 && (new Date().getDate() - date.getDate()) == 1) {
+      var h = date.getHours();
+      var m = date.getMinutes();
+      return (h<10 ? "0"+h : h) + ":" + (m<10 ? "0"+m : m)
+        + ' yesterday';
+    }
+    else {
+      var h = date.getHours();
+      var m = date.getMinutes();
+      return (h<10 ? "0"+h : h) + ":" + (m<10 ? "0"+m : m)
+        + ' ' + this.months[date.getMonth()] + " " + date.getDate();
     }
   },
 
