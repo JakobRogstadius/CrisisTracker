@@ -37,7 +37,8 @@ CrisisTracker is free and open source, so that you can deploy your own instance 
 
 * [Example deployment](http://ufn.virtues.fi/~jakob/newct/)
 * [Installation instructions](https://github.com/JakobRogstadius/CrisisTracker/wiki/Installation-instructions)
-* [Evaluation report](http://hci.uma.pt/~jakob/files/Rogstadius_2013_CrisisTracker_Crowdsourced_Social_Media_Curation_for_Disaster_Awareness.pdf) and [other publications](http://hci.uma.pt/~jakob/?p=publications)
+* [Evaluation report](http://hci.uma.pt/~jakob/files/Rogstadius_2013_CrisisTracker_Crowdsourced_Social_Media_Curation_for_Disaster_Awareness.pdf)
+* [Ph.D. Thesis](http://hci.uma.pt/~jakob/files/rogstadius_2014_phd_thesis.pdf) and [other publications](http://hci.uma.pt/~jakob/?p=publications)
 * More documentation is available on the [wiki](https://github.com/JakobRogstadius/CrisisTracker/wiki)
 
 ## Contact
@@ -48,13 +49,16 @@ Please contact [Jakob Rogstadius](http://hci.uma.pt/~jakob/) for inquiries.
 
 Development of CrisisTracker has been made possible through funding and other resources by M-ITI, IBM Research, University of Oulu and QCRI.
 
-Contributors:
+Active contributors:
 
 * [Jakob Rogstadius](http://hci.uma.pt/~jakob) - Lead developer
+
+Past contributors:
+
 * [Claudio Teixeira](http://www.claudioteixeira.com/) - Developer
 * [Vassilis Kostakos](http://www.ee.oulu.fi/~vassilis/) - Advisor
 * [Maja Vukovic](http://researcher.watson.ibm.com/researcher/view.php?person=us-maja) - Advisor
 * [Taha Kass-Hout](http://www.humanitariantracker.org/#!aboutus/csgz) - Advisor
-* [Evangelos Kostakos](http://ekarapanos.com/) - Advisor
+* [Evangelos Karapanos](http://ekarapanos.com/) - Advisor
 * [Ko-Hsun Huang](http://www.linkedin.com/profile/view?id=156209073&locale=en_US&trk=tyah) - Advisor
 * [Carlos Castillo](http://www.chato.cl/research/) - Advisor

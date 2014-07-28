@@ -44,6 +44,24 @@ SET character_set_client = utf8;
 SET character_set_client = @saved_cs_client;
 
 --
+-- Table structure for table `users`
+--
+
+DROP TABLE IF EXISTS `users`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `users` (
+  `userID` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(45) NOT NULL,
+  `role` varchar(45) NOT NULL DEFAULT 'normal',
+  PRIMARY KEY (`userID`),
+  UNIQUE KEY `name_UNIQUE` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+INSERT INTO users (`userID`, `name`, `role`) VALUES (0, 'SYSTEM', 'admin');
+
+--
 -- Table structure for table `crisis`
 --
 
@@ -234,7 +252,7 @@ DROP TABLE IF EXISTS `nominal_attribute`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `nominal_attribute` (
   `nominalAttributeID` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `userID` int(10) unsigned NOT NULL DEFAULT '4',
+  `userID` int(10) unsigned NOT NULL DEFAULT '0',
   `name` varchar(140) NOT NULL,
   `description` varchar(600) NOT NULL DEFAULT '',
   `code` varchar(15) NOT NULL,
@@ -355,23 +373,6 @@ SET character_set_client = utf8;
 ) ENGINE=MyISAM */;
 SET character_set_client = @saved_cs_client;
 
---
--- Table structure for table `users`
---
-
-DROP TABLE IF EXISTS `users`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `users` (
-  `userID` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(45) NOT NULL,
-  `role` varchar(45) NOT NULL DEFAULT 'normal',
-  PRIMARY KEY (`userID`),
-  UNIQUE KEY `name_UNIQUE` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
-INSERT INTO users (`userID`, `name`, `role`) VALUES (0, 'SYSTEM', 'admin');
 
 --
 -- Final view structure for view `active_attributes`

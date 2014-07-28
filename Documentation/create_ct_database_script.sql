@@ -146,7 +146,7 @@ CREATE TABLE `Story` (
   `WeightedSizeRecent` double unsigned NOT NULL DEFAULT '0',
   `StartTime` datetime DEFAULT NULL,
   `EndTime` datetime DEFAULT NULL,
-  `IsArchived` bit(1) NOT NULL,
+  `IsArchived` BIT(1) NOT NULL DEFAULT 0,
   `TagScore` double unsigned NOT NULL DEFAULT '0',
   `PendingUpdate` bit(1) NOT NULL DEFAULT b'0',
   `IsHidden` bit(1) NOT NULL DEFAULT b'0',
@@ -782,10 +782,10 @@ DROP TABLE IF EXISTS `TwitterTrackFilter`;
 CREATE TABLE `TwitterTrackFilter` (
   `ID` int(11) NOT NULL AUTO_INCREMENT,
   `IsActive` bit(1) NOT NULL DEFAULT b'1',
-  `IsStrong` bit(1) NOT NULL,
+  `IsStrong` bit(1) NOT NULL DEFAULT 1,
   `Hits1d` double unsigned NOT NULL DEFAULT '0',
   `Discards1d` double unsigned NOT NULL DEFAULT '0',
-  `FilterType` tinyint(3) unsigned NOT NULL,
+  `FilterType` TINYINT(3) UNSIGNED NOT NULL DEFAULT 0,
   `Word` varchar(45) DEFAULT NULL,
   `UserID` bigint(20) unsigned DEFAULT NULL,
   `UserName` varchar(45) DEFAULT NULL,
@@ -884,6 +884,20 @@ CREATE TABLE `WordTweet` (
   CONSTRAINT `WordTweet_WordID` FOREIGN KEY (`WordID`) REFERENCES `Word` (`WordID`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `PlaceName`
+--
+
+DROP TABLE IF EXISTS `PlaceName`;
+CREATE TABLE `PlaceName` (
+  `PlaceNameID` int(11) NOT NULL AUTO_INCREMENT,
+  `PlaceName` varchar(100) NOT NULL,
+  `Latitude` double NOT NULL,
+  `Longitude` double NOT NULL,
+  PRIMARY KEY (`PlaceNameID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
@@ -985,24 +999,6 @@ return case
     else date_format(t, '%e %b %H:%i') end;
 end$$
 
--- Dump completed on 2013-07-29 16:17:26
-
-
-ALTER TABLE `TwitterTrackFilter` 
-CHANGE COLUMN `IsStrong` `IsStrong` BIT(1) NOT NULL DEFAULT 1,
-CHANGE COLUMN `FilterType` `FilterType` TINYINT(3) UNSIGNED NOT NULL DEFAULT 0;
-
-ALTER TABLE `Story` 
-CHANGE COLUMN `IsArchived` `IsArchived` BIT(1) NOT NULL DEFAULT 0;
-DROP TABLE IF EXISTS `PlaceName`;
-CREATE TABLE `PlaceName` (
-  `PlaceNameID` int(11) NOT NULL AUTO_INCREMENT,
-  `PlaceName` varchar(100) NOT NULL,
-  `Latitude` double NOT NULL,
-  `Longitude` double NOT NULL,
-  PRIMARY KEY (`PlaceNameID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 DELIMITER $$
 CREATE FUNCTION `NaiveStemming`(term char(100)) RETURNS char(100) CHARSET utf8
 begin
@@ -1030,5 +1026,3 @@ begin
     return retval;
 end$$
 DELIMITER ;
-
--- Updates appended on 2013-11-25 13:52
