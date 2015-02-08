@@ -35,10 +35,9 @@ CrisisTracker is free and open source, so that you can deploy your own instance 
 
 ## Resources
 
-* [Example deployment](http://ufn.virtues.fi/~jakob/newct/)
+* [Example deployment](http://ufn.virtues.fi/crisistracker)
 * [Installation instructions](https://github.com/JakobRogstadius/CrisisTracker/wiki/Installation-instructions)
-* [Evaluation report](http://hci.uma.pt/~jakob/files/Rogstadius_2013_CrisisTracker_Crowdsourced_Social_Media_Curation_for_Disaster_Awareness.pdf)
-* [Ph.D. Thesis](http://hci.uma.pt/~jakob/files/rogstadius_2014_phd_thesis.pdf) and [other publications](http://hci.uma.pt/~jakob/?p=publications)
+* [Publications](https://github.com/JakobRogstadius/CrisisTracker/wiki/Publications)
 * More documentation is available on the [wiki](https://github.com/JakobRogstadius/CrisisTracker/wiki)
 
 ## Contact
