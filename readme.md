@@ -2,6 +2,8 @@
 
 CrisisTracker is a software platform that extracts situational awareness reports from torrents of public tweets during humanitarian disasters. It combines different kinds of automated processing with crowdsourcing to quickly detect new events and bring together related evidence into stories.
 
+As of 2016, the project is no longer maintained, as there is no funding and I need to pay the bills. Contact me if you are interested in sponsoring further development. -[Jakob Rogstadius](https://www.linkedin.com/in/jakobrogstadius/)
+
 ![Screenshot of CrisisTracker](Documentation/screenshot1.png)
 
 ## Distributed sensing via social media
@@ -42,18 +44,19 @@ CrisisTracker is free and open source, so that you can deploy your own instance 
 
 ## Contact
 
-Please contact [Jakob Rogstadius](http://hci.uma.pt/~jakob/) for inquiries.
+Please contact [Jakob Rogstadius](https://www.linkedin.com/in/jakobrogstadius/) for inquiries.
 
 ## Acknowledgements
 
-Development of CrisisTracker has been made possible through funding and other resources by M-ITI, IBM Research, University of Oulu and QCRI.
+Development of CrisisTracker has been made possible through funding and computational resources by M-ITI, IBM Research, University of Oulu and QCRI.
 
 Active contributors:
 
-* [Jakob Rogstadius](http://hci.uma.pt/~jakob) - Lead developer
+* None
 
 Past contributors:
 
+* [Jakob Rogstadius](http://hci.uma.pt/~jakob) - Lead developer
 * [Claudio Teixeira](http://www.claudioteixeira.com/) - Developer
 * [Vassilis Kostakos](http://www.ee.oulu.fi/~vassilis/) - Advisor
 * [Maja Vukovic](http://researcher.watson.ibm.com/researcher/view.php?person=us-maja) - Advisor
